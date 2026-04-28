@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tasklist)",
+      "Bash(flutter build *)",
+      "Bash(flutter run *)",
+      "Bash(python -c \"from aiotieba import Client; import inspect; src = inspect.getsource\\(Client._get_uinfo_profile\\); print\\(src\\)\")",
+      "Bash(python -c \"from aiotieba import Client; import inspect; src = inspect.getsource\\(Client.__init__\\); print\\(src\\)\")"
+    ]
+  }
+}
