@@ -23,8 +23,10 @@ class _WodePageState extends State<WodePage> {
     if (UserManager.isLogin) {
       context.push('/wode/detail');
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage()))
-          .then((_) => setState(() {}));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+      ).then((_) => setState(() {}));
     }
   }
 
@@ -54,16 +56,17 @@ class _WodePageState extends State<WodePage> {
                             CircleAvatar(
                               radius: 30,
                               backgroundColor: Colors.white,
-                              backgroundImage: isLogin && UserManager.portrait != null
-                                  ? NetworkImage(UserManager.avatarUrl,
-                                      headers: UserManager.avatarHeaders)
+                              backgroundImage:
+                                  isLogin && UserManager.portrait != null
+                                  ? NetworkImage(
+                                      UserManager.avatarUrl,
+                                      headers: UserManager.avatarHeaders,
+                                    )
                                   : null,
                             ),
                             const SizedBox(width: 15),
                             Text(
-                              isLogin
-                                  ? (UserManager.userName ?? "百度用户")
-                                  : "登录",
+                              isLogin ? (UserManager.userName ?? "百度用户") : "登录",
                               style: const TextStyle(
                                 fontSize: 22,
                                 color: Colors.white,
@@ -82,7 +85,10 @@ class _WodePageState extends State<WodePage> {
                 child: Container(
                   width: double.infinity,
                   color: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
