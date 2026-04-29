@@ -5,7 +5,12 @@
       "Bash(flutter build *)",
       "Bash(flutter run *)",
       "Bash(python -c \"from aiotieba import Client; import inspect; src = inspect.getsource\\(Client._get_uinfo_profile\\); print\\(src\\)\")",
-      "Bash(python -c \"from aiotieba import Client; import inspect; src = inspect.getsource\\(Client.__init__\\); print\\(src\\)\")"
+      "Bash(python -c \"from aiotieba import Client; import inspect; src = inspect.getsource\\(Client.__init__\\); print\\(src\\)\")",
+      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/repository/user/**)",
+      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/retrofit/interfaces/**)",
+      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/repository/source/network/**)",
+      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/impls/**)",
+      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/**)"
     ]
   }
 }
