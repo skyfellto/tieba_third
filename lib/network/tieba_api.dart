@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/post_item.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
   static const String _loginUrl = "$_baseHost/c/s/login";
-  static const String _personalizedUrl = "http://c.tieba.baidu.com/c/f/excellent/personalized";
+  static const String _personalizedUrl =
+      "http://c.tieba.baidu.com/c/f/excellent/personalized";
   static const String _clientVersion = "12.64.1.1";
 
   /// 对参数元组列表排序并计算 tiebaclient!!! MD5 签名
@@ -17,10 +19,13 @@ class TiebaApi {
     for (final pair in data) {
       buf.write("${pair[0]}=${pair[1]}");
     }
-    return md5.convert(utf8.encode("${buf.toString()}tiebaclient!!!")).toString();
+    return md5
+        .convert(utf8.encode("${buf.toString()}tiebaclient!!!"))
+        .toString();
   }
 
   /// 发送 POST 表单请求并返回解析后的 JSON（仅限 200 + error_code=0）
+  // ignore: unused_element
   static Future<Map<String, dynamic>?> _postForm(
     String url,
     List<List<String>> params, {
@@ -29,7 +34,9 @@ class TiebaApi {
   }) async {
     final sign = _computeSign(params);
     params.add(["sign", sign]);
-    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
 
     final client = http.Client();
     try {
@@ -42,7 +49,9 @@ class TiebaApi {
         })
         ..body = bodyStr;
 
-      final response = await http.Response.fromStream(await client.send(request));
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
       if (response.statusCode == 302) return null;
       if (response.statusCode != 200) return null;
 
@@ -68,7 +77,9 @@ class TiebaApi {
     ];
     final sign = _computeSign(data);
     data.add(["sign", sign]);
-    final bodyStr = data.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = data
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
 
     final client = http.Client();
     try {
@@ -81,7 +92,9 @@ class TiebaApi {
         })
         ..body = bodyStr;
 
-      final response = await http.Response.fromStream(await client.send(request));
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
       if (response.statusCode == 302) return null;
       if (response.statusCode != 200) return null;
 
@@ -125,12 +138,14 @@ class TiebaApi {
 
     final sign = _computeSign(params);
     params.add(["sign", sign]);
-    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
 
-    print("\n================================================");
-    print("【调试】请求地址：$_personalizedUrl");
-    print("【调试】请求参数：$bodyStr");
-    print("================================================\n");
+    debugPrint("\n================================================");
+    debugPrint("【调试】请求地址：$_personalizedUrl");
+    debugPrint("【调试】请求参数：$bodyStr");
+    debugPrint("================================================\n");
 
     final client = http.Client();
     try {
@@ -143,29 +158,31 @@ class TiebaApi {
         })
         ..body = bodyStr;
 
-      final response = await http.Response.fromStream(await client.send(request));
-      print("【调试】响应状态码：${response.statusCode}");
-      print("【调试】响应体：${response.body}");
-      print("================================================\n");
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint("【调试】响应状态码：${response.statusCode}");
+      debugPrint("【调试】响应体：${response.body}");
+      debugPrint("================================================\n");
 
       if (response.statusCode == 302) {
-        print("【调试】被重定向拦截，降级为占位");
+        debugPrint("【调试】被重定向拦截，降级为占位");
         return [];
       }
       if (response.statusCode != 200) {
-        print("【调试】非200状态码：${response.statusCode}");
+        debugPrint("【调试】非200状态码：${response.statusCode}");
         return [];
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       if (json["error_code"] != "0" && json["error_code"] != 0) {
-        print("【调试】API返回错误：${json["error_msg"]}");
+        debugPrint("【调试】API返回错误：${json["error_msg"]}");
         return [];
       }
 
       final list = json["thread_list"] as List<dynamic>?;
       if (list == null || list.isEmpty) {
-        print("【调试】thread_list 为空");
+        debugPrint("【调试】thread_list 为空");
         return [];
       }
 
@@ -173,10 +190,10 @@ class TiebaApi {
           .map((e) => PostItem.fromJson(e as Map<String, dynamic>))
           .where((p) => p.title.isNotEmpty)
           .toList();
-      print("【调试】解析到 ${posts.length} 条帖子");
+      debugPrint("【调试】解析到 ${posts.length} 条帖子");
       return posts;
     } catch (e) {
-      print("【调试】请求异常：$e");
+      debugPrint("【调试】请求异常：$e");
       return [];
     } finally {
       client.close();
