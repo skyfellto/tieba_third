@@ -60,6 +60,7 @@ class _TiebaPageState extends State<TiebaPage>
           floating: true,
           actions: [
             IconButton(
+              color: Colors.grey[300],
               icon: Icon(_isDoubleColumn ? Icons.view_agenda : Icons.grid_view),
               onPressed: () {
                 setState(() {

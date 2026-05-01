@@ -43,6 +43,7 @@ dependencies:
   crypto: ^3.0.7
   logger: ^2.7.0
   protobuf: ^6.0.0
+  fixnum: ^1.1.1
 
 dev_dependencies:
   flutter_test:
