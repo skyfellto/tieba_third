@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
+import '../utils/data_cache.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -104,6 +105,14 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  // 登录后静默预加载首页推荐 + 关注的吧
+  void _preloadData() {
+    final bduss = _bdussController.text.trim();
+    final stoken = _stokenController.text.trim();
+    DataCache.preloadPosts(TiebaApi.fetchPersonalizedThreads(bduss: bduss, stoken: stoken));
+    DataCache.preloadForums(TiebaApi.fetchForumRecommend(bduss: bduss, stoken: stoken));
+  }
+
   // 登录逻辑
   Future<void> _handleLogin() async {
     final bduss = _bdussController.text.trim();
@@ -142,6 +151,8 @@ class _LoginPageState extends State<LoginPage> {
         userName: userName,
         portrait: portrait,
       );
+      // 后台预加载首页推荐 + 关注的吧
+      _preloadData();
       // 返回我的页面
       if (mounted) {
         ScaffoldMessenger.of(

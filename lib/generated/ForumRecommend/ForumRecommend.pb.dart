@@ -225,7 +225,7 @@ class ForumRecommendResponseData extends $pb.GeneratedMessage {
       package: const $pb.PackageName(
           _omitMessageNames ? '' : 'tieba.forumRecommend'),
       createEmptyInstance: create)
-    ..pPM<$1.LikeForum>(1, _omitFieldNames ? '' : 'likeForum',
+    ..pPM<$1.LikeForum>(2, _omitFieldNames ? '' : 'likeForum',
         subBuilder: $1.LikeForum.create)
     ..aI(4, _omitFieldNames ? '' : 'isLogin')
     ..aI(18, _omitFieldNames ? '' : 'sortType')
@@ -252,7 +252,7 @@ class ForumRecommendResponseData extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<ForumRecommendResponseData>(create);
   static ForumRecommendResponseData? _defaultInstance;
 
-  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   $pb.PbList<$1.LikeForum> get likeForum => $_getList(0);
 
   @$pb.TagNumber(4)

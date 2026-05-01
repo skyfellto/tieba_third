@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/forum_item.dart';
+import '../network/tieba_api.dart';
+import '../utils/data_cache.dart';
+import '../utils/user_manager.dart';
 import '../constants/app_colors.dart';
+import '../widgets/followed_forum_tile.dart';
 
 class TiebaPage extends StatefulWidget {
   const TiebaPage({super.key});
@@ -11,9 +16,10 @@ class TiebaPage extends StatefulWidget {
 
 class _TiebaPageState extends State<TiebaPage>
     with AutomaticKeepAliveClientMixin {
-  // 标记是否加载完成配置
-  bool _isConfigLoaded = false;
+  bool _configLoaded = false;
   bool _isDoubleColumn = true;
+  List<ForumItem> _forums = [];
+
   static const String _storageKey = 'tieba_grid_layout';
 
   @override
@@ -23,15 +29,20 @@ class _TiebaPageState extends State<TiebaPage>
   void initState() {
     super.initState();
     _initLayoutConfig();
+    _loadForumsFromCache();
+    _loadForums();
+  }
+
+  Future<void> _loadForumsFromCache() async {
+    final cached = await DataCache.forums;
+    if (cached.isNotEmpty && mounted) setState(() => _forums = cached);
   }
 
   Future<void> _initLayoutConfig() async {
     final prefs = await SharedPreferences.getInstance();
-    final bool? savedMode = prefs.getBool(_storageKey);
-
     setState(() {
-      _isDoubleColumn = savedMode ?? true;
-      _isConfigLoaded = true; // 配置加载完成
+      _isDoubleColumn = prefs.getBool(_storageKey) ?? true;
+      _configLoaded = true;
     });
   }
 
@@ -40,58 +51,74 @@ class _TiebaPageState extends State<TiebaPage>
     await prefs.setBool(_storageKey, _isDoubleColumn);
   }
 
+  Future<void> _loadForums() async {
+    if (!UserManager.isLogin) return;
+    try {
+      final forums = await TiebaApi.fetchForumRecommend(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+      );
+      if (mounted) setState(() => _forums = forums);
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    // 配置未加载完成时，显示空白/加载，不渲染默认布局
-    if (!_isConfigLoaded) {
+    if (!_configLoaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          title: const Text(
-            '贴吧',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("贴吧",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.moonlightGradient[1],
+        actions: [
+          IconButton(
+            icon: Icon(_isDoubleColumn ? Icons.view_agenda : Icons.grid_view),
+            onPressed: () {
+              setState(() => _isDoubleColumn = !_isDoubleColumn);
+              _saveLayoutConfig();
+            },
           ),
-          backgroundColor: AppColors.moonlightGradient[1],
-          floating: true,
-          actions: [
-            IconButton(
-              color: Colors.grey[300],
-              icon: Icon(_isDoubleColumn ? Icons.view_agenda : Icons.grid_view),
-              onPressed: () {
-                setState(() {
-                  _isDoubleColumn = !_isDoubleColumn;
-                });
-                _saveLayoutConfig();
-              },
-            ),
-          ],
+        ],
+      ),
+      body: _forums.isEmpty ? ListView() : _buildForumList(),
+    );
+  }
+
+  Widget _buildForumList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text("关注的吧",
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.all(8.0),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: _isDoubleColumn ? 2 : 1,
-              childAspectRatio: _isDoubleColumn ? 0.8 : 2.5,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+        // TODO: "经过的吧" 横向列表（后续接入 GetHistoryForum）
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadForums,
+            child: ListView.builder(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: _forums.length,
+              itemBuilder: (context, index) => FollowedForumTile(
+                forum: _forums[index],
+                onTap: () {
+                  // TODO: 跳转贴吧详情页
+                },
+                onSign: () {
+                  // TODO: 签到操作
+                },
+              ),
             ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(child: Text('帖子 $index')),
-              );
-            }, childCount: 50),
           ),
         ),
       ],
     );
   }
+
 }
