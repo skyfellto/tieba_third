@@ -4,8 +4,13 @@ import 'package:fixnum/fixnum.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import '../models/post_item.dart';
+import '../models/forum_item.dart';
 import '../generated/CommonRequest.pb.dart';
 import '../generated/Personalized.pb.dart';
+import '../generated/ForumGuide/ForumGuideRequest.pb.dart';
+import '../generated/ForumGuide/ForumGuideRequestData.pb.dart';
+import '../generated/ForumGuide/ForumGuideResponse.pb.dart';
+import '../generated/ForumGuide/ForumGuideResponseData.pb.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
@@ -150,6 +155,48 @@ class TiebaApi {
       return posts;
     } catch (e) {
       print("【调试】请求异常：$e");
+      return [];
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取关注的吧列表（ForumGuide Protobuf 版）
+  static Future<List<ForumItem>> fetchForumRecommend({
+    required String bduss,
+    required String stoken,
+  }) async {
+    final reqData = ForumGuideRequestData(sortType: 1, callFrom: 4);
+    final request = ForumGuideRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("http://tiebac.baidu.com/c/f/forum/forumGuide?cmd=309683&format=protobuf");
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "bdtb for Android 12.34.5.0",
+          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+        })
+        ..files.add(http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'));
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) return [];
+
+      final pb = ForumGuideResponse.fromBuffer(response.bodyBytes);
+      if (pb.error.errorCode != 0) return [];
+
+      return pb.data.likeForum.map((f) => ForumItem(
+        forumId: f.forumId.toString(),
+        forumName: f.forumName,
+        avatar: f.avatar,
+        levelId: f.levelId,
+        isSign: f.isSign == 1,
+      )).toList();
+    } catch (_) {
       return [];
     } finally {
       client.close();

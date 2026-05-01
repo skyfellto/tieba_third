@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/auth_notifier.dart';
+import '../utils/data_cache.dart';
 import '../utils/user_manager.dart';
 import '../widgets/post_card.dart';
 
@@ -24,7 +25,14 @@ class _DongtaiPageState extends State<DongtaiPage>
   void initState() {
     super.initState();
     AuthNotifier().addListener(_onAuthChanged);
+    // 优先等预加载结果，不等网络请求
+    _loadFromCache();
     _loadData();
+  }
+
+  Future<void> _loadFromCache() async {
+    final cached = await DataCache.posts;
+    if (cached.isNotEmpty && mounted) setState(() => _posts = cached);
   }
 
   @override
@@ -48,7 +56,7 @@ class _DongtaiPageState extends State<DongtaiPage>
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
       );
-      posts = posts.where((p) => !p.isAd).toList(); // 过滤广告
+      posts = posts.where((p) => !p.isAd).toList();
       if (mounted) {
         setState(() {
           _posts = posts;
@@ -67,9 +75,11 @@ class _DongtaiPageState extends State<DongtaiPage>
   }
 
   Widget _buildBody() {
-    final showPlaceholder =
-        !UserManager.isLogin || _posts == null || _posts!.isEmpty;
-    final itemCount = showPlaceholder ? 30 : _posts!.length;
+    final hasData = _posts != null && _posts!.isNotEmpty;
+
+    if (!hasData) {
+      return ListView(); // 无数据时显示空白可滚动区
+    }
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -77,13 +87,8 @@ class _DongtaiPageState extends State<DongtaiPage>
       },
       child: ListView.builder(
         padding: const EdgeInsets.all(12),
-        itemCount: itemCount,
-        itemBuilder: (context, index) {
-          if (showPlaceholder) {
-            return PostCard(isPlaceholder: true);
-          }
-          return PostCard(post: _posts![index]);
-        },
+        itemCount: _posts!.length,
+        itemBuilder: (context, index) => PostCard(post: _posts![index]),
       ),
     );
   }
