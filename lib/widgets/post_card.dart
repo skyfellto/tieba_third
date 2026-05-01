@@ -21,15 +21,24 @@ class PostCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 标题行
+            if (!isPlaceholder && post!.isAd)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: Colors.red[200]!),
+                ),
+                child: Text("广告 · 直播",
+                    style: TextStyle(color: Colors.red[400], fontSize: 11)),
+              ),
             Row(
               children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: Colors.grey[300],
-                  backgroundImage: _showAvatar
-                      ? NetworkImage(UserManager.avatarUrl,
-                          headers: UserManager.avatarHeaders)
-                      : null,
+                  backgroundImage: _authorAvatar,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -116,7 +125,19 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  bool get _showAvatar => !isPlaceholder && UserManager.isLogin && UserManager.portrait != null;
+  ImageProvider? get _authorAvatar {
+    // 有真实数据时用楼主头像
+    if (post?.authorPortrait != null && post!.authorPortrait!.isNotEmpty) {
+      return NetworkImage(PostItem.avatarUrlFor(post!.authorPortrait!),
+          headers: UserManager.avatarHeaders);
+    }
+    // 占位卡片用登录用户头像
+    if (!isPlaceholder && UserManager.isLogin && UserManager.portrait != null) {
+      return NetworkImage(UserManager.avatarUrl,
+          headers: UserManager.avatarHeaders);
+    }
+    return null;
+  }
 
   String get _author => post?.authorName ?? (isPlaceholder ? "" : "百度用户");
   String? get _forum => post?.forumName;

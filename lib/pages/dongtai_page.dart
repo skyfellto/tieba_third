@@ -44,10 +44,11 @@ class _DongtaiPageState extends State<DongtaiPage>
 
     setState(() => _isLoading = true);
     try {
-      final posts = await TiebaApi.fetchPersonalizedThreads(
+      var posts = await TiebaApi.fetchPersonalizedThreads(
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
       );
+      posts = posts.where((p) => !p.isAd).toList(); // 过滤广告
       if (mounted) {
         setState(() {
           _posts = posts;
@@ -66,7 +67,8 @@ class _DongtaiPageState extends State<DongtaiPage>
   }
 
   Widget _buildBody() {
-    final showPlaceholder = !UserManager.isLogin || _posts == null || _posts!.isEmpty;
+    final showPlaceholder =
+        !UserManager.isLogin || _posts == null || _posts!.isEmpty;
     final itemCount = showPlaceholder ? 30 : _posts!.length;
 
     return RefreshIndicator(

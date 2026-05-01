@@ -1,3 +1,7 @@
+import '../generated/ThreadInfo.pb.dart';
+
+String _s(dynamic v) => v?.toString() ?? '';
+
 class PostItem {
   final String tid;
   final String title;
@@ -8,6 +12,11 @@ class PostItem {
   final String agreeNum;
   final String? abstractText;
   final List<String> imageUrls;
+  final bool isAd;
+
+  /// 根据 portrait 字符串拼接头像 URL
+  static String avatarUrlFor(String portrait) =>
+      "http://tb.himg.baidu.com/sys/portrait/item/$portrait";
 
   PostItem({
     required this.tid,
@@ -19,46 +28,44 @@ class PostItem {
     required this.agreeNum,
     this.abstractText,
     this.imageUrls = const [],
+    this.isAd = false,
   });
 
-  factory PostItem.fromJson(Map<String, dynamic> json) {
-    final author = json['author'] as Map<String, dynamic>?;
-
-    String toStr(dynamic v) => v?.toString() ?? '';
-    String? toStrOrNull(dynamic v) => v?.toString();
-
-    // 提取摘要文本
+  factory PostItem.fromThreadInfo(ThreadInfo t) {
     String? absText;
-    final absList = json['abstract'] as List<dynamic>?;
-    if (absList != null && absList.isNotEmpty) {
-      absText = (absList.first as Map<String, dynamic>)['text'] as String?;
-    }
+    try {
+      if (t.abstract.isNotEmpty) absText = _s(t.abstract.first.text);
+    } catch (_) {}
 
-    // 提取图片 URL
     List<String> imgs = [];
-    final mediaList = json['media'] as List<dynamic>?;
-    if (mediaList != null) {
-      for (final m in mediaList) {
-        if (m is Map<String, dynamic>) {
-          final type = m['type']?.toString();
-          final url = toStrOrNull(m['big_pic'] ?? m['src_pic']);
-          if (type == '3' && url != null && url.isNotEmpty) {
-            imgs.add(url);
-          }
+    try {
+      for (final m in t.media) {
+        if (_s(m.type) == '3') {
+          final url = _s(m.bigPic.isNotEmpty ? m.bigPic : m.srcPic);
+          if (url.isNotEmpty) imgs.add(url);
         }
       }
-    }
+    } catch (_) {}
+
+    String authorName = '';
+    String? portrait;
+    try {
+      final a = t.author;
+      authorName = _s(a.name.isNotEmpty ? a.name : a.nameShow);
+      portrait = a.portrait.isNotEmpty ? a.portrait : null;
+    } catch (_) {}
 
     return PostItem(
-      tid: toStr(json['tid'] ?? json['id']),
-      title: toStr(json['title']),
-      authorName: toStr(author?['name'] ?? author?['name_show']),
-      authorPortrait: toStrOrNull(author?['portrait']),
-      forumName: toStr(json['fname']),
-      replyNum: toStr(json['reply_num']),
-      agreeNum: toStr(json['agree_num']),
+      tid: t.threadId.toInt() > 0 ? _s(t.threadId) : _s(t.id),
+      title: _s(t.title),
+      authorName: authorName,
+      authorPortrait: portrait,
+      forumName: _s(t.forumName),
+      replyNum: _s(t.replyNum),
+      agreeNum: _s(t.agreeNum),
       abstractText: absText,
       imageUrls: imgs,
+      isAd: t.hasAlaInfo(),
     );
   }
 }
