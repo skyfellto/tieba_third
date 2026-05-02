@@ -13,7 +13,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _bdussController = TextEditingController();
   final TextEditingController _stokenController = TextEditingController();
-  final TextEditingController _cookieController = TextEditingController(); // 调试用
+  final TextEditingController _cookieController =
+      TextEditingController(); // 调试用
   bool _isLoading = false;
 
   @override
@@ -67,8 +68,10 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("调试：完整 Cookie",
-                      style: TextStyle(fontSize: 13, color: Colors.orange)),
+                  const Text(
+                    "调试：完整 Cookie",
+                    style: TextStyle(fontSize: 13, color: Colors.orange),
+                  ),
                   const SizedBox(height: 6),
                   TextField(
                     controller: _cookieController,
@@ -109,8 +112,12 @@ class _LoginPageState extends State<LoginPage> {
   void _preloadData() {
     final bduss = _bdussController.text.trim();
     final stoken = _stokenController.text.trim();
-    DataCache.preloadPosts(TiebaApi.fetchPersonalizedThreads(bduss: bduss, stoken: stoken));
-    DataCache.preloadForums(TiebaApi.fetchForumRecommend(bduss: bduss, stoken: stoken));
+    DataCache.preloadPosts(
+      TiebaApi.fetchPersonalizedThreads(bduss: bduss, stoken: stoken),
+    );
+    DataCache.preloadForums(
+      TiebaApi.fetchForumRecommend(bduss: bduss, stoken: stoken),
+    );
   }
 
   // 登录逻辑
@@ -122,9 +129,9 @@ class _LoginPageState extends State<LoginPage> {
     // 如果填了完整 Cookie 则优先用它调试，否则用 BDUSS/STOKEN
     if (fullCookie.isEmpty && (bduss.isEmpty || stoken.isEmpty)) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("请输入BDUSS和STOKEN，或贴完整Cookie")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("请输入BDUSS和STOKEN，或贴完整Cookie")),
+        );
       }
       return;
     }
@@ -144,7 +151,10 @@ class _LoginPageState extends State<LoginPage> {
       // 提取用户名、头像、tbs、userId
       final userName = result['user']?['name'] ?? '百度用户';
       final portrait = result['user']?['portrait'] as String?;
-      final tbs = (result['anti'] as Map?)?.cast<String, dynamic>()?['tbs'] as String?;
+      // ignore: invalid_null_aware_operator
+      final tbs =
+          // ignore: invalid_null_aware_operator
+          (result['anti'] as Map?)?.cast<String, dynamic>()?['tbs'] as String?;
       final userId = result['user']?['id']?.toString();
       // 保存登录信息
       await UserManager.login(

@@ -11,6 +11,14 @@ import '../generated/Personalized.pb.dart';
 import '../generated/ForumGuide/ForumGuideRequest.pb.dart';
 import '../generated/ForumGuide/ForumGuideRequestData.pb.dart';
 import '../generated/ForumGuide/ForumGuideResponse.pb.dart';
+import '../generated/PbPage/PbPageRequest.pb.dart';
+import '../generated/PbPage/PbPageRequestData.pb.dart';
+import '../generated/PbPage/PbPageResponse.pb.dart';
+import '../generated/PbPage/PbPageResponseData.pb.dart';
+import '../generated/PbFloor/PbFloorRequest.pb.dart';
+import '../generated/PbFloor/PbFloorRequestData.pb.dart';
+import '../generated/PbFloor/PbFloorResponse.pb.dart';
+import '../generated/PbFloor/PbFloorResponseData.pb.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
@@ -288,6 +296,301 @@ class TiebaApi {
       final ok = json["error_code"] == "0" || json["error_code"] == 0;
       if (!ok) print("【点赞失败】error_code=${json["error_code"]} msg=${json["error_msg"]}");
       return ok;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取帖子详情（PbPage API）
+  static Future<PbPageResponseData?> fetchPostDetail({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String threadId,
+    int page = 1,
+    String postId = '0',
+    bool seeLz = false,
+    int sortType = 0,
+  }) async {
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      phoneImei:
+          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      tbs: tbs,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+    );
+
+    final reqData = PbPageRequestData(
+      common: common,
+      kz: Int64.parseInt(threadId),
+      pid: Int64.parseInt(postId),
+      pn: page,
+      r: sortType,
+      lz: seeLz ? 1 : 0,
+      withFloor: 1,
+      floorRn: 4,
+      rn: 15,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+      mark: 0,
+      back: 0,
+      sourceType: 2,
+      floorSortType: 1,
+      isCommReverse: 0,
+      needRepostRecommendForum: 0,
+      requestTimes: 0,
+      sModel: 0,
+      similarFrom: 0,
+      fromSmartFrs: 0,
+      fromPush: 0,
+      immersionVideoCommentSource: 0,
+      isFoldCommentReq: 0,
+      isJumpfloor: 0,
+      jumpfloorNum: 0,
+      threadType: 0,
+      banner: 0,
+      weipost: 0,
+      broadcastId: Int64.ZERO,
+    );
+
+    final request = PbPageRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("$_baseHost/c/f/pb/page?cmd=302001&format=protobuf");
+    debugPrint("\n================================================");
+    debugPrint("【调试】PbPage 请求：$uri tid=$threadId page=$page lz=$seeLz r=$sortType");
+    debugPrint("================================================\n");
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "bdtb for Android 12.34.5.0",
+          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【调试】PbPage 响应状态码：${response.statusCode}");
+      if (response.statusCode != 200) {
+        debugPrint("【调试】PbPage 非200响应");
+        return null;
+      }
+
+      final pb = PbPageResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        debugPrint("【调试】PbPage API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return null;
+      }
+
+      if (!pb.hasData()) {
+        debugPrint("【调试】PbPage data为空");
+        return null;
+      }
+
+      debugPrint("【调试】PbPage 解析成功，回复数=${pb.data.postList.length}");
+      // 调试：检查前3条 post 的原始数据
+      final d = pb.data;
+      debugPrint("【调试PbPage】hasFirstFloorPost=${d.hasFirstFloorPost()} "
+          "hasThread=${d.hasThread()} sortType=${d.sortType} ");
+      if (d.hasFirstFloorPost()) {
+        final fp = d.firstFloorPost;
+        debugPrint("【调试PbPage】firstFloor: floor=${fp.floor} "
+            "hasAuthor=${fp.hasAuthor()} contentLen=${fp.content.length} "
+            "subPostNum=${fp.subPostNumber}");
+        if (fp.content.isNotEmpty) {
+          final c0 = fp.content.first;
+          debugPrint("【调试PbPage】firstContent: type=${c0.type} text='${c0.text}' src='${c0.src.length > 0 ? c0.src.substring(0, 50) : ''}'");
+        }
+      }
+      for (int i = 0; i < (d.postList.length > 3 ? 3 : d.postList.length); i++) {
+        final p = d.postList[i];
+        debugPrint("【调试PbPage】post[$i]: floor=${p.floor} hasAuthor=${p.hasAuthor()} "
+            "contentLen=${p.content.length} ");
+        if (p.content.isNotEmpty) {
+          final c0 = p.content.first;
+          debugPrint("【调试PbPage】post[$i] content[0]: type=${c0.type} text='${c0.text}' src='${c0.src.length > 0 ? c0.src.substring(0, 50) : ''}' bigCdnSrc='${c0.bigCdnSrc.length > 0 ? c0.bigCdnSrc.substring(0, 50) : ''}'");
+        }
+      }
+      return pb.data;
+    } catch (e) {
+      debugPrint("【调试】PbPage 请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取楼中楼（PbFloor API）
+  static Future<PbFloorResponseData?> fetchSubReplies({
+    required String bduss,
+    required String stoken,
+    required String threadId,
+    required String postId,
+    required String forumId,
+    int page = 1,
+    String subPostId = '0',
+  }) async {
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      phoneImei:
+          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+    );
+
+    final reqData = PbFloorRequestData(
+      common: common,
+      kz: Int64.parseInt(threadId),
+      pid: Int64.parseInt(postId),
+      spid: subPostId != '0' ? Int64.parseInt(subPostId) : Int64.ZERO,
+      pn: page,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      forumId: Int64.parseInt(forumId),
+      isCommReverse: 0,
+      oriUgcType: 0,
+    );
+
+    final request = PbFloorRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf");
+    debugPrint("\n================================================");
+    debugPrint("【调试】PbFloor 请求：$uri tid=$threadId pid=$postId page=$page");
+    debugPrint("================================================\n");
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "bdtb for Android 12.34.5.0",
+          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【调试】PbFloor 响应状态码：${response.statusCode}");
+      if (response.statusCode != 200) return null;
+
+      final pb = PbFloorResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        debugPrint("【调试】PbFloor API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return null;
+      }
+
+      if (!pb.hasData()) {
+        debugPrint("【调试】PbFloor data为空");
+        return null;
+      }
+
+      debugPrint("【调试】PbFloor 解析成功，楼中楼数=${pb.data.subpostList.length}");
+      return pb.data;
+    } catch (e) {
+      debugPrint("【调试】PbFloor 请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 点赞回复（与点赞帖子类似，obj_type=5）
+  static Future<bool> likeReply({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String userId,
+    required String threadId,
+    required String postId,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei = "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_${phoneImei}";
+    final stTime = "${Random().nextInt(730) + 121}";
+    final stSize = "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_version", "8.0.8.0"],
+      ["agree_type", "2"],
+      ["client_id", clientId],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["from", "1021636m"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["obj_type", "5"], // 5=回复, 3=帖子
+      ["op_type", "0"],
+      ["os_version", "12"],
+      ["phone_imei", phoneImei],
+      ["post_id", postId],
+      ["stErrorNums", "1"],
+      ["stMethod", "1"],
+      ["stMode", "1"],
+      ["stSize", stSize],
+      ["stTime", stTime],
+      ["stTimesNum", "1"],
+      ["stoken", stoken],
+      ["subapp_type", "mini"],
+      ["tbs", tbs],
+      ["thread_id", threadId],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST',
+          Uri.parse("http://c.tieba.baidu.com/c/c/agree/opAgree"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 7.2.0.0",
+          "Cookie": "ka=open",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "client_logid": "$timestamp",
+          "client_user_token": userId,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(await client.send(request));
+      if (response.statusCode != 200) return false;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return json["error_code"] == "0" || json["error_code"] == 0;
     } catch (_) {
       return false;
     } finally {
