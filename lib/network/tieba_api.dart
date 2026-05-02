@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:fixnum/fixnum.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
@@ -10,7 +11,6 @@ import '../generated/Personalized.pb.dart';
 import '../generated/ForumGuide/ForumGuideRequest.pb.dart';
 import '../generated/ForumGuide/ForumGuideRequestData.pb.dart';
 import '../generated/ForumGuide/ForumGuideResponse.pb.dart';
-import '../generated/ForumGuide/ForumGuideResponseData.pb.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
@@ -23,7 +23,9 @@ class TiebaApi {
     for (final pair in data) {
       buf.write("${pair[0]}=${pair[1]}");
     }
-    return md5.convert(utf8.encode("${buf.toString()}tiebaclient!!!")).toString();
+    return md5
+        .convert(utf8.encode("${buf.toString()}tiebaclient!!!"))
+        .toString();
   }
 
   /// 登录并获取用户信息
@@ -79,7 +81,8 @@ class TiebaApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      phoneImei: "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      phoneImei:
+          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
       timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
       netType: 1,
       bDUSS: bduss,
@@ -108,9 +111,9 @@ class TiebaApi {
     final bodyBytes = request.writeToBuffer();
 
     final uri = Uri.parse("$_baseHost/c/f/excellent/personalized?cmd=309264");
-    print("\n================================================");
-    print("【调试】Protobuf 请求：$uri");
-    print("================================================\n");
+    debugPrint("\n================================================");
+    debugPrint("【调试】Protobuf 请求：$uri");
+    debugPrint("================================================\n");
 
     final client = http.Client();
     try {
@@ -120,30 +123,28 @@ class TiebaApi {
           "User-Agent": "bdtb for Android 12.34.5.0",
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
-        ..files.add(http.MultipartFile.fromBytes(
-          'data',
-          bodyBytes,
-          filename: 'file',
-        ));
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
 
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      print("【调试】响应状态码：${response.statusCode}");
+      debugPrint("【调试】响应状态码：${response.statusCode}");
       if (response.statusCode != 200) {
-        print("【调试】非200，降级占位");
+        debugPrint("【调试】非200，降级占位");
         return [];
       }
 
       final pb = PersonalizedResponse.fromBuffer(response.bodyBytes);
       if (pb.error.hasErrorCode() && pb.error.errorCode != 0) {
-        print("【调试】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        debugPrint("【调试】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return [];
       }
 
       final threadList = pb.data.threadList;
       if (threadList.isEmpty) {
-        print("【调试】thread_list 为空");
+        debugPrint("【调试】thread_list 为空");
         return [];
       }
 
@@ -151,10 +152,10 @@ class TiebaApi {
           .map((t) => PostItem.fromThreadInfo(t))
           .where((p) => p.title.isNotEmpty && p.tid.isNotEmpty)
           .toList();
-      print("【调试】解析到 ${posts.length} 条帖子");
+      debugPrint("【调试】解析到 ${posts.length} 条帖子");
       return posts;
     } catch (e) {
-      print("【调试】请求异常：$e");
+      debugPrint("【调试】请求异常：$e");
       return [];
     } finally {
       client.close();
@@ -170,7 +171,9 @@ class TiebaApi {
     final request = ForumGuideRequest(data: reqData);
     final bodyBytes = request.writeToBuffer();
 
-    final uri = Uri.parse("http://tiebac.baidu.com/c/f/forum/forumGuide?cmd=309683&format=protobuf");
+    final uri = Uri.parse(
+      "http://tiebac.baidu.com/c/f/forum/forumGuide?cmd=309683&format=protobuf",
+    );
     final client = http.Client();
     try {
       final multipart = http.MultipartRequest('POST', uri)
@@ -179,7 +182,9 @@ class TiebaApi {
           "User-Agent": "bdtb for Android 12.34.5.0",
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
-        ..files.add(http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'));
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
 
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
@@ -189,13 +194,17 @@ class TiebaApi {
       final pb = ForumGuideResponse.fromBuffer(response.bodyBytes);
       if (pb.error.errorCode != 0) return [];
 
-      return pb.data.likeForum.map((f) => ForumItem(
-        forumId: f.forumId.toString(),
-        forumName: f.forumName,
-        avatar: f.avatar,
-        levelId: f.levelId,
-        isSign: f.isSign == 1,
-      )).toList();
+      return pb.data.likeForum
+          .map(
+            (f) => ForumItem(
+              forumId: f.forumId.toString(),
+              forumName: f.forumName,
+              avatar: f.avatar,
+              levelId: f.levelId,
+              isSign: f.isSign == 1,
+            ),
+          )
+          .toList();
     } catch (_) {
       return [];
     } finally {

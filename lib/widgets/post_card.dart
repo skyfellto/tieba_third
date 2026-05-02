@@ -5,13 +5,15 @@ import '../utils/user_manager.dart';
 class PostCard extends StatelessWidget {
   final PostItem? post;
   final bool isPlaceholder;
-  final VoidCallback? onForumTap; // 贴吧详情跳转预留
+  final VoidCallback? onForumTap;
+  final void Function(List<String> images, int index)? onImageTap;
 
   const PostCard({
     super.key,
     this.post,
     this.isPlaceholder = false,
     this.onForumTap,
+    this.onImageTap,
   });
 
   @override
@@ -77,24 +79,31 @@ class PostCard extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   itemCount: _images.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 6),
-                  itemBuilder: (context, index) => ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      _images[index],
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Container(
-                        width: 120,
-                        height: 120,
-                        color: Colors.grey[200],
-                        child: Icon(
-                          Icons.broken_image,
-                          color: Colors.grey[400],
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: onImageTap != null
+                          ? () => onImageTap!(_images, index)
+                          : null,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          _images[index],
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            width: 120,
+                            height: 120,
+                            color: Colors.grey[200],
+                            child: Icon(
+                              Icons.broken_image,
+                              color: Colors.grey[400],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
