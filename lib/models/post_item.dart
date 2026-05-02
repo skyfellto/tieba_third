@@ -57,7 +57,7 @@ class PostItem {
     String? portrait;
     try {
       final a = t.author;
-      authorName = _s(a.name.isNotEmpty ? a.name : a.nameShow);
+      authorName = _s(a.nameShow.isNotEmpty ? a.nameShow : a.name);
       portrait = a.portrait.isNotEmpty ? a.portrait : null;
     } catch (_) {}
 

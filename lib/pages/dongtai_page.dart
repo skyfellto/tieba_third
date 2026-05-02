@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
@@ -222,7 +223,7 @@ class _DongtaiPageState extends State<DongtaiPage>
                       // TODO: 回复帖子
                     },
                     onBodyTap: (tid) {
-                      // TODO: 跳转帖子详情页
+                      context.push('/post/$tid');
                     },
                     onLikeTap: (tid) async {
                       if (!UserManager.isLogin) return;

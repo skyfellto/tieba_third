@@ -4,6 +4,7 @@ import '../pages/tieba_page.dart';
 import '../pages/dongtai_page.dart';
 import '../pages/wode_page.dart';
 import '../pages/user_detail_page.dart';
+import '../pages/post_detail_page.dart';
 import '../utils/auth_notifier.dart';
 import '../widgets/moonlight_bottom_nav_bar.dart';
 
@@ -56,6 +57,13 @@ final GoRouter appRouter = GoRouter(
           path: '/wode/detail',
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: UserDetailPage()),
+        ),
+        // 帖子详情页（独立路由，不显示底部导航）
+        GoRoute(
+          path: '/post/:tid',
+          builder: (context, state) => PostDetailPage(
+            tid: state.pathParameters['tid']!,
+          ),
         ),
       ],
 );
