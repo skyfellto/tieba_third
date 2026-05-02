@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../models/post_item.dart';
 import '../utils/user_manager.dart';
@@ -77,30 +79,70 @@ class PostCard extends StatelessWidget {
                 height: 120,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _images.length,
+                  itemCount: min(_images.length, 3),
                   separatorBuilder: (_, _) => const SizedBox(width: 6),
                   itemBuilder: (context, index) {
+                    bool showMoreBadge = index == 2 && _images.length > 3;
+                    int remainingCount = _images.length - 3;
                     return GestureDetector(
                       onTap: onImageTap != null
                           ? () => onImageTap!(_images, index)
                           : null,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          _images[index],
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(
-                            width: 120,
-                            height: 120,
-                            color: Colors.grey[200],
-                            child: Icon(
-                              Icons.broken_image,
-                              color: Colors.grey[400],
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _images[index],
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => Container(
+                                width: 120,
+                                height: 120,
+                                color: Colors.grey[200],
+                                child: Icon(
+                                  Icons.broken_image,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          if (showMoreBadge) // 判断是否超过3张图片
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.photo_library_outlined,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "+$remainingCount",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     );
                   },

@@ -172,7 +172,7 @@ class TiebaApi {
     final bodyBytes = request.writeToBuffer();
 
     final uri = Uri.parse(
-      "http://tiebac.baidu.com/c/f/forum/forumGuide?cmd=309683&format=protobuf",
+      "$_baseHost/c/f/forum/forumGuide?cmd=309683&format=protobuf",
     );
     final client = http.Client();
     try {
