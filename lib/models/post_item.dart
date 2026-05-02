@@ -12,7 +12,7 @@ class PostItem {
   final String forumName;
   final String? forumAvatar;
   final String replyNum;
-  final String agreeNum;
+  String agreeNum; // 点赞后可修改
   final String? lastTime;
   final String? abstractText;
   final List<String> imageUrls;
