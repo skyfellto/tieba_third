@@ -45,6 +45,7 @@ dependencies:
   protobuf: ^6.0.0
   fixnum: ^1.1.1
   intl: ^0.20.2
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:

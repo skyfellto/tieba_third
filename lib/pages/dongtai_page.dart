@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/auth_notifier.dart';
@@ -22,6 +23,8 @@ class _DongtaiPageState extends State<DongtaiPage>
   bool _atBottom = false;
   int _page = 1;
   final int _maxPage = 30;
+
+  final Set<String> _likedSet = {};
 
   final ScrollController _scrollController = ScrollController();
   bool _showBackToTop = false;
@@ -208,10 +211,48 @@ class _DongtaiPageState extends State<DongtaiPage>
                       ),
                     );
                   }
+                  final p = _posts[index];
+                  final tid = p.tid;
                   return PostCard(
-                    post: _posts[index],
+                    post: p,
+                    isLiked: _likedSet.contains(tid),
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),
+                    onReplyTap: (tid) {
+                      // TODO: 回复帖子
+                    },
+                    onBodyTap: (tid) {
+                      // TODO: 跳转帖子详情页
+                    },
+                    onLikeTap: (tid) async {
+                      if (!UserManager.isLogin) return;
+                      final ok = await TiebaApi.likePost(
+                        bduss: UserManager.bduss!,
+                        stoken: UserManager.stoken!,
+                        tbs: UserManager.tbs ?? '',
+                        userId: UserManager.userId ?? '',
+                        threadId: tid,
+                      );
+                      if (ok && mounted) {
+                        setState(() {
+                          _likedSet.add(tid);
+                          // 点赞数 +1
+                          final i = _posts.indexWhere((x) => x.tid == tid);
+                          if (i >= 0) {
+                            final cur = int.tryParse(_posts[i].agreeNum) ?? 0;
+                            _posts[i].agreeNum = "${cur + 1}";
+                          }
+                        });
+                      }
+                    },
+                    onShareTap: (tid) {
+                      SharePlus.instance.share(
+                        ShareParams(
+                          text: "https://tieba.baidu.com/p/$tid",
+                          title: "来自百度贴吧的帖子",
+                        ),
+                      );
+                    },
                   );
                 },
               ),

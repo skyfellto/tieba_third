@@ -211,4 +211,87 @@ class TiebaApi {
       client.close();
     }
   }
+
+  /// 点赞帖子（基于 MiniTiebaApi 实现）
+  static Future<bool> likePost({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String userId,
+    required String threadId,
+    String postId = "0",
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei = "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_${phoneImei}";
+    final stTime = "${Random().nextInt(730) + 121}";
+    final stSize = "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    // MiniTiebaApi 标准请求：defaultCommonParamInterceptor + agree 特定字段
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_version", "8.0.8.0"],
+      ["agree_type", "2"],
+      ["client_id", clientId],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["from", "1021636m"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["obj_type", "3"],
+      ["op_type", "0"],
+      ["os_version", "12"],
+      ["phone_imei", phoneImei],
+      ["post_id", postId],
+      ["stErrorNums", "1"],
+      ["stMethod", "1"],
+      ["stMode", "1"],
+      ["stSize", stSize],
+      ["stTime", stTime],
+      ["stTimesNum", "1"],
+      ["stoken", stoken],
+      ["subapp_type", "mini"],
+      ["tbs", tbs],
+      ["thread_id", threadId],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+
+    // 打印完整请求体用于调试
+    print("【点赞body】$bodyStr");
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST',
+          Uri.parse("http://c.tieba.baidu.com/c/c/agree/opAgree"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 7.2.0.0",
+          "Cookie": "ka=open",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "client_logid": "$timestamp",
+          "client_user_token": userId,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(await client.send(request));
+      print("【点赞】状态码=${response.statusCode} 响应=${response.body}");
+      if (response.statusCode != 200) return false;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final ok = json["error_code"] == "0" || json["error_code"] == 0;
+      if (!ok) print("【点赞失败】error_code=${json["error_code"]} msg=${json["error_msg"]}");
+      return ok;
+    } catch (_) {
+      return false;
+    } finally {
+      client.close();
+    }
+  }
 }

@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import '../models/post_item.dart';
 import '../utils/user_manager.dart';
@@ -9,6 +8,11 @@ class PostCard extends StatelessWidget {
   final bool isPlaceholder;
   final VoidCallback? onForumTap;
   final void Function(List<String> images, int index)? onImageTap;
+  final void Function(String tid)? onReplyTap;
+  final void Function(String tid)? onBodyTap;
+  final void Function(String tid)? onLikeTap;
+  final void Function(String tid)? onShareTap;
+  final bool isLiked;
 
   const PostCard({
     super.key,
@@ -16,10 +20,17 @@ class PostCard extends StatelessWidget {
     this.isPlaceholder = false,
     this.onForumTap,
     this.onImageTap,
+    this.onReplyTap,
+    this.onBodyTap,
+    this.onLikeTap,
+    this.onShareTap,
+    this.isLiked = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tid = post?.tid ?? '';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -29,7 +40,7 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ========== 标题行：楼主头像 + 用户名 + 时间 ==========
+            // ========== 标题行 ==========
             Row(
               children: [
                 CircleAvatar(
@@ -39,116 +50,102 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    _author,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
+                  child: Text(_author,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
                 ),
-                Text(
-                  _time,
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                ),
+                Text(_time,
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12)),
               ],
             ),
-            const SizedBox(height: 8),
-            // ========== 帖子标题 ==========
-            Text(
-              _title,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            // ========== 摘要 ==========
-            if (_abstract != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                _abstract!,
-                style: const TextStyle(color: Colors.black87, fontSize: 13),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            // ========== 图片 ==========
-            if (_images.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 120,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: min(_images.length, 3),
-                  separatorBuilder: (_, _) => const SizedBox(width: 6),
-                  itemBuilder: (context, index) {
-                    bool showMoreBadge = index == 2 && _images.length > 3;
-                    int remainingCount = _images.length - 3;
-                    return GestureDetector(
-                      onTap: onImageTap != null
-                          ? () => onImageTap!(_images, index)
-                          : null,
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              _images[index],
-                              width: 120,
-                              height: 120,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
-                                width: 120,
-                                height: 120,
-                                color: Colors.grey[200],
-                                child: Icon(
-                                  Icons.broken_image,
-                                  color: Colors.grey[400],
-                                ),
+            // ========== 主体区域（可点击跳转详情） ==========
+            GestureDetector(
+              onTap: tid.isNotEmpty ? () => onBodyTap?.call(tid) : null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(_title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 15),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                  if (_abstract != null) ...[
+                    const SizedBox(height: 6),
+                    Text(_abstract!,
+                        style:
+                            const TextStyle(color: Colors.black87, fontSize: 13),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+                  if (_images.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 120,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: min(_images.length, 3),
+                        separatorBuilder: (_, _) => const SizedBox(width: 6),
+                        itemBuilder: (context, index) {
+                          final showMore = index == 2 && _images.length > 3;
+                          final remaining = _images.length - 3;
+                          return GestureDetector(
+                            onTap: onImageTap != null
+                                ? () => onImageTap!(_images, index)
+                                : null,
+                            child: Stack(children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(_images[index],
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Container(
+                                        width: 120,
+                                        height: 120,
+                                        color: Colors.grey[200],
+                                        child: Icon(Icons.broken_image,
+                                            color: Colors.grey[400]))),
                               ),
-                            ),
-                          ),
-                          if (showMoreBadge) // 判断是否超过3张图片
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(
-                                        Icons.photo_library_outlined,
-                                        color: Colors.white,
-                                        size: 18,
+                              if (showMore)
+                                Positioned(
+                                  bottom: 0, right: 0,
+                                  child: Container(
+                                    width: 120, height: 120,
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                              Icons.photo_library_outlined,
+                                              color: Colors.white,
+                                              size: 18),
+                                          const SizedBox(width: 4),
+                                          Text("+$remaining",
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold)),
+                                        ],
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "+$remainingCount",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                        ],
+                            ]),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
             const SizedBox(height: 8),
             // ========== 贴吧信息栏 ==========
             if (!isPlaceholder && _forumName.isNotEmpty)
@@ -157,10 +154,8 @@ class PostCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onForumTap,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(16),
@@ -176,13 +171,9 @@ class PostCard extends StatelessWidget {
                               : null,
                         ),
                         const SizedBox(width: 5),
-                        Text(
-                          _forumName,
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 12,
-                          ),
-                        ),
+                        Text(_forumName,
+                            style:
+                                TextStyle(color: Colors.grey[700], fontSize: 12)),
                       ],
                     ),
                   ),
@@ -192,11 +183,24 @@ class PostCard extends StatelessWidget {
             // ========== 操作行 ==========
             Row(
               children: [
-                _action(Icons.thumb_up_outlined, _agree),
+                GestureDetector(
+                  onTap: tid.isNotEmpty ? () => onLikeTap?.call(tid) : null,
+                  child: _action(
+                    isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                    _agree,
+                    isLiked ? Colors.red : null,
+                  ),
+                ),
                 const SizedBox(width: 24),
-                _action(Icons.chat_bubble_outline, _reply),
+                GestureDetector(
+                  onTap: tid.isNotEmpty ? () => onReplyTap?.call(tid) : null,
+                  child: _action(Icons.chat_bubble_outline, _reply, null),
+                ),
                 const SizedBox(width: 24),
-                _action(Icons.share_outlined, "分享"),
+                GestureDetector(
+                  onTap: tid.isNotEmpty ? () => onShareTap?.call(tid) : null,
+                  child: _action(Icons.share_outlined, "分享", null),
+                ),
               ],
             ),
           ],
@@ -207,37 +211,36 @@ class PostCard extends StatelessWidget {
 
   ImageProvider? get _authorAvatar {
     if (post?.authorPortrait != null && post!.authorPortrait!.isNotEmpty) {
-      return NetworkImage(
-        PostItem.avatarUrlFor(post!.authorPortrait!),
-        headers: UserManager.avatarHeaders,
-      );
+      return NetworkImage(PostItem.avatarUrlFor(post!.authorPortrait!),
+          headers: UserManager.avatarHeaders);
     }
     if (!isPlaceholder && UserManager.isLogin && UserManager.portrait != null) {
-      return NetworkImage(
-        UserManager.avatarUrl,
-        headers: UserManager.avatarHeaders,
-      );
+      return NetworkImage(UserManager.avatarUrl,
+          headers: UserManager.avatarHeaders);
     }
     return null;
   }
 
-  String get _author => post?.authorName ?? (isPlaceholder ? "" : "百度用户");
+  String get _author =>
+      post?.authorName ?? (isPlaceholder ? "" : "百度用户");
   String get _forumName => post?.forumName ?? '';
   String? get _forumAvatar => post?.forumAvatar;
-  String get _title => post?.title ?? (isPlaceholder ? "这是一条占位帖子内容。" : "");
+  String get _title =>
+      post?.title ?? (isPlaceholder ? "这是一条占位帖子内容。" : "");
   String? get _abstract => post?.abstractText;
   List<String> get _images => post?.imageUrls ?? [];
   String get _agree => post?.agreeNum ?? "";
   String get _reply => post?.replyNum ?? "";
   String get _time => post?.lastTime ?? "刚刚";
 
-  Widget _action(IconData icon, String label) {
+  Widget _action(IconData icon, String label, Color? color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 18, color: Colors.grey[400]),
+        Icon(icon, size: 18, color: color ?? Colors.grey[400]),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+        Text(label,
+            style: TextStyle(color: color ?? Colors.grey[400], fontSize: 12)),
       ],
     );
   }

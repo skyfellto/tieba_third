@@ -141,15 +141,19 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = false);
 
     if (result != null) {
-      // 提取用户名和头像
+      // 提取用户名、头像、tbs、userId
       final userName = result['user']?['name'] ?? '百度用户';
       final portrait = result['user']?['portrait'] as String?;
+      final tbs = (result['anti'] as Map?)?.cast<String, dynamic>()?['tbs'] as String?;
+      final userId = result['user']?['id']?.toString();
       // 保存登录信息
       await UserManager.login(
         bduss: bduss,
         stoken: stoken,
         userName: userName,
         portrait: portrait,
+        tbs: tbs,
+        userId: userId,
       );
       // 后台预加载首页推荐 + 关注的吧
       _preloadData();
