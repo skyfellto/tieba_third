@@ -912,29 +912,47 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // ========== 楼中楼 ==========
 
-  /// 从 PbContent 中提取"回复 XXX"的目标用户（type 4 = @用户）
+  /// 从 PbContent 中提取"回复 XXX"的目标用户（uid>0 的 type 0 文本）
   String? _extractReplyTarget(List<PbContent> contents) {
     for (final c in contents) {
-      if (c.type == 4 && c.text.isNotEmpty) return c.text;
+      if (c.uid.toInt() > 0 && c.text.isNotEmpty) {
+        return c.text.trim();
+      }
     }
     return null;
   }
 
-  /// 提取文本，跳过 type 4（@用户），避免和"回复 XXX"重复
+  /// 提取文本，跳过"回复 XXX"结构中的前缀和带 uid 的条目
   String _extractTextNoMention(List<PbContent> contents) {
     final buf = StringBuffer();
-    for (final c in contents) {
-      if (c.type == 4) continue; // 跳过 @用户
-      if (_textTypes.contains(c.type) && c.text.isNotEmpty) {
-        if (buf.isNotEmpty) buf.write('\n');
-        buf.write(c.text);
-      }
-      if (c.type == 1 && c.text.isNotEmpty) {
-        if (buf.isNotEmpty) buf.write('\n');
-        buf.write(c.text);
+    // 先找出 replyTarget 所在的索引
+    int replyStartIdx = -1;
+    for (int i = 0; i < contents.length; i++) {
+      if (contents[i].uid.toInt() > 0) {
+        replyStartIdx = i - 1; // "回复 "前缀所在位置
+        break;
       }
     }
-    return buf.toString();
+    for (int i = 0; i < contents.length; i++) {
+      final c = contents[i];
+      // 跳过"回复 XXX"结构
+      if (replyStartIdx >= 0 && (i == replyStartIdx || i == replyStartIdx + 1))
+        // ignore: curly_braces_in_flow_control_structures
+        continue;
+      if (c.uid.toInt() > 0) continue; // 保险：任何带 uid 的都跳过
+      if (_textTypes.contains(c.type) && c.text.isNotEmpty) {
+        // 关键修复：去掉强制换行，用空格拼接，只保留原文的换行
+        final cleanText = c.text.trim().replaceAll('\n', ' ');
+        if (buf.isNotEmpty && cleanText.isNotEmpty) buf.write(' ');
+        buf.write(cleanText);
+      }
+      if (c.type == 1 && c.text.isNotEmpty) {
+        final cleanText = c.text.trim().replaceAll('\n', ' ');
+        if (buf.isNotEmpty && cleanText.isNotEmpty) buf.write(' ');
+        buf.write(cleanText);
+      }
+    }
+    return buf.toString().trim();
   }
 
   Widget _buildSubReplyItem(
@@ -942,7 +960,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     Map<int, usermodel.User> authorMap, {
     usermodel.User? opAuthor,
   }) {
-    // 从 user_list 查找作者
+    // 查找回复作者信息（原有逻辑不变，新增匿名兜底）
     usermodel.User? author;
     if (sub.hasAuthor()) {
       author = sub.author;
@@ -952,13 +970,95 @@ class _PostDetailPageState extends State<PostDetailPage> {
         author = authorMap[aid];
       }
     }
-    if (author == null) return const SizedBox.shrink();
+    final String authorName = author != null
+        ? _getAuthorName(author)
+        : '匿名用户'; // 无作者信息兜底，避免异常显示
+
     final replyTarget = _extractReplyTarget(sub.content);
     final text = _extractTextNoMention(sub.content);
     final images = _extractImages(sub.content);
     final timeStr = _formatTime(sub.time);
 
+    // 构建完整连贯的富文本流，所有内容在同一行起始，超出自动换行
+    final List<InlineSpan> contentSpans = [];
+
+    // 1. 回复者用户名
+    contentSpans.add(
+      TextSpan(
+        text: authorName,
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+          color: Colors.blue,
+        ),
+      ),
+    );
+
+    // 2. 楼主标识（1:1复刻你提供的样式，WidgetSpan嵌入富文本，保证完全同行）
+    if (opAuthor != null && author?.id == opAuthor.id) {
+      contentSpans.add(
+        WidgetSpan(
+          // 垂直居中对齐，和用户名文字完美对齐，不上下错位
+          alignment: PlaceholderAlignment.middle,
+          // 用户名和楼主标之间的间距
+          child: Padding(
+            padding: const EdgeInsets.only(left: 4),
+            // 1:1 完全复刻你截图里的Container样式，参数完全一致
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: const Text(
+                '楼主',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 3. 回复目标用户（如果有，和前面内容完全连贯）
+    if (replyTarget != null && replyTarget.isNotEmpty) {
+      contentSpans.addAll([
+        const TextSpan(
+          text: ' 回复 ',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        TextSpan(
+          text: replyTarget,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            color: Colors.blueGrey,
+          ),
+        ),
+      ]);
+    }
+
+    // 4. 冒号 + 回复正文（和前面内容完全连在一起，无分行）
+    if (text.isNotEmpty) {
+      contentSpans.add(
+        TextSpan(
+          text: '：$text',
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.black87,
+            height: 1.3,
+          ),
+        ),
+      );
+    }
+
+    // 最终布局
     return Container(
+      width: double.infinity, // 强制占满父容器宽度，解决短内容"太短"的问题
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -967,81 +1067,29 @@ class _PostDetailPageState extends State<PostDetailPage> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            children: [
-              Flexible(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: _getAuthorName(author),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      if (replyTarget != null) ...[
-                        const TextSpan(
-                          text: ' 回复 ',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        TextSpan(
-                          text: replyTarget,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              // 楼主标识
-              if (opAuthor != null && author.id == opAuthor.id)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: const Text(
-                      '楼主',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.red,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 4),
-              Text(
-                timeStr,
-                style: TextStyle(color: Colors.grey[400], fontSize: 10),
-              ),
-            ],
+          // 所有内容在同一个富文本中，保证同行起始+自动换行，无分段分行
+          Text.rich(
+            TextSpan(children: contentSpans),
+            softWrap: true, // 允许自动换行
+            overflow: TextOverflow.visible, // 超出不截断，整行换行
+            maxLines: null, // 不限制行数，完整显示所有内容
           ),
-          if (text.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                text,
-                style: const TextStyle(fontSize: 13, height: 1.3),
-              ),
-            ),
+          // 回复图片（原有逻辑不变）
           if (images.isNotEmpty) ...[
             const SizedBox(height: 4),
             _buildPostImageRow(images, imageHeight: 120),
           ],
+          // 回复时间（放在内容下方，和贴吧原生样式一致）
+          if (timeStr.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                timeStr,
+                style: TextStyle(color: Colors.grey[400], fontSize: 10),
+              ),
+            ),
         ],
       ),
     );
