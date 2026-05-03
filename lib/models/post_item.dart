@@ -70,22 +70,25 @@ class PostItem {
 
     String? lastReplyTime;
     try {
-      DateTime dateTime =
-          DateTime.fromMillisecondsSinceEpoch(t.lastTimeInt * 1000);
+      DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(
+        t.lastTimeInt * 1000,
+      );
       DateTime now = DateTime.now();
-      if (now.year == dateTime.year &&
-          now.day == dateTime.day &&
-          now.month == dateTime.month) {
-        Duration differ = now.difference(dateTime);
-        if (!differ.isNegative && differ.inMinutes < 1) {
-          lastReplyTime = null;
-        } else if (!differ.isNegative && differ.inMinutes <= 40) {
-          lastReplyTime = "${differ.inMinutes} 分钟前";
+      if (now.year == dateTime.year) {
+        if (now.day == dateTime.day && now.month == dateTime.month) {
+          Duration differ = now.difference(dateTime);
+          if (!differ.isNegative && differ.inMinutes < 1) {
+            lastReplyTime = null;
+          } else if (!differ.isNegative && differ.inMinutes <= 40) {
+            lastReplyTime = "${differ.inMinutes} 分钟前";
+          } else {
+            lastReplyTime = "今天 ${DateFormat('HH:mm').format(dateTime)}";
+          }
         } else {
-          lastReplyTime = "今天 ${DateFormat('HH:mm').format(dateTime)}";
+          lastReplyTime = DateFormat('MM-dd HH:mm').format(dateTime);
         }
       } else {
-        lastReplyTime = DateFormat('MM-dd HH:mm').format(dateTime);
+        lastReplyTime = DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
       }
     } catch (_) {}
 

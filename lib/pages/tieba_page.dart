@@ -58,6 +58,13 @@ class _TiebaPageState extends State<TiebaPage>
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
       );
+      forums.sort((a, b) {
+        int levelDiff = b.levelId - a.levelId;
+        if (levelDiff != 0) {
+          return levelDiff;
+        }
+        return a.forumName.compareTo(b.forumName);
+      });
       if (mounted) setState(() => _forums = forums);
     } catch (_) {}
   }
@@ -72,8 +79,10 @@ class _TiebaPageState extends State<TiebaPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("贴吧",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "贴吧",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: AppColors.moonlightGradient[1],
         actions: [
           IconButton(
@@ -95,8 +104,10 @@ class _TiebaPageState extends State<TiebaPage>
       children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Text("关注的吧",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          child: Text(
+            "关注的吧",
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
         ),
         // TODO: "经过的吧" 横向列表（后续接入 GetHistoryForum）
         Expanded(
@@ -120,5 +131,4 @@ class _TiebaPageState extends State<TiebaPage>
       ],
     );
   }
-
 }
