@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../generated/PbPage/PbPageResponseData.pb.dart';
@@ -291,24 +292,34 @@ class _PostDetailPageState extends State<PostDetailPage> {
       foregroundColor: Colors.white,
       titleSpacing: 0,
       title: forum != null && forum.name.isNotEmpty
-          ? Row(
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.white24,
-                  backgroundImage: forum.avatar.isNotEmpty
-                      ? NetworkImage(
-                          forum.avatar,
-                          headers: UserManager.avatarHeaders,
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  forum.name,
-                  style: const TextStyle(fontSize: 15, color: Colors.white),
-                ),
-              ],
+          ? GestureDetector(
+              onTap: () {
+                final fid = forum.id.toInt();
+                if (fid > 0) {
+                  context.push('/forum/$fid?name=${Uri.encodeComponent(forum.name)}&avatar=${Uri.encodeComponent(forum.avatar)}');
+                }
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.white24,
+                    backgroundImage: forum.avatar.isNotEmpty
+                        ? NetworkImage(
+                            forum.avatar,
+                            headers: UserManager.avatarHeaders,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    forum.name,
+                    style: const TextStyle(fontSize: 15, color: Colors.white),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 16, color: Colors.white.withValues(alpha: 0.6)),
+                ],
+              ),
             )
           : const Text(
               '帖子详情',

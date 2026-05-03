@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forum_item.dart';
 import '../network/tieba_api.dart';
@@ -119,7 +120,8 @@ class _TiebaPageState extends State<TiebaPage>
               itemBuilder: (context, index) => FollowedForumTile(
                 forum: _forums[index],
                 onTap: () {
-                  // TODO: 跳转贴吧详情页
+                  final f = _forums[index];
+                  context.push('/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}');
                 },
                 onSign: () {
                   // TODO: 签到操作

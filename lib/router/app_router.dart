@@ -5,6 +5,7 @@ import '../pages/dongtai_page.dart';
 import '../pages/wode_page.dart';
 import '../pages/user_detail_page.dart';
 import '../pages/post_detail_page.dart';
+import '../pages/forum_detail_page.dart';
 import '../utils/auth_notifier.dart';
 import '../widgets/moonlight_bottom_nav_bar.dart';
 
@@ -63,6 +64,15 @@ final GoRouter appRouter = GoRouter(
           path: '/post/:tid',
           builder: (context, state) => PostDetailPage(
             tid: state.pathParameters['tid']!,
+          ),
+        ),
+        // 贴吧详情页（独立路由）
+        GoRoute(
+          path: '/forum/:fid',
+          builder: (context, state) => ForumDetailPage(
+            fid: state.pathParameters['fid']!,
+            forumName: state.uri.queryParameters['name'],
+            forumAvatar: state.uri.queryParameters['avatar'],
           ),
         ),
       ],
