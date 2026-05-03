@@ -39,6 +39,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
   int _currentPage = 1;
   bool _loadingMore = false;
   bool _hasMore = true;
+  int _totalPages = 0;
+  int _descRequestCount = 0;
+  bool _descAutoLoading = false;
 
   // 已点赞的回复 pid 集合
   final Set<String> _likedReplySet = {};
@@ -103,62 +106,107 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Future<void> _loadData({bool refresh = false}) async {
     if (!UserManager.isLogin) {
-      if (mounted)
-        setState(() {
-          _isLoading = false;
-          _error = "未登录";
-        });
+      if (mounted) setState(() { _isLoading = false; _error = "未登录"; });
       return;
     }
-
     if (refresh) {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-        _currentPage = 1;
-        _hasMore = true;
-      });
+      setState(() { _isLoading = true; _error = null; _currentPage = 1; _hasMore = true; _totalPages = 0; _descRequestCount = 0; });
     } else {
       if (_isLoading || _loadingMore || !_hasMore) return;
       setState(() => _loadingMore = true);
     }
 
-    final page = refresh ? 1 : _currentPage + 1;
-    debugPrint(
-      "【详情页加载】page=$page lz=${_seeLz ? 1 : 0} r=$_sortType refresh=$refresh",
-    );
+    final page = _resolveDescPage(refresh);
+    if (page == 0) { if (!refresh) setState(() => _loadingMore = false); return; }
+    debugPrint("【详情页加载】page=$page refresh=$refresh");
     final data = await TiebaApi.fetchPostDetail(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      tbs: UserManager.tbs ?? '',
-      threadId: widget.tid,
-      page: page,
-      seeLz: _seeLz,
-      sortType: _sortType,
+      bduss: UserManager.bduss!, stoken: UserManager.stoken!, tbs: UserManager.tbs ?? '',
+      threadId: widget.tid, page: page, seeLz: _seeLz, sortType: 0, lastPid: '0',
     );
 
     if (mounted) {
+      if (_sortType == 1 && refresh && data != null && data.hasThread()) {
+        _totalPages = (data.thread.replyNum / 15).ceil();
+        // 清空旧数据，从最后一页重新开始
+        _data = null;
+      }
+      if (_sortType == 1 && refresh && _totalPages > 1 && _descRequestCount == 0) {
+        _descRequestCount = 1; _isLoading = false; _loadingMore = true;
+        _loadDescLastPage();
+        return;
+      }
       setState(() {
-        _isLoading = false;
-        _loadingMore = false;
+        _isLoading = false; _loadingMore = false;
         if (data != null) {
-          _currentPage = page;
-          // 后续页面只追加 post_list，保留首帖的 firstPost
-          if (refresh) {
-            _data = data;
-          } else if (_data != null) {
-            for (final p in data.postList) {
-              _data!.postList.add(p);
+          if (_sortType == 1) {
+            if (_data != null) {
+              final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
+              for (final p in data.postList) { if (!existIds.contains(p.id.toInt())) _data!.postList.add(p); }
+              for (final u in data.userList) {
+                if (!_data!.userList.map((e) => e.id.toInt()).contains(u.id.toInt())) _data!.userList.add(u);
+              }
+            } else { _data = data; }
+            _hasMore = _descRequestCount < _totalPages;
+          } else {
+            _currentPage = page;
+            if (refresh) { _data = data; }
+            else if (_data != null) {
+              final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
+              for (final p in data.postList) { if (!existIds.contains(p.id.toInt())) _data!.postList.add(p); }
+              for (final u in data.userList) {
+                if (!_data!.userList.map((e) => e.id.toInt()).contains(u.id.toInt())) _data!.userList.add(u);
+              }
             }
-            for (final u in data.userList) {
-              _data!.userList.add(u);
-            }
+            _hasMore = data.hasPage() && data.page.hasMore == 1;
           }
-          _hasMore = data.hasPage() && data.page.hasMore == 1;
-        } else {
-          if (refresh) _error = "加载失败";
-        }
+        } else { if (refresh) _error = "加载失败"; }
       });
+      _descAutoLoading = false;
+      // 倒序且数据太少时自动触底加载
+      if (_sortType == 1 && _hasMore && !_descAutoLoading && _data != null && _data!.postList.length < 10 && mounted) {
+        _descAutoLoading = true;
+        _loadData(refresh: false);
+      }
+    }
+  }
+
+  /// 倒序：pn = totalPages - _descRequestCount + 1（totalPages, -1, -2...）
+  int _resolveDescPage(bool refresh) {
+    if (_sortType == 1 && _totalPages > 0) {
+      if (refresh) return 1;
+      _descRequestCount++;
+      final pn = _totalPages - _descRequestCount + 1;
+      if (pn < 1) { _hasMore = false; return 0; }
+      return pn;
+    }
+    return refresh ? 1 : _currentPage + 1;
+  }
+
+  /// 倒序：加载最后一页（page=totalPages，最新回复）
+  Future<void> _loadDescLastPage() async {
+    setState(() => _loadingMore = true);
+    final data = await TiebaApi.fetchPostDetail(
+      bduss: UserManager.bduss!, stoken: UserManager.stoken!, tbs: UserManager.tbs ?? '',
+      threadId: widget.tid, page: _totalPages, seeLz: _seeLz, sortType: 0, lastPid: '0',
+    );
+    if (mounted) {
+      setState(() {
+        _isLoading = false; _loadingMore = false;
+        if (data != null) {
+          if (_data != null) {
+            final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
+            for (final p in data.postList) { if (!existIds.contains(p.id.toInt())) _data!.postList.add(p); }
+            for (final u in data.userList) {
+              if (!_data!.userList.map((e) => e.id.toInt()).contains(u.id.toInt())) _data!.userList.add(u);
+            }
+          } else { _data = data; }
+          _hasMore = _descRequestCount < _totalPages;
+        } else { _error = "加载失败"; }
+      });
+      // 最后一页数据太少时自动触发触底加载
+      if (data != null && _hasMore && !_descAutoLoading && _data != null && _data!.postList.length < 10 && mounted) {
+        _loadData(refresh: false);
+      }
     }
   }
 
@@ -208,16 +256,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
     try {
       final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
       final now = DateTime.now();
-      if (now.year == dateTime.year &&
-          now.day == dateTime.day &&
-          now.month == dateTime.month) {
-        final diff = now.difference(dateTime);
-        if (!diff.isNegative && diff.inMinutes < 1) return '刚刚';
-        if (!diff.isNegative && diff.inMinutes <= 40)
-          return '${diff.inMinutes} 分钟前';
-        return "今天 ${DateFormat('HH:mm').format(dateTime)}";
+      if (now.year == dateTime.year) {
+        if (now.day == dateTime.day && now.month == dateTime.month) {
+          final diff = now.difference(dateTime);
+          if (!diff.isNegative && diff.inMinutes < 1) return '刚刚';
+          if (!diff.isNegative && diff.inMinutes <= 40)
+            return '${diff.inMinutes} 分钟前';
+          return "今天 ${DateFormat('HH:mm').format(dateTime)}";
+        }
+        return DateFormat('MM-dd HH:mm').format(dateTime);
+      } else {
+        return DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
       }
-      return DateFormat('MM-dd HH:mm').format(dateTime);
     } catch (_) {
       return '';
     }
@@ -322,6 +372,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
         replyPosts.add(p);
       }
     }
+    // 按排序模式排列
+    if (_sortType == 1) {
+      replyPosts.sort((a, b) => b.floor.compareTo(a.floor));
+    } else {
+      replyPosts.sort((a, b) => a.floor.compareTo(b.floor));
+    }
 
     return ListView(
       controller: _scrollController,
@@ -342,7 +398,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         ...replyPosts.map(
           (p) => _buildReplyItem(p, authorMap, opAuthor: opAuthor),
         ),
-        // 加载更多指示器
+        // 底部状态：加载中 / 没有更多回复
         if (_loadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -351,17 +407,22 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    width: 16,
-                    height: 16,
+                    width: 16, height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   SizedBox(width: 8),
-                  Text(
-                    "正在加载...",
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
+                  Text("正在加载...",
+                      style: TextStyle(color: Colors.grey, fontSize: 13)),
                 ],
               ),
+            ),
+          )
+        else if (!_hasMore && replyPosts.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: Text("没有回复啦",
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
             ),
           ),
         const SizedBox(height: 24),
@@ -663,10 +724,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
         // "正序" / "倒序"
         GestureDetector(
           onTap: () {
-            setState(() {
-              _sortType = _sortType == 0 ? 1 : 0;
-              _loadData(refresh: true);
-            });
+            _sortType = _sortType == 0 ? 1 : 0;
+            _loadData(refresh: true);
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

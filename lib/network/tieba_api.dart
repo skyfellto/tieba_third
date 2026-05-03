@@ -15,6 +15,8 @@ import '../generated/PbPage/PbPageRequest.pb.dart';
 import '../generated/PbPage/PbPageRequestData.pb.dart';
 import '../generated/PbPage/PbPageResponse.pb.dart';
 import '../generated/PbPage/PbPageResponseData.pb.dart';
+import '../generated/PbPage/AdParam.pb.dart';
+import '../generated/AppPosInfo.pb.dart';
 import '../generated/PbFloor/PbFloorRequest.pb.dart';
 import '../generated/PbFloor/PbFloorRequestData.pb.dart';
 import '../generated/PbFloor/PbFloorResponse.pb.dart';
@@ -313,6 +315,9 @@ class TiebaApi {
     String postId = '0',
     bool seeLz = false,
     int sortType = 0,
+    String lastPid = '0',
+    String forumId = '0',
+    String stType = 'pb',
   }) async {
     final common = CommonRequest(
       clientType: 2,
@@ -359,9 +364,14 @@ class TiebaApi {
       isJumpfloor: 0,
       jumpfloorNum: 0,
       threadType: 0,
+      lastPid: Int64.parseInt(lastPid),
+      forumId: Int64.parseInt(forumId),
+      stType: stType,
       banner: 0,
       weipost: 0,
       broadcastId: Int64.ZERO,
+      adParam: AdParam(loadCount: 0, refreshCount: 1, isReqAd: 1),
+      appPos: AppPosInfo(),
     );
 
     final request = PbPageRequest(data: reqData);
