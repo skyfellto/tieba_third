@@ -217,6 +217,9 @@ class _DongtaiPageState extends State<DongtaiPage>
                   return PostCard(
                     post: p,
                     isLiked: _likedSet.contains(tid),
+                    onForumTap: () {
+                      context.push('/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}');
+                    },
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),
                     onReplyTap: (tid) {

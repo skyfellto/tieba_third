@@ -21,11 +21,22 @@ import '../generated/PbFloor/PbFloorRequest.pb.dart';
 import '../generated/PbFloor/PbFloorRequestData.pb.dart';
 import '../generated/PbFloor/PbFloorResponse.pb.dart';
 import '../generated/PbFloor/PbFloorResponseData.pb.dart';
+import '../generated/GetForumDetail/GetForumDetailRequest.pb.dart';
+import '../generated/GetForumDetail/GetForumDetailRequestData.pb.dart';
+import '../generated/GetForumDetail/GetForumDetailResponse.pb.dart';
+import '../generated/GetForumDetail/GetForumDetailResponseData.pb.dart';
+import '../generated/GetLevelInfo/GetLevelInfoRequest.pb.dart';
+import '../generated/GetLevelInfo/GetLevelInfoRequestData.pb.dart';
+import '../generated/GetLevelInfo/GetLevelInfoResponse.pb.dart';
+import '../generated/GetLevelInfo/GetLevelInfoResponseData.pb.dart';
+import '../generated/FrsPage/FrsPage.pb.dart';
+import '../generated/FrsPage/AdParam.pb.dart' as frs_ad_param;
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
   static const String _loginUrl = "$_baseHost/c/s/login";
   static const String _clientVersion = "12.64.1.1";
+  static const String _v12ClientVersion = "12.52.1.0";
 
   static String _computeSign(List<List<String>> data) {
     data.sort((a, b) => a[0].compareTo(b[0]));
@@ -526,6 +537,348 @@ class TiebaApi {
       return pb.data;
     } catch (e) {
       debugPrint("【调试】PbFloor 请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取贴吧详细信息（GetForumDetail API）
+  static Future<GetForumDetailResponseData?> fetchForumDetail({
+    required String bduss,
+    required String stoken,
+    required String forumId,
+    required String userId,
+  }) async {
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _v12ClientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: "Android",
+      brand: "Android",
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+    );
+
+    final reqData = GetForumDetailRequestData(
+      forumId: Int64.parseInt(forumId),
+      common: common,
+    );
+
+    final request = GetForumDetailRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("$_baseHost/c/f/forum/getforumdetail?cmd=303021&format=protobuf");
+    debugPrint("【论坛详情】请求：$uri forumId=$forumId");
+    if (bduss.length > 10) {
+      debugPrint("【论坛详情】BDUSS前缀=${bduss.substring(0, 8)}... 长度=${bduss.length}");
+    }
+    if (stoken.isNotEmpty) {
+      debugPrint("【论坛详情】STOKEN前缀=${stoken.substring(0, 4)}... 长度=${stoken.length}");
+    }
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "tieba/$_v12ClientVersion",
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: Android",
+          "Charset": "UTF-8",
+          "Client-Type": "2",
+          "client_user_token": userId,
+          "Cuid": cuid,
+          "Cuid-Galaxy2": cuid,
+          "Cuid-Gid": "",
+          "Cuid-Galaxy3": cuid,
+        })
+        ..fields['STOKEN'] = stoken
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        debugPrint("【论坛详情】非200响应：${response.statusCode}");
+        return null;
+      }
+
+      final pb = GetForumDetailResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError()) {
+        debugPrint("【论坛详情】error子消息存在: code=${pb.error.errorCode} msg='${pb.error.errorMsg}' userMsg='${pb.error.userMsg}'");
+        if (pb.error.errorCode != 0) return null;
+      } else {
+        debugPrint("【论坛详情】响应中无error子消息");
+      }
+
+      if (!pb.hasData()) {
+        debugPrint("【论坛详情】data为空");
+        return null;
+      }
+
+      final fi = pb.data.hasForumInfo() ? pb.data.forumInfo : null;
+      debugPrint("【论坛详情】解析成功 hasForumInfo=${pb.data.hasForumInfo()} "
+          "forumId=${fi?.forumId.toInt()} name='${fi?.forumName}' avatar='${fi?.avatar.isNotEmpty == true ? fi!.avatar.substring(0, 30) : ''}' "
+          "isLike=${fi?.isLike} memberCount=${fi?.memberCount} threadCount=${fi?.threadCount} "
+          "slogan='${fi?.slogan}'");
+      return pb.data;
+    } catch (e) {
+      debugPrint("【论坛详情】请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取贴吧等级信息（GetLevelInfo API）
+  static Future<GetLevelInfoResponseData?> fetchLevelInfo({
+    required String bduss,
+    required String stoken,
+    required String forumId,
+    required String userId,
+  }) async {
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _v12ClientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: "Android",
+      brand: "Android",
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+    );
+
+    final reqData = GetLevelInfoRequestData(
+      forumId: Int64.parseInt(forumId),
+      common: common,
+    );
+
+    final request = GetLevelInfoRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("$_baseHost/c/f/forum/getLevelInfo?cmd=301005&format=protobuf");
+    debugPrint("【等级信息】请求：$uri forumId=$forumId");
+    if (bduss.length > 10) {
+      debugPrint("【等级信息】BDUSS前缀=${bduss.substring(0, 8)}... 长度=${bduss.length}");
+    }
+    if (stoken.isNotEmpty) {
+      debugPrint("【等级信息】STOKEN前缀=${stoken.substring(0, 4)}... 长度=${stoken.length}");
+    }
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "tieba/$_v12ClientVersion",
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: Android",
+          "Charset": "UTF-8",
+          "Client-Type": "2",
+          "client_user_token": userId,
+          "Cuid": cuid,
+          "Cuid-Galaxy2": cuid,
+          "Cuid-Gid": "",
+          "Cuid-Galaxy3": cuid,
+        })
+        ..fields['STOKEN'] = stoken
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【等级信息】HTTP ${response.statusCode} body=${response.bodyBytes.length}bytes "
+          "前50hex=${response.bodyBytes.take(50).map((b) => b.toRadixString(16).padLeft(2, '0')).join('')}");
+      if (response.statusCode != 200) {
+        debugPrint("【等级信息】非200响应：${response.statusCode}");
+        return null;
+      }
+
+      final pb = GetLevelInfoResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError()) {
+        debugPrint("【等级信息】error子消息存在: code=${pb.error.errorCode} msg='${pb.error.errorMsg}' userMsg='${pb.error.userMsg}'");
+        if (pb.error.errorCode != 0) return null;
+      } else {
+        debugPrint("【等级信息】响应中无error子消息");
+      }
+
+      if (!pb.hasData()) {
+        debugPrint("【等级信息】data为空");
+        return null;
+      }
+
+      final d = pb.data;
+      debugPrint("【等级信息】解析成功 userLevel=${d.userLevel} isLike=${d.isLike} levelName='${d.levelName}' "
+          "levelInfoCount=${d.levelInfo.length} "
+          "hasLevelInfo=${d.levelInfo.isNotEmpty}");
+      // 打印前3个等级
+      for (int i = 0; i < (d.levelInfo.length > 3 ? 3 : d.levelInfo.length); i++) {
+        final l = d.levelInfo[i];
+        debugPrint("【等级信息】levelInfo[$i]: id=${l.id} name='${l.name}' score=${l.score}");
+      }
+      return pb.data;
+    } catch (e) {
+      debugPrint("【等级信息】请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取贴吧页面信息（FrsPage API）— 包含用户等级/关注状态
+  static Future<FrsPageResponseData?> fetchFrsPage({
+    required String bduss,
+    required String stoken,
+    required String forumName,
+    required String userId,
+    int page = 1,
+    int loadType = 1,
+    int sortType = 0,
+  }) async {
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _v12ClientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: "Android",
+      brand: "Android",
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+    );
+
+    final reqData = FrsPageRequestData(
+      kw: forumName,
+      pn: page,
+      rn: 30,
+      loadType: loadType,
+      sortType: sortType,
+      common: common,
+      stType: "tb_forumlist",
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+      callFrom: 0,
+      isGood: 0,
+      isSelection: 0,
+      cid: 0,
+      ctime: 0,
+      dataSize: 0,
+      netError: 0,
+      stParam: 0,
+      categoryId: 0,
+      isDefaultNavtab: 0,
+      adParam: frs_ad_param.AdParam(
+        loadCount: 0,
+        refreshCount: 1,
+      ),
+      appPos: AppPosInfo(),
+    );
+
+    final request = FrsPageRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("$_baseHost/c/f/frs/page?cmd=301001");
+    debugPrint("【FrsPage】请求：$uri kw=$forumName pn=$page");
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "tieba/$_v12ClientVersion",
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: Android",
+          "Charset": "UTF-8",
+          "Client-Type": "2",
+          "client_user_token": userId,
+          "Cuid": cuid,
+          "Cuid-Galaxy2": cuid,
+          "Cuid-Gid": "",
+          "Cuid-Galaxy3": cuid,
+        })
+        ..fields['STOKEN'] = stoken
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【FrsPage】HTTP ${response.statusCode} body=${response.bodyBytes.length}bytes");
+      if (response.statusCode != 200) {
+        debugPrint("【FrsPage】非200响应：${response.statusCode}");
+        return null;
+      }
+
+      final pb = FrsPageResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        debugPrint("【FrsPage】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return null;
+      }
+
+      if (!pb.hasData()) {
+        debugPrint("【FrsPage】data为空");
+        return null;
+      }
+
+      final d = pb.data;
+      final fi = d.hasForum() ? d.forum : null;
+      debugPrint("【FrsPage】解析成功 forumId=${fi?.id.toInt()} name='${fi?.name}' "
+          "isLike=${fi?.isLike} userLevel=${fi?.userLevel} levelName='${fi?.levelName}' "
+          "curScore=${fi?.curScore} levelupScore=${fi?.levelupScore} "
+          "threadCount=${d.threadList.length}");
+      return d;
+    } catch (e) {
+      debugPrint("【FrsPage】请求异常：$e");
       return null;
     } finally {
       client.close();
