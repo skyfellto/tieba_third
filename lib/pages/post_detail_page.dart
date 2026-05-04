@@ -46,6 +46,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // 已点赞的回复 pid 集合
   final Set<String> _likedReplySet = {};
+  int _descRetryCount = 0;
 
   @override
   void initState() {
@@ -107,64 +108,114 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Future<void> _loadData({bool refresh = false}) async {
     if (!UserManager.isLogin) {
-      if (mounted) setState(() { _isLoading = false; _error = "未登录"; });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = "未登录";
+        });
+      }
       return;
     }
     if (refresh) {
-      setState(() { _isLoading = true; _error = null; _currentPage = 1; _hasMore = true; _totalPages = 0; _descRequestCount = 0; });
+      _descRetryCount = 0;
+      setState(() {
+        _isLoading = true;
+        _error = null;
+        _currentPage = 1;
+        _hasMore = true;
+        _totalPages = 0;
+        _descRequestCount = 0;
+      });
     } else {
       if (_isLoading || _loadingMore || !_hasMore) return;
       setState(() => _loadingMore = true);
     }
 
     final page = _resolveDescPage(refresh);
-    if (page == 0) { if (!refresh) setState(() => _loadingMore = false); return; }
+    if (page == 0) {
+      if (!refresh) setState(() => _loadingMore = false);
+      return;
+    }
     debugPrint("【详情页加载】page=$page refresh=$refresh");
     final data = await TiebaApi.fetchPostDetail(
-      bduss: UserManager.bduss!, stoken: UserManager.stoken!, tbs: UserManager.tbs ?? '',
-      threadId: widget.tid, page: page, seeLz: _seeLz, sortType: 0, lastPid: '0',
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      tbs: UserManager.tbs ?? '',
+      threadId: widget.tid,
+      page: page,
+      seeLz: _seeLz,
+      sortType: 0,
+      lastPid: '0',
     );
 
     if (mounted) {
       if (_sortType == 1 && refresh && data != null && data.hasThread()) {
         _totalPages = (data.thread.replyNum / 15).ceil();
-        // 清空旧数据，从最后一页重新开始
-        _data = null;
+        // 保留第1页数据作为基础（含楼主帖 floor<=1），后续合并其他页
+        _data = data;
       }
-      if (_sortType == 1 && refresh && _totalPages > 1 && _descRequestCount == 0) {
-        _descRequestCount = 1; _isLoading = false; _loadingMore = true;
+      if (_sortType == 1 &&
+          refresh &&
+          _totalPages > 1 &&
+          _descRequestCount == 0) {
+        _descRequestCount = 1;
+        _isLoading = false;
+        _loadingMore = true;
         _loadDescLastPage();
         return;
       }
       setState(() {
-        _isLoading = false; _loadingMore = false;
+        _isLoading = false;
+        _loadingMore = false;
         if (data != null) {
           if (_sortType == 1) {
             if (_data != null) {
               final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
-              for (final p in data.postList) { if (!existIds.contains(p.id.toInt())) _data!.postList.add(p); }
-              for (final u in data.userList) {
-                if (!_data!.userList.map((e) => e.id.toInt()).contains(u.id.toInt())) _data!.userList.add(u);
+              for (final p in data.postList) {
+                if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
               }
-            } else { _data = data; }
+              for (final u in data.userList) {
+                if (!_data!.userList
+                    .map((e) => e.id.toInt())
+                    .contains(u.id.toInt())) {
+                  _data!.userList.add(u);
+                }
+              }
+            } else {
+              _data = data;
+            }
             _hasMore = _descRequestCount < _totalPages;
           } else {
             _currentPage = page;
-            if (refresh) { _data = data; }
-            else if (_data != null) {
+            if (refresh) {
+              _data = data;
+            } else if (_data != null) {
               final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
-              for (final p in data.postList) { if (!existIds.contains(p.id.toInt())) _data!.postList.add(p); }
+              for (final p in data.postList) {
+                if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
+              }
               for (final u in data.userList) {
-                if (!_data!.userList.map((e) => e.id.toInt()).contains(u.id.toInt())) _data!.userList.add(u);
+                if (!_data!.userList
+                    .map((e) => e.id.toInt())
+                    .contains(u.id.toInt())) {
+                  _data!.userList.add(u);
+                }
               }
             }
             _hasMore = data.hasPage() && data.page.hasMore == 1;
           }
-        } else { if (refresh) _error = "加载失败"; }
+        } else {
+          if (refresh) _error = "加载失败";
+        }
       });
       _descAutoLoading = false;
       // 倒序且数据太少时自动触底加载
-      if (_sortType == 1 && _hasMore && !_descAutoLoading && _data != null && _data!.postList.length < 10 && mounted) {
+      if (_sortType == 1 &&
+          _hasMore &&
+          !_descAutoLoading &&
+          _data != null &&
+          _data!.postList.length < 10 &&
+          mounted) {
         _descAutoLoading = true;
         _loadData(refresh: false);
       }
@@ -177,7 +228,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
       if (refresh) return 1;
       _descRequestCount++;
       final pn = _totalPages - _descRequestCount + 1;
-      if (pn < 1) { _hasMore = false; return 0; }
+      if (pn < 1) {
+        _hasMore = false;
+        return 0;
+      }
       return pn;
     }
     return refresh ? 1 : _currentPage + 1;
@@ -186,26 +240,89 @@ class _PostDetailPageState extends State<PostDetailPage> {
   /// 倒序：加载最后一页（page=totalPages，最新回复）
   Future<void> _loadDescLastPage() async {
     setState(() => _loadingMore = true);
-    final data = await TiebaApi.fetchPostDetail(
-      bduss: UserManager.bduss!, stoken: UserManager.stoken!, tbs: UserManager.tbs ?? '',
-      threadId: widget.tid, page: _totalPages, seeLz: _seeLz, sortType: 0, lastPid: '0',
+
+    PbPageResponseData? data = await TiebaApi.fetchPostDetail(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      tbs: UserManager.tbs ?? '',
+      threadId: widget.tid,
+      page: _totalPages,
+      seeLz: _seeLz,
+      sortType: 0,
+      lastPid: '0',
     );
+
+    // 最后一页加载失败时自动重试一次
+    if (data == null && mounted) {
+      debugPrint("【倒序】最后一页(${_totalPages})加载失败，自动重试...");
+      data = await TiebaApi.fetchPostDetail(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        threadId: widget.tid,
+        page: _totalPages,
+        seeLz: _seeLz,
+        sortType: 0,
+        lastPid: '0',
+      );
+    }
+
+    // 重试仍然失败时，回退到第1页数据防止内容消失
+    if (data == null && mounted) {
+      debugPrint("【倒序】重试仍然失败，回退到第1页");
+      data = await TiebaApi.fetchPostDetail(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        threadId: widget.tid,
+        page: 1,
+        seeLz: _seeLz,
+        sortType: 0,
+        lastPid: '0',
+      );
+    }
+
     if (mounted) {
       setState(() {
-        _isLoading = false; _loadingMore = false;
+        _isLoading = false;
+        _loadingMore = false;
         if (data != null) {
           if (_data != null) {
             final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
-            for (final p in data.postList) { if (!existIds.contains(p.id.toInt())) _data!.postList.add(p); }
-            for (final u in data.userList) {
-              if (!_data!.userList.map((e) => e.id.toInt()).contains(u.id.toInt())) _data!.userList.add(u);
+            for (final p in data.postList) {
+              if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
             }
-          } else { _data = data; }
+            for (final u in data.userList) {
+              if (!_data!.userList
+                  .map((e) => e.id.toInt())
+                  .contains(u.id.toInt())) {
+                _data!.userList.add(u);
+              }
+            }
+          } else {
+            _data = data;
+          }
           _hasMore = _descRequestCount < _totalPages;
-        } else { _error = "加载失败"; }
+          _descRetryCount = 0;
+        } else {
+          // 加载失败时，用户仍可看到第1页数据
+          _hasMore = false;
+          // 自动重试（最多2次）
+          if (_descRetryCount < 2) {
+            _descRetryCount++;
+            _loadData(refresh: true);
+            return;
+          }
+          _descRetryCount = 0;
+        }
       });
       // 最后一页数据太少时自动触发触底加载
-      if (data != null && _hasMore && !_descAutoLoading && _data != null && _data!.postList.length < 10 && mounted) {
+      if (data != null &&
+          _hasMore &&
+          !_descAutoLoading &&
+          _data != null &&
+          _data!.postList.length < 10 &&
+          mounted) {
         _loadData(refresh: false);
       }
     }
@@ -261,8 +378,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
         if (now.day == dateTime.day && now.month == dateTime.month) {
           final diff = now.difference(dateTime);
           if (!diff.isNegative && diff.inMinutes < 1) return '刚刚';
-          if (!diff.isNegative && diff.inMinutes <= 40)
+          if (!diff.isNegative && diff.inMinutes <= 40) {
             return '${diff.inMinutes} 分钟前';
+          }
           return "今天 ${DateFormat('HH:mm').format(dateTime)}";
         }
         return DateFormat('MM-dd HH:mm').format(dateTime);
@@ -285,52 +403,130 @@ class _PostDetailPageState extends State<PostDetailPage> {
     return Scaffold(appBar: _buildAppBar(), body: _buildBody());
   }
 
+  // PreferredSizeWidget _buildAppBar() {
+  //   final forum = _data?.forum;
+  //   return AppBar(
+  //     backgroundColor: Theme.of(context).primaryColor,
+  //     foregroundColor: Colors.white,
+  //     titleSpacing: 0,
+  //     title: forum != null && forum.name.isNotEmpty
+  //         ? GestureDetector(
+  //             onTap: () {
+  //               final fid = forum.id.toInt();
+  //               if (fid > 0) {
+  //                 context.push(
+  //                   '/forum/$fid?name=${Uri.encodeComponent(forum.name)}&avatar=${Uri.encodeComponent(forum.avatar)}',
+  //                 );
+  //               }
+  //             },
+  //             child: Row(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: [
+  //                 CircleAvatar(
+  //                   radius: 14,
+  //                   backgroundColor: Colors.white24,
+  //                   backgroundImage: forum.avatar.isNotEmpty
+  //                       ? NetworkImage(
+  //                           forum.avatar,
+  //                           headers: UserManager.avatarHeaders,
+  //                         )
+  //                       : null,
+  //                 ),
+  //                 const SizedBox(width: 8),
+  //                 Text(
+  //                   forum.name,
+  //                   style: const TextStyle(fontSize: 15, color: Colors.white),
+  //                 ),
+  //                 // const SizedBox(width: 4),
+  //                 // Icon(
+  //                 //   Icons.chevron_right,
+  //                 //   size: 16,
+  //                 //   color: Colors.white.withValues(alpha: 0.6),
+  //                 // ),
+  //               ],
+  //             ),
+  //           )
+  //         : const Text(
+  //             '帖子详情',
+  //             style: TextStyle(fontSize: 15, color: Colors.white),
+  //           ),
+  //     actions: [
+  //       if (_showBackToTop)
+  //         IconButton(
+  //           icon: const Icon(Icons.arrow_upward, color: Colors.white),
+  //           onPressed: _scrollToTop,
+  //         ),
+  //     ],
+  //   );
+  // }
+
   PreferredSizeWidget _buildAppBar() {
     final forum = _data?.forum;
     return AppBar(
       backgroundColor: Theme.of(context).primaryColor,
       foregroundColor: Colors.white,
       titleSpacing: 0,
-      title: forum != null && forum.name.isNotEmpty
-          ? GestureDetector(
-              onTap: () {
-                final fid = forum.id.toInt();
-                if (fid > 0) {
-                  context.push('/forum/$fid?name=${Uri.encodeComponent(forum.name)}&avatar=${Uri.encodeComponent(forum.avatar)}');
-                }
-              },
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 14,
-                    backgroundColor: Colors.white24,
-                    backgroundImage: forum.avatar.isNotEmpty
-                        ? NetworkImage(
-                            forum.avatar,
-                            headers: UserManager.avatarHeaders,
-                          )
-                        : null,
+      // 固定左侧返回箭头的宽度，保证左侧占位永远一致
+      leadingWidth: 56,
+      title: SizedBox(
+        // 让title占满AppBar分配的全部可用宽度
+        width: double.infinity,
+        // 强制内容在可用宽度内绝对居中
+        child: Center(
+          child: forum != null && forum.name.isNotEmpty
+              ? GestureDetector(
+                  onTap: () {
+                    final fid = forum.id.toInt();
+                    if (fid > 0) {
+                      context.push(
+                        '/forum/$fid?name=${Uri.encodeComponent(forum.name)}&avatar=${Uri.encodeComponent(forum.avatar)}',
+                      );
+                    }
+                  },
+                  // 左右加对称padding，避免内容过长时被返回箭头/按钮遮挡
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 56),
+                    child: Row(
+                      // 让Row只包裹内容，不额外占宽，配合Center实现完美居中
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: Colors.white24,
+                          backgroundImage: forum.avatar.isNotEmpty
+                              ? NetworkImage(
+                                  forum.avatar,
+                                  headers: UserManager.avatarHeaders,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          forum.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    forum.name,
-                    style: const TextStyle(fontSize: 15, color: Colors.white),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.chevron_right, size: 16, color: Colors.white.withValues(alpha: 0.6)),
-                ],
-              ),
-            )
-          : const Text(
-              '帖子详情',
-              style: TextStyle(fontSize: 15, color: Colors.white),
-            ),
+                )
+              : const Text(
+                  '帖子详情',
+                  style: TextStyle(fontSize: 15, color: Colors.white),
+                ),
+        ),
+      ),
+      // 核心修复：固定右侧actions的宽度，无论按钮是否显示，占位永远一致
       actions: [
         if (_showBackToTop)
           IconButton(
             icon: const Icon(Icons.arrow_upward, color: Colors.white),
             onPressed: _scrollToTop,
           ),
+        // 按钮隐藏时，用等宽的SizedBox占位，保证右侧宽度永远固定
+        if (!_showBackToTop) const SizedBox(width: 48),
       ],
     );
   }
@@ -418,12 +614,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(
-                    width: 16, height: 16,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                   SizedBox(width: 8),
-                  Text("正在加载...",
-                      style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  Text(
+                    "正在加载...",
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -432,8 +631,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
-              child: Text("没有回复啦",
-                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              child: Text(
+                "没有回复啦",
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ),
           ),
         const SizedBox(height: 24),

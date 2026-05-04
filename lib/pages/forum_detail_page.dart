@@ -101,11 +101,12 @@ class _ForumDetailPageState extends State<ForumDetailPage>
 
   Future<void> _loadData() async {
     if (!UserManager.isLogin) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isLoading = false;
           _error = "未登录";
         });
+      }
       return;
     }
 
