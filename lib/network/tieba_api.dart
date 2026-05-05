@@ -768,6 +768,7 @@ class TiebaApi {
     int page = 1,
     int loadType = 1,
     int sortType = 0,
+    int isGood = 0,
   }) async {
     final phoneImei =
         "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
@@ -801,6 +802,7 @@ class TiebaApi {
       rn: 30,
       loadType: loadType,
       sortType: sortType,
+      isGood: isGood,
       common: common,
       stType: "tb_forumlist",
       scrW: 1080,
@@ -808,7 +810,6 @@ class TiebaApi {
       scrDip: 2.0,
       qType: 2,
       callFrom: 0,
-      isGood: 0,
       isSelection: 0,
       cid: 0,
       ctime: 0,
