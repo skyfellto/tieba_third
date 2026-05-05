@@ -10,7 +10,8 @@
       "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/retrofit/interfaces/**)",
       "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/repository/source/network/**)",
       "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/impls/**)",
-      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/**)"
+      "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/**)",
+      "Bash(dart analyze *)"
     ]
   }
 }

@@ -1,12 +1,17 @@
+import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:go_router/go_router.dart';
 import '../generated/RecommendForumInfo.pb.dart';
 import '../generated/GetForumDetail/GetForumDetailResponseData.pb.dart';
 import '../generated/FrsPage/FrsPage.pb.dart';
+import '../generated/User.pb.dart' as usermodel;
+import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../constants/app_colors.dart';
+import '../widgets/post_card.dart';
+import '../widgets/image_viewer.dart';
+import 'package:share_plus/share_plus.dart';
 
 /// 贴吧详情页
 class ForumDetailPage extends StatefulWidget {
@@ -41,8 +46,33 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   int _currentTab = 0;
 
   // 排序菜单
-  final _sortOptions = ["按发帖时间排序", "按回复时间排序"];
-  int _selectedSort = 0;
+  final _sortOptions = ["按发帖时间查询", "按回复时间查询"];
+  int _selectedSort = 1; // 默认按回复时间排序
+
+  final GlobalKey _earliestTabKey = GlobalKey();
+  // NestedScrollView overlap handle，在 headerSliverBuilder 中捕获
+  SliverOverlapAbsorberHandle? _overlapHandle;
+
+  // 帖子列表
+  List<PostItem> _threads = [];
+  bool _loadingMoreThreads = false;
+  bool _hasMoreThreads = true;
+  int _threadPage = 1;
+  final Set<String> _likedThreadSet = {};
+  List<PostItem> _goodThreads = [];
+  bool _loadingGoodThreads = false;
+  bool _loadingMoreGoodThreads = false;
+  bool _hasMoreGoodThreads = true;
+  int _goodThreadPage = 1;
+  // 回顶按钮
+  bool _showBackToTop = false;
+  double _lastScrollPos = 0;
+  // ignore: unused_field
+  ScrollPosition? _scrollPosition;
+  bool _isAnimatingToTop = false;
+  bool _isRefreshing = false;
+  final GlobalKey _scrollTopKey0 = GlobalKey();
+  final GlobalKey _scrollTopKey1 = GlobalKey();
 
   @override
   void initState() {
@@ -62,39 +92,101 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
       setState(() => _currentTab = _tabController.index);
+      if (_tabController.index == 1 && _goodThreads.isEmpty) {
+        final info = _forumInfo;
+        final name = info?.forumName ?? widget.forumName;
+        if (name != null && name.isNotEmpty) {
+          _loadGoodThreads(name);
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: 152,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => context.pop(),
-              ),
-              flexibleSpace: _buildFlexibleSpace(),
-              title: _buildGlassmorphism(child: _buildCollapsedTitle()),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(48),
-                child: _buildGlassmorphism(child: _buildTabBar()),
+      body: Stack(
+        children: [
+          NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              _overlapHandle = NestedScrollView.sliverOverlapAbsorberHandleFor(
+                context,
+              );
+              return [
+                SliverOverlapAbsorber(
+                  handle: _overlapHandle!,
+                  sliver: SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _HeaderDelegate(
+                      topPadding: MediaQuery.of(context).padding.top,
+                      forumInfo: _forumInfo,
+                      forumName: widget.forumName,
+                      forumAvatar: widget.forumAvatar,
+                      isLike: _isLike,
+                      userLevel: _userLevel,
+                      levelName: _levelName,
+                      curScore: _curScore,
+                      levelupScore: _levelupScore,
+                      currentTab: _currentTab,
+                      tabController: _tabController,
+                      earliestTabKey: _earliestTabKey,
+                      onTapEarliest: _onTapEarliest,
+                      onTapFeatured: () => _tabController.animateTo(1),
+                      onPop: () => context.pop(),
+                    ),
+                  ),
+                ),
+              ];
+            },
+            body: TabBarView(
+              controller: _tabController,
+              children: [_buildPostList(), _buildGoodThreads()],
+            ),
+          ),
+          // 加载指示器（refresh 时显示在 tab 栏上方）
+          if (_isRefreshing)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight,
+              left: 0, right: 0,
+              child: const LinearProgressIndicator(
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),
             ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: [_buildPostList(), _buildEssencePlaceholder()],
-        ),
+          // 回顶按钮
+          Positioned(
+            right: 16,
+            bottom: 80,
+            child: AnimatedOpacity(
+              opacity: _showBackToTop ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: FloatingActionButton(
+                mini: true,
+                heroTag: null,
+                onPressed: _scrollToTop,
+                child: const Icon(Icons.arrow_upward),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _scrollToTop() {
+    _isAnimatingToTop = true;
+    if (_showBackToTop) setState(() => _showBackToTop = false);
+    final key = _currentTab == 0 ? _scrollTopKey0 : _scrollTopKey1;
+    final ctx = key.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx, alignment: 0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+    }
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) {
+        _isAnimatingToTop = false;
+        _lastScrollPos = 0;
+      }
+    });
   }
 
   // ===================== Data loading =====================
@@ -133,7 +225,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     }
     forumName ??= widget.forumName;
 
-    // 请求 FrsPage 获取等级/关注信息
+    // 请求 FrsPage 获取等级/关注信息 + 帖子列表
     FrsPageResponseData? frsData;
     if (forumName != null && forumName.isNotEmpty) {
       frsData = await TiebaApi.fetchFrsPage(
@@ -141,6 +233,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         stoken: UserManager.stoken!,
         forumName: forumName,
         userId: UserManager.userId ?? '',
+        page: 1,
+        loadType: 1,
       );
     }
 
@@ -154,7 +248,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
             detailData.hasForumInfo()) {
           _forumInfo = detailData.forumInfo;
         }
-        // 从 FrsPage 获取等级/关注信息
+        // 从 FrsPage 获取等级/关注信息 + 帖子
         if (frsData != null && frsData.hasForum()) {
           final fi = frsData.forum;
           _isLike = fi.isLike == 1;
@@ -163,6 +257,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _curScore = fi.curScore;
           _levelupScore = fi.levelupScore;
         }
+        if (frsData != null) {
+          _threads = _processThreadData(frsData);
+          _threadPage = 1;
+          _hasMoreThreads = frsData.hasPage() && frsData.page.hasMore == 1;
+        }
         if (_forumInfo == null && frsData == null) {
           _error = "加载失败";
         }
@@ -170,195 +269,179 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     }
   }
 
-  // ===================== Header =====================
-
-  /// 磨砂玻璃效果
-  Widget _buildGlassmorphism({required Widget child}) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          color: Colors.black.withValues(alpha: 0.25),
-          child: child,
-        ),
-      ),
-    );
+  /// 从 FrsPage 响应中提取帖子列表，补充作者信息
+  List<PostItem> _processThreadData(FrsPageResponseData data) {
+    final userMap = <int, usermodel.User>{};
+    for (final u in data.userList) {
+      userMap[u.id.toInt()] = u;
+    }
+    return data.threadList
+        .map((t) {
+          final p = PostItem.fromThreadInfo(t);
+          // 如果 fromThreadInfo 未能获取作者信息，从 userList 补充
+          if ((p.authorName.isEmpty || p.authorPortrait == null) &&
+              t.authorId.toInt() > 0) {
+            final author = userMap[t.authorId.toInt()];
+            if (author != null) {
+              p.authorName = author.nameShow.isNotEmpty
+                  ? author.nameShow
+                  : author.name;
+              p.authorPortrait = author.portrait.isNotEmpty
+                  ? author.portrait
+                  : null;
+            }
+          }
+          p.forumName = '';
+          return p;
+        })
+        .where((p) => p.tid.isNotEmpty)
+        .map((p) {
+          if (p.imageUrls.isNotEmpty && p.imageUrls.length <= 2) {
+            debugPrint("【帖子图片】tid=${p.tid} 图片数=${p.imageUrls.length} url0=${p.imageUrls.isNotEmpty ? p.imageUrls[0].substring(0, 40) : '无'}");
+          } else if (p.imageUrls.isEmpty) {
+            int mediaCount = 0;
+            for (final t in data.threadList) {
+              if (t.id.toInt().toString() == p.tid) { mediaCount = t.media.length; break; }
+            }
+            debugPrint("【帖子图片】tid=${p.tid} 无图片 media数=$mediaCount");
+          }
+          return p;
+        })
+        .toList();
   }
 
-  /// 可变形悬挂栏 flexibleSpace
-  Widget _buildFlexibleSpace() {
-    return Stack(
-      children: [
-        Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: AppColors.moonlightGradient,
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-        ),
-        Positioned.fill(child: _buildExpandedContent()),
-      ],
-    );
-  }
-
-  /// 展开状态内容（位于 toolbar 下方、tab 上方）
-  Widget _buildExpandedContent() {
+  Future<void> _onRefreshThreads() async {
+    if (!UserManager.isLogin) return;
+    _isRefreshing = true;
+    if (mounted) setState(() {});
     final info = _forumInfo;
-    final name = info?.forumName ?? widget.forumName ?? "贴吧";
-    final avatar = info?.avatar.isNotEmpty == true
-        ? info!.avatar
-        : widget.forumAvatar;
+    final forumName = info?.forumName ?? widget.forumName;
+    if (forumName == null || forumName.isEmpty) { _isRefreshing = false; if (mounted) setState(() {}); return; }
 
-    // 计算经验进度
-    double? progress;
-    if (_isLike && _levelupScore > _curScore) {
-      progress = _curScore / _levelupScore;
+    final data = await TiebaApi.fetchFrsPage(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      forumName: forumName,
+      userId: UserManager.userId ?? '',
+      page: 1,
+      loadType: 1,
+    );
+    if (mounted) {
+      setState(() {
+        _isRefreshing = false;
+        if (data != null) {
+          _threads = _processThreadData(data);
+          _threadPage = 1;
+          _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
+        }
+      });
+    }
+  }
+
+  Future<void> _loadMoreThreads() async {
+    if (_loadingMoreThreads || !_hasMoreThreads || !UserManager.isLogin) return;
+    setState(() => _loadingMoreThreads = true);
+
+    // 获取论坛名称
+    final info = _forumInfo;
+    final forumName = info?.forumName ?? widget.forumName;
+    if (forumName == null || forumName.isEmpty) {
+      setState(() => _loadingMoreThreads = false);
+      return;
     }
 
-    return Padding(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + kToolbarHeight,
-        left: 16,
-        right: 16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ======== 头像 + 名称 + 右侧信息 ========
-          SizedBox(
-            height: 48,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.white24,
-                  backgroundImage: avatar != null && avatar.isNotEmpty
-                      ? NetworkImage(avatar, headers: UserManager.avatarHeaders)
-                      : null,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (_isLike) ...[
-                  // 已关注：等级 + 名称
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        "Lv$_userLevel",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (_levelName.isNotEmpty)
-                        Text(
-                          _levelName,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 11,
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (progress != null) ...[
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      width: 60,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.white.withValues(alpha: 0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                          minHeight: 4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ] else ...[
-                  // 未关注：关注按钮（预留接口）
-                  GestureDetector(
-                    onTap: () {
-                      // TODO: 关注接口
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Text(
-                        "+ 关注",
-                        style: TextStyle(
-                          color: Color(0xFF222436),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+    final nextPage = _threadPage + 1;
+    final data = await TiebaApi.fetchFrsPage(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      forumName: forumName,
+      userId: UserManager.userId ?? '',
+      page: nextPage,
+      loadType: 2,
     );
+
+    if (mounted) {
+      setState(() {
+        _loadingMoreThreads = false;
+        if (data != null) {
+          final newPosts = _processThreadData(data);
+          _threads.addAll(newPosts);
+          _threadPage = nextPage;
+          _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
+        }
+      });
+    }
   }
 
-  /// 折叠状态标题
-  Widget _buildCollapsedTitle() {
-    final info = _forumInfo;
-    final name = info?.forumName ?? widget.forumName ?? "贴吧";
-    final avatar = info?.avatar.isNotEmpty == true
-        ? info!.avatar
-        : widget.forumAvatar;
+  // ===================== Good Threads Pagination =====================
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: Colors.white24,
-          backgroundImage: avatar != null && avatar.isNotEmpty
-              ? NetworkImage(avatar, headers: UserManager.avatarHeaders)
-              : null,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+  Future<void> _onRefreshGoodThreads() async {
+    if (!UserManager.isLogin) return;
+    _isRefreshing = true;
+    if (mounted) setState(() {});
+    final info = _forumInfo;
+    final forumName = info?.forumName ?? widget.forumName;
+    if (forumName == null || forumName.isEmpty) return;
+    setState(() {
+      _loadingGoodThreads = true;
+      _goodThreadPage = 1;
+    });
+    final data = await TiebaApi.fetchFrsPage(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      forumName: forumName,
+      userId: UserManager.userId ?? '',
+      page: 1,
+      loadType: 1,
+      isGood: 1,
     );
+    if (mounted && data != null) {
+      setState(() {
+        _goodThreads = _processThreadData(data);
+        _loadingGoodThreads = false;
+        _hasMoreGoodThreads = data.hasPage() && data.page.hasMore == 1;
+      });
+    } else if (mounted) {
+      setState(() => _loadingGoodThreads = false);
+    }
+  }
+
+  Future<void> _loadMoreGoodThreads() async {
+    if (_loadingMoreGoodThreads || !_hasMoreGoodThreads || !UserManager.isLogin)
+      return;
+    setState(() => _loadingMoreGoodThreads = true);
+    final info = _forumInfo;
+    final forumName = info?.forumName ?? widget.forumName;
+    if (forumName == null || forumName.isEmpty) {
+      setState(() => _loadingMoreGoodThreads = false);
+      return;
+    }
+    final nextPage = _goodThreadPage + 1;
+    final data = await TiebaApi.fetchFrsPage(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      forumName: forumName,
+      userId: UserManager.userId ?? '',
+      page: nextPage,
+      loadType: 2,
+      isGood: 1,
+    );
+    if (mounted && data != null) {
+      setState(() {
+        _goodThreads.addAll(_processThreadData(data));
+        _goodThreadPage = nextPage;
+        _loadingMoreGoodThreads = false;
+        _hasMoreGoodThreads = data.hasPage() && data.page.hasMore == 1;
+      });
+    } else if (mounted) {
+      setState(() => _loadingMoreGoodThreads = false);
+    }
   }
 
   // ===================== Tab Bar =====================
 
   /// 底部 Tab 栏
+  // ignore: unused_element
   Widget _buildTabBar() {
     return SizedBox(
       height: 48,
@@ -366,7 +449,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         children: [
           // "最新" Tab
           GestureDetector(
-            onTap: _onTapLatest,
+            onTap: _onTapEarliest,
             child: _tabLabel(
               "最新",
               isActive: _currentTab == 0,
@@ -420,7 +503,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     );
   }
 
-  void _onTapLatest() {
+  void _onTapEarliest() {
     if (_currentTab == 1) {
       // 在精华页点击最新 -> 切换到最新
       _tabController.animateTo(0);
@@ -431,32 +514,75 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   }
 
   void _showSortMenu() {
-    final RenderBox? button = context.findRenderObject() as RenderBox?;
-    if (button == null) return;
-    final overlay =
+    // final RenderBox? button = context.findRenderObject() as RenderBox?;
+    // if (button == null) return;
+    // final overlay =
+    //     Overlay.of(context).context.findRenderObject() as RenderBox?;
+    // if (overlay == null) return;
+    final RenderBox? button =
+        _earliestTabKey.currentContext?.findRenderObject() as RenderBox?;
+    if (button == null || !button.attached) return;
+    final overlayBox =
         Overlay.of(context).context.findRenderObject() as RenderBox?;
-    if (overlay == null) return;
+    if (overlayBox == null) return;
+    final Offset buttonTopLeft = button.localToGlobal(
+      Offset.zero,
+      ancestor: overlayBox,
+    );
+    final Size buttonSize = button.size;
+
+    final position = RelativeRect.fromLTRB(
+      buttonTopLeft.dx, // 左对齐
+      buttonTopLeft.dy + buttonSize.height, // 紧贴按钮下方
+      buttonTopLeft.dx + buttonSize.width, // 与按钮等宽
+      overlayBox.size.height, // 下边界为屏幕底部
+    );
+
     showMenu<int>(
       context: context,
       initialValue: _selectedSort,
-      position: RelativeRect.fromRect(
-        Rect.fromPoints(
-          button.localToGlobal(const Offset(16, 0), ancestor: overlay),
-          button.localToGlobal(const Offset(140, 48), ancestor: overlay),
-        ),
-        Offset.zero & overlay.size,
-      ),
+      position: position,
+      // position: RelativeRect.fromRect(
+      //   Rect.fromPoints(
+      //     button.localToGlobal(const Offset(16, 0), ancestor: overlay),
+      //     button.localToGlobal(const Offset(140, 48), ancestor: overlay),
+      //   ),
+      //   Offset.zero & overlay.size,
+      // ),
       items: [
         for (int i = 0; i < _sortOptions.length; i++)
           PopupMenuItem(
             value: i,
-            child: Row(
-              children: [
-                if (_selectedSort == i)
-                  const Icon(Icons.check, size: 18, color: Colors.blue),
-                if (_selectedSort == i) const SizedBox(width: 8),
-                Text(_sortOptions[i]),
-              ],
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[200]!, width: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  if (_selectedSort == i)
+                    // const Icon(Icons.check, size: 18, color: Colors.blue),
+                    Icon(
+                      Icons.check,
+                      size: 18,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  if (_selectedSort == i) const SizedBox(width: 8),
+                  Text(
+                    _sortOptions[i],
+                    style: TextStyle(
+                      color: _selectedSort == i
+                          ? Theme.of(context).primaryColor
+                          : Colors.black87,
+                      fontWeight: _selectedSort == i
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
       ],
@@ -474,7 +600,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_error != null) {
+    if (_error != null && _threads.isEmpty) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -486,74 +612,144 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         ),
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: 20,
-      itemBuilder: (context, index) => _buildPlaceholderPost(),
-    );
-  }
-
-  Widget _buildPlaceholderPost() {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(radius: 14, backgroundColor: Colors.grey[300]),
-                const SizedBox(width: 8),
-                Text(
-                  "用户昵称",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  "刚刚",
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+    return RefreshIndicator(
+      onRefresh: _onRefreshThreads,
+      displacement: 120,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollUpdateNotification) {
+            final pos = notification.metrics.pixels;
+            // 回顶按钮检测
+            if (!_isAnimatingToTop) {
+              if (pos < _lastScrollPos && pos > 100) {
+                if (!_showBackToTop) setState(() => _showBackToTop = true);
+              } else if (pos > _lastScrollPos) {
+                if (_showBackToTop) setState(() => _showBackToTop = false);
+              }
+            }
+            _lastScrollPos = pos;
+            // 触底加载
+            if (!_loadingMoreThreads &&
+                _hasMoreThreads &&
+                pos >= notification.metrics.maxScrollExtent - 200) {
+              _loadMoreThreads();
+            }
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverOverlapInjector(handle: _overlapHandle!),
+            SliverToBoxAdapter(child: SizedBox(key: _scrollTopKey0, height: 0)),
+            SliverPadding(
+              padding: const EdgeInsets.all(12),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (index == _threads.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  }
+                  final p = _threads[index];
+                  if (p.isTop) {
+                    final stickTid = p.tid;
+                    return GestureDetector(
+                      onTap: () => context.push('/post/$stickTid'),
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  "置顶",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.orange[700],
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  p.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  final tid = p.tid;
+                  return PostCard(
+                    post: p,
+                    showForum: false,
+                    isLiked: _likedThreadSet.contains(tid),
+                    onImageTap: (images, i) =>
+                        ImageViewer.show(context, images, index: i),
+                    onBodyTap: (_) => context.push('/post/$tid'),
+                    onLikeTap: (_) async {
+                      if (!UserManager.isLogin) return;
+                      final ok = await TiebaApi.likePost(
+                        bduss: UserManager.bduss!,
+                        stoken: UserManager.stoken!,
+                        tbs: UserManager.tbs ?? '',
+                        userId: UserManager.userId ?? '',
+                        threadId: tid,
+                      );
+                      if (ok && mounted) {
+                        setState(() {
+                          _likedThreadSet.add(tid);
+                          final idx = _threads.indexWhere((x) => x.tid == tid);
+                          if (idx >= 0) {
+                            final cur =
+                                int.tryParse(_threads[idx].agreeNum) ?? 0;
+                            _threads[idx].agreeNum = "${cur + 1}";
+                          }
+                        });
+                      }
+                    },
+                    onShareTap: (_) => SharePlus.instance.share(
+                      ShareParams(
+                        text: "https://tieba.baidu.com/p/$tid",
+                        title: "来自百度贴吧的帖子",
+                      ),
+                    ),
+                  );
+                }, childCount: _threads.length + (_loadingMoreThreads ? 1 : 0)),
               ),
-              child: Center(
-                child: Text(
-                  "帖子内容占位 - 待接入帖子列表接口",
-                  style: TextStyle(color: Colors.grey[400], fontSize: 13),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(
-                  Icons.thumb_up_outlined,
-                  size: 18,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(width: 24),
-                Icon(
-                  Icons.chat_bubble_outline,
-                  size: 18,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(width: 24),
-                Icon(Icons.share_outlined, size: 18, color: Colors.grey[400]),
-              ],
             ),
           ],
         ),
@@ -561,19 +757,483 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     );
   }
 
-  Widget _buildEssencePlaceholder() {
-    return Center(
-      child: Column(
+  Widget _buildGoodThreads() {
+    if (_goodThreads.isEmpty && _loadingGoodThreads) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_goodThreads.isEmpty) {
+      final info = _forumInfo;
+      if (info != null) {
+        final forumName = info.forumName;
+        _loadGoodThreads(forumName);
+      }
+      return const Center(child: CircularProgressIndicator());
+    }
+    return RefreshIndicator(
+      onRefresh: _onRefreshGoodThreads,
+      displacement: 120,
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollUpdateNotification) {
+            final pos = notification.metrics.pixels;
+            if (pos < _lastScrollPos && pos > 100) {
+              if (!_showBackToTop) setState(() => _showBackToTop = true);
+            } else if (pos > _lastScrollPos) {
+              if (_showBackToTop) setState(() => _showBackToTop = false);
+            }
+            _lastScrollPos = pos;
+            if (!_loadingMoreGoodThreads &&
+                _hasMoreGoodThreads &&
+                pos >= notification.metrics.maxScrollExtent - 200) {
+              _loadMoreGoodThreads();
+            }
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverOverlapInjector(handle: _overlapHandle!),
+            SliverToBoxAdapter(child: SizedBox(key: _scrollTopKey1, height: 0)),
+            SliverPadding(
+              padding: const EdgeInsets.all(12),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index == _goodThreads.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    }
+                    final p = _goodThreads[index];
+                    final tid = p.tid;
+                    return PostCard(
+                      post: p,
+                      showForum: false,
+                      badge: "精",
+                      isLiked: _likedThreadSet.contains(tid),
+                      onImageTap: (images, i) =>
+                          ImageViewer.show(context, images, index: i),
+                      onBodyTap: (_) => context.push('/post/$tid'),
+                      onLikeTap: (_) async {
+                        if (!UserManager.isLogin) return;
+                        final ok = await TiebaApi.likePost(
+                          bduss: UserManager.bduss!,
+                          stoken: UserManager.stoken!,
+                          tbs: UserManager.tbs ?? '',
+                          userId: UserManager.userId ?? '',
+                          threadId: tid,
+                        );
+                        if (ok && mounted) {
+                          setState(() {
+                            _likedThreadSet.add(tid);
+                            final idx = _goodThreads.indexWhere(
+                              (x) => x.tid == tid,
+                            );
+                            if (idx >= 0) {
+                              final cur =
+                                  int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
+                              _goodThreads[idx].agreeNum = "${cur + 1}";
+                            }
+                          });
+                        }
+                      },
+                      onShareTap: (_) => SharePlus.instance.share(
+                        ShareParams(
+                          text: "https://tieba.baidu.com/p/$tid",
+                          title: "来自百度贴吧的帖子",
+                        ),
+                      ),
+                    );
+                  },
+                  childCount:
+                      _goodThreads.length + (_loadingMoreGoodThreads ? 1 : 0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadGoodThreads(String forumName) async {
+    if (_loadingGoodThreads || !UserManager.isLogin) return;
+    setState(() => _loadingGoodThreads = true);
+    final data = await TiebaApi.fetchFrsPage(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      forumName: forumName,
+      userId: UserManager.userId ?? '',
+      page: _goodThreadPage,
+      loadType: 1,
+      isGood: 1,
+    );
+    if (mounted && data != null) {
+      setState(() {
+        _goodThreads = _processThreadData(data);
+        _loadingGoodThreads = false;
+      });
+    } else if (mounted) {
+      setState(() => _loadingGoodThreads = false);
+    }
+  }
+}
+
+/// 统一头部 SliverPersistentHeader 代理
+class _HeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double topPadding;
+  final RecommendForumInfo? forumInfo;
+  final String? forumName;
+  final String? forumAvatar;
+  final bool isLike;
+  final int userLevel;
+  final String levelName;
+  final int curScore;
+  final int levelupScore;
+  final int currentTab;
+  final TabController tabController;
+  final VoidCallback? onTapEarliest;
+  final VoidCallback? onTapFeatured;
+  final VoidCallback? onPop;
+  final GlobalKey? earliestTabKey;
+
+  const _HeaderDelegate({
+    this.topPadding = 0,
+    this.forumInfo,
+    this.forumName,
+    this.forumAvatar,
+    this.isLike = false,
+    this.userLevel = 0,
+    this.levelName = '',
+    this.curScore = 0,
+    this.levelupScore = 0,
+    required this.currentTab,
+    required this.tabController,
+    this.onTapEarliest,
+    this.onTapFeatured,
+    this.earliestTabKey,
+    this.onPop,
+  });
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final pad = MediaQuery.of(context).padding;
+    final totalExpand = maxExtent - minExtent;
+    final progress = totalExpand > 0
+        ? (shrinkOffset / totalExpand).clamp(0.0, 1.0)
+        : 1.0;
+
+    final name = forumInfo?.forumName ?? forumName ?? "贴吧";
+    final avatarUrl =
+        (forumInfo?.avatar.isNotEmpty == true
+            ? forumInfo!.avatar
+            : forumAvatar) ??
+        '';
+
+    // 头像+名称整体位移（作为整体一起移动）
+    final unitLeft = lerpDouble(16.0, 56.0, progress)!;
+    final unitTop = lerpDouble(
+      pad.top + kToolbarHeight + 4,
+      pad.top + (kToolbarHeight - 28) / 2,
+      progress,
+    )!;
+    // 头像缩小（但保持可见）
+    final avatarRadius = lerpDouble(28, 14, progress)!;
+    // 名称缩小（但不消失，保持可见）
+    final nameFontSize = lerpDouble(20, 15, progress)!;
+    final nameGap = lerpDouble(14, 8, progress)!;
+    // 等级信息渐出
+    final levelFade = (1 - progress / 0.35).clamp(0.0, 1.0);
+    return Stack(
+      children: [
+        // 1. 背景（最底层）
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: AppColors.moonlightGradient,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        // ---------- 以下内容在背景之上 ----------
+        // 3. Tab 栏（在 tab 磨砂之上）
+        Positioned(
+          bottom: 0,
+          left: pad.left,
+          right: pad.right,
+          height: 48,
+          child: _buildTabBar(context),
+        ),
+        // 4. 头像 + 名称 + 等级（整体联动，在 toolbar 磨砂之上）
+        Positioned(
+          left: unitLeft,
+          top: unitTop,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: avatarRadius,
+                backgroundColor: Colors.white24,
+                backgroundImage: avatarUrl.isNotEmpty
+                    ? NetworkImage(
+                        avatarUrl,
+                        headers: UserManager.avatarHeaders,
+                      )
+                    : null,
+                onBackgroundImageError: (_, __) {},
+              ),
+              SizedBox(width: nameGap),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: nameFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (levelFade > 0)
+                    Opacity(
+                      opacity: levelFade,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: _buildLevelInfo(context),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // 5. 操作按钮（在磨砂之上）
+        Positioned(
+          top: pad.top,
+          right: pad.right,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.search, color: Colors.white, size: 22),
+                onPressed: () {},
+                splashRadius: 20,
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                onSelected: (v) {},
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'share', child: Text('分享')),
+                  PopupMenuItem(value: 'report', child: Text('举报')),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // 6. 返回键（在磨砂之上，始终清晰）
+        Positioned(
+          top: pad.top,
+          left: pad.left,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: onPop,
+            splashRadius: 20,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  double get maxExtent => topPadding + kToolbarHeight + 100 + 48;
+
+  @override
+  double get minExtent => topPadding + kToolbarHeight + 48;
+
+  @override
+  bool shouldRebuild(_HeaderDelegate oldDelegate) =>
+      topPadding != oldDelegate.topPadding ||
+      forumInfo != oldDelegate.forumInfo ||
+      forumName != oldDelegate.forumName ||
+      forumAvatar != oldDelegate.forumAvatar ||
+      isLike != oldDelegate.isLike ||
+      userLevel != oldDelegate.userLevel ||
+      levelName != oldDelegate.levelName ||
+      curScore != oldDelegate.curScore ||
+      levelupScore != oldDelegate.levelupScore ||
+      currentTab != oldDelegate.currentTab;
+
+  // ---- 内部组件 ----
+
+  Widget _buildTabBar(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: Row(
+          children: [
+            // 最早 Tab — 占据一半空间，点击区域充满整个半边
+            Expanded(
+              child: InkWell(
+                key: earliestTabKey,
+                onTap: onTapEarliest,
+                child: Center(
+                  child: _tabLabel(
+                    "最早",
+                    isActive: currentTab == 0,
+                    showDropdown: currentTab == 0,
+                  ),
+                ),
+              ),
+            ),
+            // 精选 Tab — 占据另一半空间，点击区域同样充满
+            Expanded(
+              child: InkWell(
+                onTap: onTapFeatured,
+                child: Center(
+                  child: _tabLabel("精选", isActive: currentTab == 1),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tabLabel(
+    String text, {
+    required bool isActive,
+    bool showDropdown = false,
+  }) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.center,
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star_border, size: 48, color: Colors.grey[300]),
-          const SizedBox(height: 12),
           Text(
-            "精华功能待接入",
-            style: TextStyle(color: Colors.grey[400], fontSize: 15),
+            text,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              color: isActive ? Colors.white : Colors.white60,
+            ),
           ),
+          if (showDropdown) ...[
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildLevelInfo(BuildContext context) {
+    final expProgress = (isLike && levelupScore > 0 && curScore > 0)
+        ? (curScore / levelupScore).clamp(0.0, 1.0)
+        : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isLike) ...[
+          Row(
+            children: [
+              Text(
+                "Lv$userLevel",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (levelName.isNotEmpty)
+                Text(
+                  levelName,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                ),
+            ],
+          ),
+          if (expProgress != null) ...[
+            const SizedBox(height: 4),
+            SizedBox(
+              width: 140,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: expProgress,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  minHeight: 4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 1),
+            Text(
+              '$curScore / $levelupScore',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ] else ...[
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {},
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  "+ 关注",
+                  style: TextStyle(
+                    color: Color(0xFF222436),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

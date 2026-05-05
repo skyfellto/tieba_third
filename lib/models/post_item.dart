@@ -6,10 +6,10 @@ String _s(dynamic v) => v?.toString() ?? '';
 class PostItem {
   final String tid;
   final String title;
-  final String authorName;
-  final String? authorPortrait;
+  String authorName;
+  String? authorPortrait;
   final String forumId;
-  final String forumName;
+  String forumName;
   final String? forumAvatar;
   final String replyNum;
   String agreeNum; // 点赞后可修改
@@ -17,6 +17,7 @@ class PostItem {
   final String? abstractText;
   final List<String> imageUrls;
   final bool isAd;
+  bool isTop;
 
   static String avatarUrlFor(String portrait) =>
       "http://tb.himg.baidu.com/sys/portrait/item/$portrait";
@@ -35,6 +36,7 @@ class PostItem {
     this.abstractText,
     this.imageUrls = const [],
     this.isAd = false,
+    this.isTop = false,
   });
 
   factory PostItem.fromThreadInfo(ThreadInfo t) {
@@ -46,9 +48,13 @@ class PostItem {
     List<String> imgs = [];
     try {
       for (final m in t.media) {
-        if (_s(m.type) == '3') {
-          final url = _s(m.bigPic.isNotEmpty ? m.bigPic : m.srcPic);
-          if (url.isNotEmpty) imgs.add(url);
+        // 取第一个可用的图片 URL：originPic > bigPic > srcPic > dynamicPic
+        final url = _s(m.originPic.isNotEmpty ? m.originPic :
+                     (m.bigPic.isNotEmpty ? m.bigPic :
+                     (m.srcPic.isNotEmpty ? m.srcPic :
+                     (m.dynamicPic.isNotEmpty ? m.dynamicPic : ''))));
+        if (url.isNotEmpty) {
+          imgs.add(url);
         }
       }
     } catch (_) {}
@@ -106,6 +112,7 @@ class PostItem {
       lastTime: lastReplyTime,
       imageUrls: imgs,
       isAd: t.hasAlaInfo(),
+      isTop: t.isTop == 1,
     );
   }
 }

@@ -13,11 +13,15 @@ class PostCard extends StatelessWidget {
   final void Function(String tid)? onLikeTap;
   final void Function(String tid)? onShareTap;
   final bool isLiked;
+  final bool showForum;
+  final String? badge;
 
   const PostCard({
     super.key,
     this.post,
     this.isPlaceholder = false,
+    this.showForum = true,
+    this.badge,
     this.onForumTap,
     this.onImageTap,
     this.onReplyTap,
@@ -66,6 +70,19 @@ class PostCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
+                  if (badge != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(3),
+                          border: Border.all(color: Colors.red[200]!),
+                        ),
+                        child: Text(badge!, style: TextStyle(fontSize: 11, color: Colors.red[700], fontWeight: FontWeight.w600)),
+                      ),
+                    ),
                   Text(_title,
                       style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 15),
@@ -148,7 +165,7 @@ class PostCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             // ========== 贴吧信息栏 ==========
-            if (!isPlaceholder && _forumName.isNotEmpty)
+            if (!isPlaceholder && showForum && _forumName.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(left: 1),
                 child: GestureDetector(
