@@ -54,13 +54,19 @@ class PostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(_author,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14)),
+                  child: Text(
+                    _author,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
-                Text(_time,
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                Text(
+                  _time,
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
               ],
             ),
             // ========== 主体区域（可点击跳转详情） ==========
@@ -70,31 +76,61 @@ class PostCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  if (badge != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(3),
-                          border: Border.all(color: Colors.red[200]!),
-                        ),
-                        child: Text(badge!, style: TextStyle(fontSize: 11, color: Colors.red[700], fontWeight: FontWeight.w600)),
+                  if (badge != null || _title.isNotEmpty)
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          if (badge != null)
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                  right: 5,
+                                ), // 标签与标题之间的间距
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 1,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    borderRadius: BorderRadius.circular(3),
+                                    border: Border.all(color: Colors.red[200]!),
+                                  ),
+                                  child: Text(
+                                    badge!,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.red[700],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          TextSpan(
+                            text: _title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  Text(_title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 15),
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   if (_abstract != null) ...[
                     const SizedBox(height: 6),
-                    Text(_abstract!,
-                        style:
-                            const TextStyle(color: Colors.black87, fontSize: 13),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      _abstract!,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 13,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                   if (_images.isNotEmpty) ...[
                     const SizedBox(height: 8),
@@ -111,50 +147,63 @@ class PostCard extends StatelessWidget {
                             onTap: onImageTap != null
                                 ? () => onImageTap!(_images, index)
                                 : null,
-                            child: Stack(children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(_images[index],
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    _images[index],
                                     width: 120,
                                     height: 120,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, _, _) => Container(
-                                        width: 120,
-                                        height: 120,
-                                        color: Colors.grey[200],
-                                        child: Icon(Icons.broken_image,
-                                            color: Colors.grey[400]))),
-                              ),
-                              if (showMore)
-                                Positioned(
-                                  bottom: 0, right: 0,
-                                  child: Container(
-                                    width: 120, height: 120,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Center(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                              Icons.photo_library_outlined,
-                                              color: Colors.white,
-                                              size: 18),
-                                          const SizedBox(width: 4),
-                                          Text("+$remaining",
-                                              style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold)),
-                                        ],
+                                      width: 120,
+                                      height: 120,
+                                      color: Colors.grey[200],
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        color: Colors.grey[400],
                                       ),
                                     ),
                                   ),
                                 ),
-                            ]),
+                                if (showMore)
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      width: 120,
+                                      height: 120,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Center(
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                              Icons.photo_library_outlined,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              "+$remaining",
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           );
                         },
                       ),
@@ -171,8 +220,10 @@ class PostCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onForumTap,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[50],
                       borderRadius: BorderRadius.circular(16),
@@ -188,9 +239,13 @@ class PostCard extends StatelessWidget {
                               : null,
                         ),
                         const SizedBox(width: 5),
-                        Text(_forumName,
-                            style:
-                                TextStyle(color: Colors.grey[700], fontSize: 12)),
+                        Text(
+                          _forumName,
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -228,22 +283,24 @@ class PostCard extends StatelessWidget {
 
   ImageProvider? get _authorAvatar {
     if (post?.authorPortrait != null && post!.authorPortrait!.isNotEmpty) {
-      return NetworkImage(PostItem.avatarUrlFor(post!.authorPortrait!),
-          headers: UserManager.avatarHeaders);
+      return NetworkImage(
+        PostItem.avatarUrlFor(post!.authorPortrait!),
+        headers: UserManager.avatarHeaders,
+      );
     }
     if (!isPlaceholder && UserManager.isLogin && UserManager.portrait != null) {
-      return NetworkImage(UserManager.avatarUrl,
-          headers: UserManager.avatarHeaders);
+      return NetworkImage(
+        UserManager.avatarUrl,
+        headers: UserManager.avatarHeaders,
+      );
     }
     return null;
   }
 
-  String get _author =>
-      post?.authorName ?? (isPlaceholder ? "" : "百度用户");
+  String get _author => post?.authorName ?? (isPlaceholder ? "" : "百度用户");
   String get _forumName => post?.forumName ?? '';
   String? get _forumAvatar => post?.forumAvatar;
-  String get _title =>
-      post?.title ?? (isPlaceholder ? "这是一条占位帖子内容。" : "");
+  String get _title => post?.title ?? (isPlaceholder ? "这是一条占位帖子内容。" : "");
   String? get _abstract => post?.abstractText;
   List<String> get _images => post?.imageUrls ?? [];
   String get _agree => post?.agreeNum ?? "";
@@ -256,8 +313,10 @@ class PostCard extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: color ?? Colors.grey[400]),
         const SizedBox(width: 4),
-        Text(label,
-            style: TextStyle(color: color ?? Colors.grey[400], fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(color: color ?? Colors.grey[400], fontSize: 12),
+        ),
       ],
     );
   }
