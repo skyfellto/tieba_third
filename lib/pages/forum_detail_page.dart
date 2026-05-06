@@ -470,13 +470,13 @@ class _ForumDetailPageState extends State<ForumDetailPage>
               showDropdown: _currentTab == 0,
             ),
           ),
-          // "精华" Tab
+          // "精选" Tab
           GestureDetector(
             onTap: () {
               _tabController.animateTo(1);
-              // 预留精华接口回调
+              // 预留精选接口回调
             },
-            child: _tabLabel("精华", isActive: _currentTab == 1),
+            child: _tabLabel("精选", isActive: _currentTab == 1),
           ),
           const Spacer(),
         ],
@@ -519,7 +519,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
 
   void _onTapEarliest() {
     if (_currentTab == 1) {
-      // 在精华页点击最新 -> 切换到最新
+      // 在精选页点击最新 -> 切换到最新
       _tabController.animateTo(0);
     } else {
       // 已在最新页 -> 显示排序菜单

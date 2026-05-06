@@ -144,8 +144,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (mounted) {
       if (_sortType == 1 && refresh && data != null && data.hasThread()) {
         _totalPages = (data.thread.replyNum / 15).ceil();
-        // 保留第1页数据作为基础（含楼主帖 floor<=1），后续合并其他页
+        // 保留第1页数据作为基础（含楼主帖 floor<=1），清除第1页回复
         _data = data;
+        _data!.postList.removeWhere((p) => p.floor > 1);
       }
       if (_sortType == 1 &&
           refresh &&
