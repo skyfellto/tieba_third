@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tieba_third/constants/app_colors.dart';
 import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../utils/post_content_parser.dart';
@@ -17,6 +18,18 @@ class PostDetailHeader extends StatelessWidget {
     this.firstPost,
     this.opAuthor,
   });
+
+  Color levelColor(usermodel.User author) {
+    if (author.levelId <= 3) {
+      return AppColors.levelGreen;
+    } else if (author.levelId <= 9) {
+      return AppColors.levelBlue;
+    } else if (author.levelId <= 15) {
+      return AppColors.levelYellow;
+    } else {
+      return AppColors.levelOrange;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +52,7 @@ class PostDetailHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 楼主信息
-        if (opAuthor != null)
-          _buildAuthorInfo(opAuthor!, timeStr),
+        if (opAuthor != null) _buildAuthorInfo(opAuthor!, timeStr),
         // 无作者信息时也显示时间
         if (opAuthor == null && timeStr.isNotEmpty)
           Padding(
@@ -114,14 +126,14 @@ class PostDetailHeader extends StatelessWidget {
                         vertical: 1,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue[50],
+                        color: levelColor(author),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         '${author.levelId}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.blue[700],
+                          color: AppColors.levelNumber,
                         ),
                       ),
                     ),
@@ -150,19 +162,13 @@ class PostDetailHeader extends StatelessWidget {
                 children: [
                   Text(
                     timeStr,
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                   if (author.ipAddress.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Text(
                       'IP属地：${author.ipAddress}',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 11),
                     ),
                   ],
                 ],
