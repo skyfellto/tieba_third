@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:tieba_third/constants/app_colors.dart';
 import '../generated/Post.pb.dart';
 import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
@@ -27,6 +28,18 @@ class PostReplyCard extends StatelessWidget {
     this.onLikeTap,
     this.onImageTap,
   });
+
+  Color levelColor(usermodel.User author) {
+    if (author.levelId <= 3) {
+      return AppColors.levelGreen;
+    } else if (author.levelId <= 9) {
+      return AppColors.levelBlue;
+    } else if (author.levelId <= 15) {
+      return AppColors.levelYellow;
+    } else {
+      return AppColors.levelOrange;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,12 +173,12 @@ class PostReplyCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
+              color: levelColor(author),
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
               '${author.levelId}',
-              style: TextStyle(fontSize: 10, color: Colors.blue[700]),
+              style: TextStyle(fontSize: 10, color: AppColors.levelNumber),
             ),
           ),
         ],

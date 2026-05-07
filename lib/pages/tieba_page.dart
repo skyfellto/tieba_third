@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +21,8 @@ class _TiebaPageState extends State<TiebaPage>
   bool _configLoaded = false;
   bool _isDoubleColumn = true;
   List<ForumItem> _forums = [];
+  bool _isSigningAll = false;
+  final Set<String> _signingForums = {};
 
   static const String _storageKey = 'tieba_grid_layout';
 
@@ -70,6 +73,111 @@ class _TiebaPageState extends State<TiebaPage>
     } catch (_) {}
   }
 
+  /// 单独签到
+  Future<void> _handleSignForum(ForumItem forum) async {
+    if (_signingForums.contains(forum.forumId) || forum.isSign) return;
+    setState(() => _signingForums.add(forum.forumId));
+    try {
+      final result = await TiebaApi.signForum(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        forumId: forum.forumId,
+        forumName: forum.forumName,
+      );
+      if (mounted) {
+        if (result != null) {
+          debugPrint(
+            "【签到成功】${forum.forumName} user_info=${result["user_info"]}",
+          );
+          setState(() {
+            final idx = _forums.indexWhere((f) => f.forumId == forum.forumId);
+            if (idx != -1) {
+              _forums[idx] = _forums[idx].copyWith(isSign: true);
+            }
+          });
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('签到失败，请稍后重试')));
+        }
+      }
+    } catch (e) {
+      debugPrint("【签到异常】$e");
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('签到失败，请稍后重试')));
+      }
+    } finally {
+      if (mounted) setState(() => _signingForums.remove(forum.forumId));
+    }
+  }
+
+  /// 一键签到（逐个单独签到，每次间隔随机延迟）
+  Future<void> _handleSignAll() async {
+    if (_isSigningAll) return;
+    setState(() => _isSigningAll = true);
+    try {
+      final unsigned = _forums.where((f) => !f.isSign).toList();
+      if (unsigned.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('今天已经全部签到过了')));
+        }
+        return;
+      }
+
+      int success = 0;
+      for (int i = 0; i < unsigned.length; i++) {
+        final forum = unsigned[i];
+        try {
+          final r = await TiebaApi.signForum(
+            bduss: UserManager.bduss!,
+            stoken: UserManager.stoken!,
+            tbs: UserManager.tbs ?? '',
+            forumId: forum.forumId,
+            forumName: forum.forumName,
+          );
+          if (r != null) {
+            success++;
+            if (mounted) {
+              final idx = _forums.indexWhere((f) => f.forumId == forum.forumId);
+              if (idx != -1) _forums[idx] = _forums[idx].copyWith(isSign: true);
+            }
+            debugPrint(
+              "【一键签到】${forum.forumName} 成功 ($success/${unsigned.length})",
+            );
+          } else {
+            debugPrint("【一键签到】${forum.forumName} 失败");
+          }
+        } catch (e) {
+          debugPrint("【一键签到异常】${forum.forumName}: $e");
+        }
+
+        // 非最后一个时，间隔随机延迟 2~3.2 秒
+        if (i < unsigned.length - 1) {
+          final delay = 2000 + Random().nextInt(1200);
+          debugPrint("【一键签到】等待 ${delay}ms 后签下一个");
+          await Future.delayed(Duration(milliseconds: delay));
+        }
+      }
+
+      if (mounted) {
+        setState(() {});
+        final failed = unsigned.length - success;
+        if (failed > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('共成功签到 $success 个吧，失败 $failed 个吧')),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _isSigningAll = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -86,6 +194,31 @@ class _TiebaPageState extends State<TiebaPage>
         ),
         backgroundColor: AppColors.moonlightGradient[1],
         actions: [
+          // 一键签到
+          if (UserManager.isLogin && !_isSigningAll)
+            TextButton.icon(
+              onPressed: _handleSignAll,
+              icon: const Icon(Icons.task_alt, size: 20, color: Colors.white),
+              label: const Text(
+                "一键签到",
+                style: TextStyle(color: Colors.white, fontSize: 13),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.only(right: 4),
+              ),
+            )
+          else if (_isSigningAll)
+            const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
           IconButton(
             icon: Icon(_isDoubleColumn ? Icons.view_agenda : Icons.grid_view),
             onPressed: () {
@@ -119,12 +252,15 @@ class _TiebaPageState extends State<TiebaPage>
               itemCount: _forums.length,
               itemBuilder: (context, index) => FollowedForumTile(
                 forum: _forums[index],
+                isSigning: _signingForums.contains(_forums[index].forumId),
                 onTap: () {
                   final f = _forums[index];
-                  context.push('/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}');
+                  context.push(
+                    '/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}',
+                  );
                 },
                 onSign: () {
-                  // TODO: 签到操作
+                  _handleSignForum(_forums[index]);
                 },
               ),
             ),

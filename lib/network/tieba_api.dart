@@ -886,6 +886,195 @@ class TiebaApi {
     }
   }
 
+  /// 单独签到（POST /c/c/forum/sign）
+  /// 参考 tiebalite OfficialTiebaApi.signFlow
+  static Future<Map<String, dynamic>?> signForum({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String forumId,
+    required String forumName,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    // tiebalite signFlow: Cookie=ka=open, _client_version=11.10.8.6
+    // 使用 defaultCommonParamInterceptor 风格参数 + 签到专有字段
+    final params = [
+      ["BDUSS", bduss],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "11.10.8.6"],
+      ["_os_version", "12"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["fid", forumId],
+      ["from", "tieba"],
+      ["kw", forumName],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["tbs", tbs],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr =
+        params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+
+    debugPrint("\n【签到请求】POST /c/c/forum/sign");
+    debugPrint("【签到参数】fid=$forumId kw=$forumName");
+    debugPrint("【签到body】$bodyStr");
+
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse("http://c.tieba.baidu.com/c/c/forum/sign"),
+      )
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 11.10.8.6",
+          "Cookie": "ka=open",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response =
+          await http.Response.fromStream(await client.send(request));
+      debugPrint("【签到响应】状态码=${response.statusCode}");
+      debugPrint("【签到响应】body=${response.body}");
+
+      if (response.statusCode != 200) {
+        debugPrint("【签到失败】非200状态码");
+        return null;
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint(
+            "【签到失败】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      // tiebalite SignResultBean: userInfo 为空表示签到失败
+      if (json["user_info"] == null) {
+        debugPrint("【签到失败】user_info 为空");
+        return null;
+      }
+      return json;
+    } catch (e) {
+      debugPrint("【签到异常】$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 一键签到（POST /c/c/forum/msign）
+  /// 参考 tiebalite OfficialTiebaApi.mSignFlow
+  static Future<Map<String, dynamic>?> mSign({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String forumIds,
+    required String userId,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    // tiebalite mSignFlow: Cookie=CUID;ka=open;TBBRAND;BAIDUID, _client_version=11.10.8.6
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "11.10.8.6"],
+      ["_os_version", "12"],
+      ["authsid", "null"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["forum_ids", forumIds],
+      ["from", "tieba"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["stoken", stoken],
+      ["tbs", tbs],
+      ["timestamp", timestamp],
+      ["user_id", userId],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr =
+        params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+
+    debugPrint("\n【一键签到请求】POST /c/c/forum/msign");
+    debugPrint("【一键签到参数】forum_ids=$forumIds tbs=$tbs");
+    debugPrint("【一键签到body】$bodyStr");
+
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse("http://c.tieba.baidu.com/c/c/forum/msign"),
+      )
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 11.10.8.6",
+          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "cuid_gid": "",
+          "client_type": "2",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response =
+          await http.Response.fromStream(await client.send(request));
+      debugPrint("【一键签到响应】状态码=${response.statusCode}");
+      debugPrint("【一键签到响应】body=${response.body}");
+
+      if (response.statusCode != 200) {
+        debugPrint("【一键签到失败】非200状态码");
+        return null;
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint(
+            "【一键签到失败】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      // tiebalite: info 为字符串时表示失败，为数组时才是签到结果
+      final info = json["info"];
+      if (info is String) {
+        debugPrint("【一键签到失败】info 为字符串: $info");
+        return null;
+      }
+      return json;
+    } catch (e) {
+      debugPrint("【一键签到异常】$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
   /// 点赞回复（与点赞帖子类似，obj_type=5）
   static Future<bool> likeReply({
     required String bduss,
