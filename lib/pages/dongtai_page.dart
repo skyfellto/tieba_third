@@ -230,21 +230,21 @@ class _DongtaiPageState extends State<DongtaiPage>
                     },
                     onLikeTap: (tid) async {
                       if (!UserManager.isLogin) return;
-                      final ok = await TiebaApi.likePost(
+                      final score = await TiebaApi.likePost(
                         bduss: UserManager.bduss!,
                         stoken: UserManager.stoken!,
                         tbs: UserManager.tbs ?? '',
                         userId: UserManager.userId ?? '',
                         threadId: tid,
                       );
-                      if (ok && mounted) {
+                      if (score != null && mounted) {
                         setState(() {
                           _likedSet.add(tid);
                           // 点赞数 +1
                           final i = _posts.indexWhere((x) => x.tid == tid);
                           if (i >= 0) {
-                            final cur = int.tryParse(_posts[i].agreeNum) ?? 0;
-                            _posts[i].agreeNum = "${cur + 1}";
+                            _posts[i].agreeNum =
+                                score > 0 ? "$score" : "${(int.tryParse(_posts[i].agreeNum) ?? 0) + 1}";
                           }
                         });
                       }

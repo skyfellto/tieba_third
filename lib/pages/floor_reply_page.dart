@@ -1,5 +1,8 @@
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:tieba_third/constants/app_colors.dart';
+import '../generated/Agree.pb.dart';
+import '../generated/PbContent.pb.dart';
 import '../generated/PbFloor/PbFloorResponseData.pb.dart';
 import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
@@ -43,6 +46,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   bool _loadingMore = false;
   late ScrollController _scrollController;
   String? _forumId;
+  String _lastSubPostId = '0';
 
   @override
   void initState() {
@@ -71,9 +75,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     _lastScrollPosition = current;
 
     // 触底加载更多
-    if (!_hasMore || _loadingMore || _scrollController.position.outOfRange) {
-      return;
-    }
+    if (!_hasMore || _loadingMore || _scrollController.position.outOfRange) return;
     if (current >= _scrollController.position.maxScrollExtent - 100) {
       _loadMore();
     }
@@ -95,6 +97,44 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     });
   }
 
+  /// 将 JSON 子回复项转 SubPostList protobuf
+  SubPostList _subPostFromJson(Map<String, dynamic> item) {
+    final contentList = (item["content"] as List<dynamic>?)
+            ?.map((c) => PbContent(
+                  type: (c["type"] as num?)?.toInt() ?? 0,
+                  text: c["text"]?.toString() ?? '',
+                  src: c["src"]?.toString() ?? '',
+                  uid: Int64.parseInt(c["uid"]?.toString() ?? '0'),
+                ))
+            .toList() ??
+        [];
+    final author = item["author"] as Map<String, dynamic>?;
+    final agree = item["agree"] as Map<String, dynamic>?;
+    return SubPostList(
+      id: Int64.parseInt(item["id"]?.toString() ?? '0'),
+      time: int.tryParse(item["time"]?.toString() ?? '0') ?? 0,
+      content: contentList,
+      authorId: Int64.parseInt(author?["id"]?.toString() ?? '0'),
+      author: author != null
+          ? usermodel.User(
+              id: Int64.parseInt(author["id"]?.toString() ?? '0'),
+              name: author["name"]?.toString() ?? '',
+              nameShow: author["name_show"]?.toString() ?? '',
+              portrait: author["portrait"]?.toString() ?? '',
+              levelId: int.tryParse(author["level_id"]?.toString() ?? '0') ?? 0,
+            )
+          : null,
+      agree: agree != null
+          ? Agree(
+              agreeNum:
+                  Int64.parseInt(agree["agree_num"]?.toString() ?? '0'),
+              hasAgree:
+                  int.tryParse(agree["has_agree"]?.toString() ?? '0') ?? 0,
+            )
+          : null,
+    );
+  }
+
   Future<void> _loadData({bool refresh = false}) async {
     if (!UserManager.isLogin) {
       if (mounted) setState(() => _error = '未登录');
@@ -107,51 +147,111 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         _error = null;
         _currentPage = 1;
         _hasMore = true;
+        _lastSubPostId = '0';
       });
     }
 
-    final data = await TiebaApi.fetchSubReplies(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      threadId: widget.tid,
-      postId: widget.pid,
-      forumId: _forumId ?? '0',
-      page: _currentPage,
-    );
+    // 第一页用 protobuf API，翻页用 JSON API（支持 rn 分页）
+    Map<String, dynamic>? jsonData;
+    PbFloorResponseData? pbData;
+
+    if (refresh) {
+      pbData = await TiebaApi.fetchSubReplies(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        threadId: widget.tid,
+        postId: widget.pid,
+        forumId: _forumId ?? '0',
+        page: 1,
+        subPostId: '0',
+      );
+    } else {
+      jsonData = await TiebaApi.fetchFloorRepliesJson(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        threadId: widget.tid,
+        postId: widget.pid,
+        page: _currentPage,
+        subPostId: _lastSubPostId,
+        rn: 30,
+      );
+    }
 
     if (!mounted) return;
 
-    if (data != null) {
-      if (_forumId == null && data.hasForum()) {
-        _forumId = data.forum.id.toString();
-      }
-      _buildAuthorMap(data);
+    if (jsonData != null) {
+      final subpostList = ((jsonData["subpost_list"] as List<dynamic>?) ?? [])
+          .map((item) => _subPostFromJson(item as Map<String, dynamic>))
+          .toList();
+      final pageInfo = jsonData["page"] as Map<String, dynamic>?;
+      final currentPg = int.tryParse(pageInfo?["current_page"]?.toString() ?? '0') ?? 0;
+      final totalPg = int.tryParse(pageInfo?["total_page"]?.toString() ?? '0') ?? 0;
+      final hasMore = _currentPage < totalPg;
 
       setState(() {
         _isLoading = false;
         _loadingMore = false;
-        if (refresh) {
-          _data = data;
-        } else if (_data != null) {
-          final existIds = _data!.subpostList.map((s) => s.id.toInt()).toSet();
-          for (final s in data.subpostList) {
-            if (!existIds.contains(s.id.toInt())) {
-              _data!.subpostList.add(s);
-            }
-          }
-          if (data.hasPost()) _data!.post = data.post;
+        _data ??= PbFloorResponseData();
+        for (final s in subpostList) {
+          _data!.subpostList.add(s);
         }
-        _currentPage = data.hasPage() && data.page.currentPage > 0
-            ? data.page.currentPage + 1
-            : _currentPage + 1;
-        _hasMore = data.hasPage() && data.page.hasMore == 1;
+        _currentPage = currentPg + 1;
+        _hasMore = hasMore;
+        if (subpostList.isNotEmpty) {
+          _lastSubPostId = subpostList.last.id.toString();
+        }
       });
+      if (mounted) {
+        _rebuildAuthorMap(subpostList);
+        _syncLikedFromData();
+        _checkAutoLoad();
+      }
+    } else if (pbData != null) {
+      final p = pbData;
+      if (_forumId == null && p.hasForum()) {
+        _forumId = p.forum.id.toString();
+      }
+      _buildAuthorMap(p);
+
+      setState(() {
+        _isLoading = false;
+        _loadingMore = false;
+        _data = p;
+        _currentPage = 2;
+        // protobuf API hasMore 不可靠，用 JSON API 翻页替代
+        _hasMore = p.subpostList.length >= 30;
+        if (p.subpostList.isNotEmpty) {
+          _lastSubPostId = p.subpostList.last.id.toString();
+        }
+      });
+      if (mounted) {
+        _syncLikedFromData();
+        _checkAutoLoad();
+      }
     } else {
       setState(() {
         _isLoading = false;
         _loadingMore = false;
         if (refresh) _error = '加载失败';
       });
+    }
+  }
+
+  void _checkAutoLoad() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_hasMore && !_loadingMore && mounted) {
+        final pos = _scrollController.position;
+        if (pos.maxScrollExtent <= pos.viewportDimension + 50) _loadMore();
+      }
+    });
+  }
+
+  void _rebuildAuthorMap(List<SubPostList> subpostList) {
+    for (final s in subpostList) {
+      if (s.hasAuthor()) {
+        _authorMap[s.author.id.toInt()] = s.author;
+      }
     }
   }
 
@@ -174,22 +274,40 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     }
   }
 
+  /// 从 API 响应中同步点赞状态（SubPostList.agree.hasAgree == 1）
+  void _syncLikedFromData() {
+    if (_data == null) return;
+    for (final s in _data!.subpostList) {
+      if (s.hasAgree() && s.agree.hasAgree == 1) {
+        _likedReplySet.add(s.id.toString());
+      }
+    }
+  }
+
   Future<void> _handleLikeReply(SubPostList subReply) async {
     if (!UserManager.isLogin) return;
     final pidStr = subReply.id.toString();
     if (_likedReplySet.contains(pidStr)) return;
 
-    final ok = await TiebaApi.likeReply(
+    final score = await TiebaApi.likeReply(
       bduss: UserManager.bduss!,
       stoken: UserManager.stoken!,
       tbs: UserManager.tbs ?? '',
       userId: UserManager.userId ?? '',
       threadId: widget.tid,
       postId: pidStr,
+      objType: 2, // SubPostList = 楼中楼, obj_type=2
     );
 
-    if (ok && mounted) {
-      setState(() => _likedReplySet.add(pidStr));
+    if (score != null && mounted) {
+      setState(() {
+        _likedReplySet.add(pidStr);
+        if (subReply.hasAgree()) {
+          subReply.agree.agreeNum = Int64(
+            score > 0 ? score : subReply.agree.agreeNum.toInt() + 1,
+          );
+        }
+      });
     }
   }
 

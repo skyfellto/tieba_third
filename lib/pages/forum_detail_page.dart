@@ -73,6 +73,13 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   final GlobalKey _scrollTopKey0 = GlobalKey();
   final GlobalKey _scrollTopKey1 = GlobalKey();
 
+  /// 从帖子列表数据中同步点赞状态（API 返回的 Agree.hasAgree == 1）
+  void _syncLikedFromPosts(List<PostItem> posts) {
+    for (final p in posts) {
+      if (p.isLiked) _likedThreadSet.add(p.tid);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -264,6 +271,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         }
         if (frsData != null) {
           _threads = _processThreadData(frsData);
+          _syncLikedFromPosts(_threads);
           _threadPage = 1;
           _hasMoreThreads = frsData.hasPage() && frsData.page.hasMore == 1;
         }
@@ -379,6 +387,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         _loadingMoreThreads = false;
         if (data != null) {
           final newPosts = _processThreadData(data);
+          _syncLikedFromPosts(newPosts);
           _threads.addAll(newPosts);
           _threadPage = nextPage;
           _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
@@ -412,6 +421,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     if (mounted && data != null) {
       setState(() {
         _goodThreads = _processThreadData(data);
+        _syncLikedFromPosts(_goodThreads);
         _loadingGoodThreads = false;
         _hasMoreGoodThreads = data.hasPage() && data.page.hasMore == 1;
       });
@@ -442,7 +452,9 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     );
     if (mounted && data != null) {
       setState(() {
-        _goodThreads.addAll(_processThreadData(data));
+        final newGood = _processThreadData(data);
+        _syncLikedFromPosts(newGood);
+        _goodThreads.addAll(newGood);
         _goodThreadPage = nextPage;
         _loadingMoreGoodThreads = false;
         _hasMoreGoodThreads = data.hasPage() && data.page.hasMore == 1;
@@ -736,21 +748,20 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                     onBodyTap: (_) => context.push('/post/$tid'),
                     onLikeTap: (_) async {
                       if (!UserManager.isLogin) return;
-                      final ok = await TiebaApi.likePost(
+                      final score = await TiebaApi.likePost(
                         bduss: UserManager.bduss!,
                         stoken: UserManager.stoken!,
                         tbs: UserManager.tbs ?? '',
                         userId: UserManager.userId ?? '',
                         threadId: tid,
                       );
-                      if (ok && mounted) {
+                      if (score != null && mounted) {
                         setState(() {
                           _likedThreadSet.add(tid);
                           final idx = _threads.indexWhere((x) => x.tid == tid);
                           if (idx >= 0) {
-                            final cur =
-                                int.tryParse(_threads[idx].agreeNum) ?? 0;
-                            _threads[idx].agreeNum = "${cur + 1}";
+                            _threads[idx].agreeNum =
+                                score > 0 ? "$score" : "${(int.tryParse(_threads[idx].agreeNum) ?? 0) + 1}";
                           }
                         });
                       }
@@ -838,23 +849,22 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       onBodyTap: (_) => context.push('/post/$tid'),
                       onLikeTap: (_) async {
                         if (!UserManager.isLogin) return;
-                        final ok = await TiebaApi.likePost(
+                        final score = await TiebaApi.likePost(
                           bduss: UserManager.bduss!,
                           stoken: UserManager.stoken!,
                           tbs: UserManager.tbs ?? '',
                           userId: UserManager.userId ?? '',
                           threadId: tid,
                         );
-                        if (ok && mounted) {
+                        if (score != null && mounted) {
                           setState(() {
                             _likedThreadSet.add(tid);
                             final idx = _goodThreads.indexWhere(
                               (x) => x.tid == tid,
                             );
                             if (idx >= 0) {
-                              final cur =
-                                  int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
-                              _goodThreads[idx].agreeNum = "${cur + 1}";
+                              _goodThreads[idx].agreeNum =
+                                  score > 0 ? "$score" : "${(int.tryParse(_goodThreads[idx].agreeNum) ?? 0) + 1}";
                             }
                           });
                         }
