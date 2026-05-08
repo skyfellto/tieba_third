@@ -540,6 +540,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
             likedReplySet: _likedReplySet,
             tid: widget.tid,
             onLikeTap: (post) => _handleLikeReply(post),
+            onShowAllReplies: (postId, floor, replyCount) {
+              context.push(
+                '/floor-replies/${widget.tid}?pid=$postId&floor=$floor&replyCount=$replyCount',
+              );
+            },
           ),
         ),
         // 底部状态：加载中 / 没有更多回复
@@ -578,8 +583,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
       ],
     );
   }
-
-
 
   // ========== 回复 Tab 栏 ==========
 
@@ -654,7 +657,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
     );
   }
 
-
   // ========== 回复点赞 ==========
 
   Future<void> _handleLikeReply(Post post) async {
@@ -677,4 +679,3 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 }
-

@@ -11,12 +11,16 @@ class PostDetailHeader extends StatelessWidget {
   final String? title;
   final Post? firstPost;
   final usermodel.User? opAuthor;
+  final bool showLouZhuBadge;
+  final bool showIpLocation;
 
   const PostDetailHeader({
     super.key,
     this.title,
     this.firstPost,
     this.opAuthor,
+    this.showLouZhuBadge = true,
+    this.showIpLocation = true,
   });
 
   Color levelColor(usermodel.User author) {
@@ -138,24 +142,25 @@ class PostDetailHeader extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      '楼主',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.red,
-                        fontWeight: FontWeight.w600,
+                  if (showLouZhuBadge)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red[50],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '楼主',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               Row(
@@ -164,7 +169,7 @@ class PostDetailHeader extends StatelessWidget {
                     timeStr,
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
-                  if (author.ipAddress.isNotEmpty) ...[
+                  if (showIpLocation && author.ipAddress.isNotEmpty) ...[
                     const SizedBox(width: 8),
                     Text(
                       'IP属地：${author.ipAddress}',
