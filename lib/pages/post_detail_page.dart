@@ -1,3 +1,4 @@
+import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../generated/PbPage/PbPageResponseData.pb.dart';
@@ -202,6 +203,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           if (refresh) _error = "加载失败";
         }
       });
+      if (_data != null) _syncLikedFromData();
       _descAutoLoading = false;
       // 倒序且数据太少时自动触底加载
       if (_sortType == 1 &&
@@ -659,11 +661,27 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // ========== 回复点赞 ==========
 
+  /// 从 API 响应数据中同步点赞状态（Post.agree.hasAgree == 1）
+  void _syncLikedFromData() {
+    if (_data == null) return;
+    for (final p in _data!.postList) {
+      if (p.hasAgree() && p.agree.hasAgree == 1) {
+        _likedReplySet.add(p.id.toString());
+      }
+    }
+    if (_data!.hasFirstFloorPost()) {
+      final fp = _data!.firstFloorPost;
+      if (fp.hasAgree() && fp.agree.hasAgree == 1) {
+        _likedReplySet.add(fp.id.toString());
+      }
+    }
+  }
+
   Future<void> _handleLikeReply(Post post) async {
     if (!UserManager.isLogin) return;
 
     final pidStr = post.id.toString();
-    final ok = await TiebaApi.likeReply(
+    final score = await TiebaApi.likeReply(
       bduss: UserManager.bduss!,
       stoken: UserManager.stoken!,
       tbs: UserManager.tbs ?? '',
@@ -672,9 +690,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
       postId: pidStr,
     );
 
-    if (ok && mounted) {
+    if (score != null && mounted) {
       setState(() {
         _likedReplySet.add(pidStr);
+        if (post.hasAgree()) {
+          post.agree.agreeNum = Int64(
+            score > 0 ? score : post.agree.agreeNum.toInt() + 1,
+          );
+        }
       });
     }
   }

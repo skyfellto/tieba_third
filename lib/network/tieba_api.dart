@@ -234,7 +234,8 @@ class TiebaApi {
   }
 
   /// 点赞帖子（基于 MiniTiebaApi 实现）
-  static Future<bool> likePost({
+  /// 点赞帖子，返回新点赞数，失败返回 null
+  static Future<int?> likePost({
     required String bduss,
     required String stoken,
     required String tbs,
@@ -287,8 +288,7 @@ class TiebaApi {
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
 
-    // 打印完整请求体用于调试
-    // print("【点赞body】$bodyStr");
+    debugPrint("【点赞帖子请求】threadId=$threadId");
 
     final client = http.Client();
     try {
@@ -312,14 +312,26 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // print("【点赞】状态码=${response.statusCode} 响应=${response.body}");
-      if (response.statusCode != 200) return false;
+      debugPrint("【点赞帖子响应】${response.statusCode} ${response.body}");
+      if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final ok = json["error_code"] == "0" || json["error_code"] == 0;
-      // if (!ok) print("【点赞失败】error_code=${json["error_code"]} msg=${json["error_msg"]}");
-      return ok;
-    } catch (_) {
-      return false;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【点赞帖子失败】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      if (json["data"] == null) {
+        debugPrint("【点赞帖子失败】data 为空");
+        return null;
+      }
+      final dataMap = json["data"] as Map<String, dynamic>?;
+      final agreeMap = dataMap?["agree"] as Map<String, dynamic>?;
+      final score = int.tryParse(agreeMap?["score"]?.toString() ?? '') ?? 0;
+      debugPrint("【点赞帖子成功】newScore=$score");
+      return score;
+    } catch (e) {
+      debugPrint("【点赞帖子异常】$e");
+      return null;
     } finally {
       client.close();
     }
@@ -526,7 +538,7 @@ class TiebaApi {
     final request = PbFloorRequest(data: reqData);
     final bodyBytes = request.writeToBuffer();
 
-    final uri = Uri.parse("$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf");
+    final uri = Uri.parse("$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf&rn=30");
     debugPrint("\n================================================");
     debugPrint("【调试】PbFloor 请求：$uri tid=$threadId pid=$postId page=$page");
     debugPrint("================================================\n");
@@ -566,6 +578,83 @@ class TiebaApi {
       return pb.data;
     } catch (e) {
       debugPrint("【调试】PbFloor 请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取楼中楼回复列表（JSON API，支持 rn 分页）
+  static Future<Map<String, dynamic>?> fetchFloorRepliesJson({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String threadId,
+    required String postId,
+    int page = 1,
+    String subPostId = '0',
+    int rn = 30,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_version", "8.0.8.0"],
+      ["client_id", clientId],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["from", "1021636m"],
+      ["kz", threadId],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["os_version", "12"],
+      ["phone_imei", phoneImei],
+      ["pid", postId],
+      ["pn", "$page"],
+      ["rn", "$rn"],
+      ["spid", subPostId],
+      ["stoken", stoken],
+      ["subapp_type", "mini"],
+      ["tbs", tbs],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr =
+        params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse("http://c.tieba.baidu.com/c/f/pb/floor"),
+      )
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 7.2.0.0",
+          "Cookie": "ka=open",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response =
+          await http.Response.fromStream(await client.send(request));
+      if (response.statusCode != 200) return null;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) return null;
+      return json;
+    } catch (e) {
+      debugPrint("【楼中楼JSON异常】$e");
       return null;
     } finally {
       client.close();
@@ -1137,14 +1226,17 @@ class TiebaApi {
     }
   }
 
-  /// 点赞回复（与点赞帖子类似，obj_type=5）
-  static Future<bool> likeReply({
+  /// 点赞回复
+  /// [objType]: 1=post/reply, 2=subpost(楼中楼), 3=thread
+  /// 返回新点赞数，失败返回 null
+  static Future<int?> likeReply({
     required String bduss,
     required String stoken,
     required String tbs,
     required String userId,
     required String threadId,
     required String postId,
+    int objType = 1,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei =
@@ -1167,7 +1259,7 @@ class TiebaApi {
       ["from", "1021636m"],
       ["model", "Android"],
       ["net_type", "1"],
-      ["obj_type", "5"], // 5=回复, 3=帖子
+      ["obj_type", "$objType"],
       ["op_type", "0"],
       ["os_version", "12"],
       ["phone_imei", phoneImei],
@@ -1189,6 +1281,8 @@ class TiebaApi {
     final bodyStr = params
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
+
+    debugPrint("【点赞回复请求】obj_type=$objType postId=$postId");
 
     final client = http.Client();
     try {
@@ -1212,11 +1306,28 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      if (response.statusCode != 200) return false;
+      debugPrint("【点赞回复响应】${response.statusCode} ${response.body}");
+      if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      return json["error_code"] == "0" || json["error_code"] == 0;
-    } catch (_) {
-      return false;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【点赞回复失败】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      // tiebalite: data 为空也表示失败
+      if (json["data"] == null) {
+        debugPrint("【点赞回复失败】data 为空");
+        return null;
+      }
+      // 解析新点赞数 tiebalite AgreeBean.data.agree.score
+      final dataMap = json["data"] as Map<String, dynamic>?;
+      final agreeMap = dataMap?["agree"] as Map<String, dynamic>?;
+      final score = int.tryParse(agreeMap?["score"]?.toString() ?? '') ?? 0;
+      debugPrint("【点赞回复成功】newScore=$score");
+      return score;
+    } catch (e) {
+      debugPrint("【点赞回复异常】$e");
+      return null;
     } finally {
       client.close();
     }
