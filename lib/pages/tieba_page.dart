@@ -87,9 +87,9 @@ class _TiebaPageState extends State<TiebaPage>
       );
       if (mounted) {
         if (result != null) {
-          debugPrint(
-            "【签到成功】${forum.forumName} user_info=${result["user_info"]}",
-          );
+          // debugPrint(
+          //   "【签到成功】${forum.forumName} user_info=${result["user_info"]}",
+          // );
           setState(() {
             final idx = _forums.indexWhere((f) => f.forumId == forum.forumId);
             if (idx != -1) {
@@ -103,7 +103,7 @@ class _TiebaPageState extends State<TiebaPage>
         }
       }
     } catch (e) {
-      debugPrint("【签到异常】$e");
+      // debugPrint("【签到异常】$e");
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -146,20 +146,20 @@ class _TiebaPageState extends State<TiebaPage>
               final idx = _forums.indexWhere((f) => f.forumId == forum.forumId);
               if (idx != -1) _forums[idx] = _forums[idx].copyWith(isSign: true);
             }
-            debugPrint(
-              "【一键签到】${forum.forumName} 成功 ($success/${unsigned.length})",
-            );
+            // debugPrint(
+            //   "【一键签到】${forum.forumName} 成功 ($success/${unsigned.length})",
+            // );
           } else {
-            debugPrint("【一键签到】${forum.forumName} 失败");
+            // debugPrint("【一键签到】${forum.forumName} 失败");
           }
         } catch (e) {
-          debugPrint("【一键签到异常】${forum.forumName}: $e");
+          // debugPrint("【一键签到异常】${forum.forumName}: $e");
         }
 
-        // 非最后一个时，间隔随机延迟 2~3.2 秒
+        // 非最后一个时，间隔随机延迟 0.7~2 秒
         if (i < unsigned.length - 1) {
-          final delay = 2000 + Random().nextInt(1200);
-          debugPrint("【一键签到】等待 ${delay}ms 后签下一个");
+          final delay = 700 + Random().nextInt(1300);
+          // debugPrint("【一键签到】等待 ${delay}ms 后签下一个");
           await Future.delayed(Duration(milliseconds: delay));
         }
       }

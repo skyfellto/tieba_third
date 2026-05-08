@@ -17,6 +17,8 @@ class PostReplyCard extends StatelessWidget {
   final String tid;
   final void Function(Post post)? onLikeTap;
   final void Function(List<String> images, int index)? onImageTap;
+  final void Function(String postId, int floor, int replyCount)?
+  onShowAllReplies;
 
   const PostReplyCard({
     super.key,
@@ -27,6 +29,7 @@ class PostReplyCard extends StatelessWidget {
     required this.tid,
     this.onLikeTap,
     this.onImageTap,
+    this.onShowAllReplies,
   });
 
   Color levelColor(usermodel.User author) {
@@ -86,10 +89,15 @@ class PostReplyCard extends StatelessWidget {
                         timeStr,
                         style: TextStyle(color: Colors.grey[400], fontSize: 11),
                       ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '第${post.floor}楼',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                    ),
                     if (author != null && author.ipAddress.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       Text(
-                        'IP属地：${author.ipAddress}',
+                        '来自${author.ipAddress}',
                         style: TextStyle(color: Colors.grey[400], fontSize: 11),
                       ),
                     ],
@@ -124,9 +132,11 @@ class PostReplyCard extends StatelessWidget {
                   ),
               if (subPostNumber > 3 || subPostList.length > 3)
                 GestureDetector(
-                  onTap: () {
-                    // 预留回调：查看更多楼中楼
-                  },
+                  onTap: () => onShowAllReplies?.call(
+                    post.id.toString(),
+                    post.floor,
+                    subPostNumber > 0 ? subPostNumber : subPostList.length,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
