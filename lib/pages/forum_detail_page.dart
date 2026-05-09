@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../generated/RecommendForumInfo.pb.dart';
 import '../generated/GetForumDetail/GetForumDetailResponseData.pb.dart';
 import '../generated/FrsPage/FrsPage.pb.dart';
@@ -73,10 +75,39 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   final GlobalKey _scrollTopKey0 = GlobalKey();
   final GlobalKey _scrollTopKey1 = GlobalKey();
 
-  /// 从帖子列表数据中同步点赞状态（API 返回的 Agree.hasAgree == 1）
+  Map<String, int> _likedAgreeMap = {};
+  static const String _likedStorageKey = 'forum_detail_liked_cnt';
+
+  Future<void> _initLikedSet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_likedStorageKey);
+    if (raw != null && raw.isNotEmpty) {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      for (final e in map.entries) {
+        _likedThreadSet.add(e.key);
+        _likedAgreeMap[e.key] = (e.value as num).toInt();
+      }
+    }
+  }
+
+  Future<void> _saveLikedSet() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_likedStorageKey, jsonEncode(_likedAgreeMap));
+  }
+
+  /// 从本地持久化恢复点赞数，同时同步 API 返回的 isLiked
   void _syncLikedFromPosts(List<PostItem> posts) {
     for (final p in posts) {
-      if (p.isLiked) _likedThreadSet.add(p.tid);
+      if (_likedThreadSet.contains(p.tid)) {
+        final saved = _likedAgreeMap[p.tid];
+        if (saved != null) {
+          final apiNum = int.tryParse(p.agreeNum) ?? 0;
+          p.agreeNum = "${saved > apiNum ? saved : apiNum}";
+        }
+      } else if (p.isLiked) {
+        _likedThreadSet.add(p.tid);
+        _likedAgreeMap[p.tid] = int.tryParse(p.agreeNum) ?? 0;
+      }
     }
   }
 
@@ -86,6 +117,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_onTabChanged);
     _loadData();
+    _initLikedSet();
   }
 
   @override
@@ -739,6 +771,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                     );
                   }
                   final tid = p.tid;
+                  debugPrint("【点赞帖子】tid=$tid firstPostId=${p.firstPostId}");
                   return PostCard(
                     post: p,
                     showForum: false,
@@ -762,8 +795,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                           if (idx >= 0) {
                             final cur = int.tryParse(_threads[idx].agreeNum) ?? 0;
                             _threads[idx].agreeNum = "${cur + 1}";
+                            _likedAgreeMap[tid] = cur + 1;
                           }
                         });
+                        _saveLikedSet();
                       }
                     },
                     onShareTap: (_) => SharePlus.instance.share(
@@ -865,8 +900,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                             if (idx >= 0) {
                               final cur = int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
                               _goodThreads[idx].agreeNum = "${cur + 1}";
+                              _likedAgreeMap[tid] = cur + 1;
                             }
                           });
+                          _saveLikedSet();
                         }
                       },
                       onShareTap: (_) => SharePlus.instance.share(

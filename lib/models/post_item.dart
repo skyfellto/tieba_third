@@ -19,6 +19,7 @@ class PostItem {
   final bool isAd;
   bool isTop;
   bool isLiked;
+  String firstPostId;
 
   static String avatarUrlFor(String portrait) =>
       "http://tb.himg.baidu.com/sys/portrait/item/$portrait";
@@ -39,6 +40,7 @@ class PostItem {
     this.isAd = false,
     this.isTop = false,
     this.isLiked = false,
+    this.firstPostId = '',
   });
 
   factory PostItem.fromThreadInfo(ThreadInfo t) {
@@ -116,6 +118,7 @@ class PostItem {
       isAd: t.hasAlaInfo(),
       isTop: t.isTop == 1,
       isLiked: t.hasAgree() && t.agree.hasAgree == 1,
+      firstPostId: _s(t.firstPostId),
     );
   }
 }
