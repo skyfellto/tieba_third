@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/constants/app_colors.dart';
 import '../generated/Agree.pb.dart';
 import '../generated/PbContent.pb.dart';
@@ -48,11 +50,34 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   String? _forumId;
   String _lastSubPostId = '0';
 
+  static const String _likedStorageKey = 'floor_reply_liked_cnt';
+
+  /// 从本地恢复点赞状态及点赞数，加载数据后由 _syncLikedFromData 调用
+  Map<String, int> _likedAgreeMap = {};
+
+  Future<void> _initLikedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_likedStorageKey);
+    if (raw != null && raw.isNotEmpty) {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      for (final e in map.entries) {
+        _likedReplySet.add(e.key);
+        _likedAgreeMap[e.key] = (e.value as num).toInt();
+      }
+    }
+  }
+
+  Future<void> _saveLikedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_likedStorageKey, jsonEncode(_likedAgreeMap));
+  }
+
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
     _loadData(refresh: true);
+    _initLikedData();
   }
 
   @override
@@ -278,8 +303,18 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   void _syncLikedFromData() {
     if (_data == null) return;
     for (final s in _data!.subpostList) {
-      if (s.hasAgree() && s.agree.hasAgree == 1) {
-        _likedReplySet.add(s.id.toString());
+      final pid = s.id.toString();
+      // 从本地恢复点赞状态
+      if (_likedReplySet.contains(pid)) {
+        // 恢复点赞数
+        final saved = _likedAgreeMap[pid];
+        if (saved != null && s.hasAgree()) {
+          s.agree.agreeNum = Int64(saved);
+        }
+      } else if (s.hasAgree() && s.agree.hasAgree == 1) {
+        // API 返回已点赞
+        _likedReplySet.add(pid);
+        _likedAgreeMap[pid] = s.agree.agreeNum.toInt();
       }
     }
   }
@@ -303,11 +338,12 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       setState(() {
         _likedReplySet.add(pidStr);
         if (subReply.hasAgree()) {
-          subReply.agree.agreeNum = Int64(
-            score > 0 ? score : subReply.agree.agreeNum.toInt() + 1,
-          );
+          final newNum = subReply.agree.agreeNum.toInt() + 1;
+          subReply.agree.agreeNum = Int64(newNum);
+          _likedAgreeMap[pidStr] = newNum;
         }
       });
+      _saveLikedData();
     }
   }
 

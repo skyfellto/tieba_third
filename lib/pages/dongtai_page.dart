@@ -243,8 +243,8 @@ class _DongtaiPageState extends State<DongtaiPage>
                           // 点赞数 +1
                           final i = _posts.indexWhere((x) => x.tid == tid);
                           if (i >= 0) {
-                            _posts[i].agreeNum =
-                                score > 0 ? "$score" : "${(int.tryParse(_posts[i].agreeNum) ?? 0) + 1}";
+                            final cur = int.tryParse(_posts[i].agreeNum) ?? 0;
+                            _posts[i].agreeNum = "${cur + 1}";
                           }
                         });
                       }

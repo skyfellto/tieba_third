@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../generated/PbPage/PbPageResponseData.pb.dart';
 import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
@@ -40,13 +42,33 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // 已点赞的回复 pid 集合
   final Set<String> _likedReplySet = {};
+  Map<String, int> _likedAgreeMap = {};
   int _descRetryCount = 0;
+  static const String _likedStorageKey = 'post_detail_liked_cnt';
+
+  Future<void> _initLikedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_likedStorageKey);
+    if (raw != null && raw.isNotEmpty) {
+      final map = jsonDecode(raw) as Map<String, dynamic>;
+      for (final e in map.entries) {
+        _likedReplySet.add(e.key);
+        _likedAgreeMap[e.key] = (e.value as num).toInt();
+      }
+    }
+  }
+
+  Future<void> _saveLikedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_likedStorageKey, jsonEncode(_likedAgreeMap));
+  }
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadData(refresh: true);
+    _initLikedData();
   }
 
   @override
@@ -661,19 +683,26 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // ========== 回复点赞 ==========
 
-  /// 从 API 响应数据中同步点赞状态（Post.agree.hasAgree == 1）
+  /// 从本地持久化 + API 响应恢复点赞状态
   void _syncLikedFromData() {
     if (_data == null) return;
-    for (final p in _data!.postList) {
-      if (p.hasAgree() && p.agree.hasAgree == 1) {
-        _likedReplySet.add(p.id.toString());
+    void syncPost(Post p) {
+      final pid = p.id.toString();
+      if (_likedReplySet.contains(pid)) {
+        final saved = _likedAgreeMap[pid];
+        if (saved != null && p.hasAgree()) {
+          p.agree.agreeNum = Int64(saved);
+        }
+      } else if (p.hasAgree() && p.agree.hasAgree == 1) {
+        _likedReplySet.add(pid);
+        _likedAgreeMap[pid] = p.agree.agreeNum.toInt();
       }
     }
+    for (final p in _data!.postList) {
+      syncPost(p);
+    }
     if (_data!.hasFirstFloorPost()) {
-      final fp = _data!.firstFloorPost;
-      if (fp.hasAgree() && fp.agree.hasAgree == 1) {
-        _likedReplySet.add(fp.id.toString());
-      }
+      syncPost(_data!.firstFloorPost);
     }
   }
 
@@ -694,11 +723,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
       setState(() {
         _likedReplySet.add(pidStr);
         if (post.hasAgree()) {
-          post.agree.agreeNum = Int64(
-            score > 0 ? score : post.agree.agreeNum.toInt() + 1,
-          );
+          final newNum = post.agree.agreeNum.toInt() + 1;
+          post.agree.agreeNum = Int64(newNum);
+          _likedAgreeMap[pidStr] = newNum;
         }
       });
+      _saveLikedData();
     }
   }
 }
