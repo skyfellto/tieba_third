@@ -760,8 +760,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                           _likedThreadSet.add(tid);
                           final idx = _threads.indexWhere((x) => x.tid == tid);
                           if (idx >= 0) {
-                            _threads[idx].agreeNum =
-                                score > 0 ? "$score" : "${(int.tryParse(_threads[idx].agreeNum) ?? 0) + 1}";
+                            final cur = int.tryParse(_threads[idx].agreeNum) ?? 0;
+                            _threads[idx].agreeNum = "${cur + 1}";
                           }
                         });
                       }
@@ -863,8 +863,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                               (x) => x.tid == tid,
                             );
                             if (idx >= 0) {
-                              _goodThreads[idx].agreeNum =
-                                  score > 0 ? "$score" : "${(int.tryParse(_goodThreads[idx].agreeNum) ?? 0) + 1}";
+                              final cur = int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
+                              _goodThreads[idx].agreeNum = "${cur + 1}";
                             }
                           });
                         }

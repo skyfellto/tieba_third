@@ -312,23 +312,12 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      debugPrint("【点赞帖子响应】${response.statusCode} ${response.body}");
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        debugPrint("【点赞帖子失败】error_code=$err msg=${json["error_msg"]}");
-        return null;
-      }
-      if (json["data"] == null) {
-        debugPrint("【点赞帖子失败】data 为空");
-        return null;
-      }
-      final dataMap = json["data"] as Map<String, dynamic>?;
-      final agreeMap = dataMap?["agree"] as Map<String, dynamic>?;
-      final score = int.tryParse(agreeMap?["score"]?.toString() ?? '') ?? 0;
-      debugPrint("【点赞帖子成功】newScore=$score");
-      return score;
+      if (err != null && err != "0" && err != 0) return null;
+      if (json["data"] == null) return null;
+      return 1;
     } catch (e) {
       debugPrint("【点赞帖子异常】$e");
       return null;
@@ -1306,7 +1295,7 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      debugPrint("【点赞回复响应】${response.statusCode} ${response.body}");
+      debugPrint("【点赞回复响应】${response.statusCode} body=${response.body}");
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
@@ -1314,17 +1303,11 @@ class TiebaApi {
         debugPrint("【点赞回复失败】error_code=$err msg=${json["error_msg"]}");
         return null;
       }
-      // tiebalite: data 为空也表示失败
       if (json["data"] == null) {
-        debugPrint("【点赞回复失败】data 为空");
+        debugPrint("【点赞回复失败】data=null");
         return null;
       }
-      // 解析新点赞数 tiebalite AgreeBean.data.agree.score
-      final dataMap = json["data"] as Map<String, dynamic>?;
-      final agreeMap = dataMap?["agree"] as Map<String, dynamic>?;
-      final score = int.tryParse(agreeMap?["score"]?.toString() ?? '') ?? 0;
-      debugPrint("【点赞回复成功】newScore=$score");
-      return score;
+      return 1;
     } catch (e) {
       debugPrint("【点赞回复异常】$e");
       return null;
