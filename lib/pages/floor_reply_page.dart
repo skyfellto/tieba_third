@@ -100,7 +100,8 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     _lastScrollPosition = current;
 
     // 触底加载更多
-    if (!_hasMore || _loadingMore || _scrollController.position.outOfRange) return;
+    if (!_hasMore || _loadingMore || _scrollController.position.outOfRange)
+      return;
     if (current >= _scrollController.position.maxScrollExtent - 100) {
       _loadMore();
     }
@@ -124,13 +125,16 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
 
   /// 将 JSON 子回复项转 SubPostList protobuf
   SubPostList _subPostFromJson(Map<String, dynamic> item) {
-    final contentList = (item["content"] as List<dynamic>?)
-            ?.map((c) => PbContent(
-                  type: (c["type"] as num?)?.toInt() ?? 0,
-                  text: c["text"]?.toString() ?? '',
-                  src: c["src"]?.toString() ?? '',
-                  uid: Int64.parseInt(c["uid"]?.toString() ?? '0'),
-                ))
+    final contentList =
+        (item["content"] as List<dynamic>?)
+            ?.map(
+              (c) => PbContent(
+                type: (c["type"] as num?)?.toInt() ?? 0,
+                text: c["text"]?.toString() ?? '',
+                src: c["src"]?.toString() ?? '',
+                uid: Int64.parseInt(c["uid"]?.toString() ?? '0'),
+              ),
+            )
             .toList() ??
         [];
     final author = item["author"] as Map<String, dynamic>?;
@@ -151,8 +155,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           : null,
       agree: agree != null
           ? Agree(
-              agreeNum:
-                  Int64.parseInt(agree["agree_num"]?.toString() ?? '0'),
+              agreeNum: Int64.parseInt(agree["agree_num"]?.toString() ?? '0'),
               hasAgree:
                   int.tryParse(agree["has_agree"]?.toString() ?? '0') ?? 0,
             )
@@ -210,8 +213,10 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           .map((item) => _subPostFromJson(item as Map<String, dynamic>))
           .toList();
       final pageInfo = jsonData["page"] as Map<String, dynamic>?;
-      final currentPg = int.tryParse(pageInfo?["current_page"]?.toString() ?? '0') ?? 0;
-      final totalPg = int.tryParse(pageInfo?["total_page"]?.toString() ?? '0') ?? 0;
+      final currentPg =
+          int.tryParse(pageInfo?["current_page"]?.toString() ?? '0') ?? 0;
+      final totalPg =
+          int.tryParse(pageInfo?["total_page"]?.toString() ?? '0') ?? 0;
       final hasMore = _currentPage < totalPg;
 
       setState(() {
@@ -435,7 +440,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           PostDetailHeader(
-            title: _data!.hasThread() ? _data!.thread.title : null,
+            // title: _data!.hasThread() ? _data!.thread.title : null,
             firstPost: _data!.post,
             opAuthor: _data!.post.hasAuthor() ? _data!.post.author : null,
             showLouZhuBadge: false,
