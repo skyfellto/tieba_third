@@ -252,11 +252,9 @@ class TiebaApi {
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
-    // MiniTiebaApi 标准请求：defaultCommonParamInterceptor + agree 特定字段
     final params = [
       ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_version", "8.0.8.0"],
+      ["_client_version", "7.2.0.0"],
       ["agree_type", "2"],
       ["client_id", clientId],
       ["cuid", cuid],
@@ -312,11 +310,19 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
+      debugPrint("【点赞帖子响应】状态码=${response.statusCode} body=${response.body}");
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) return null;
-      if (json["data"] == null) return null;
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【点赞帖子失败】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      if (json["data"] == null) {
+        debugPrint("【点赞帖子失败】data=null");
+        return null;
+      }
+      debugPrint("【点赞帖子成功】返回1");
       return 1;
     } catch (e) {
       debugPrint("【点赞帖子异常】$e");
@@ -1238,8 +1244,7 @@ class TiebaApi {
 
     final params = [
       ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_version", "8.0.8.0"],
+      ["_client_version", "7.2.0.0"],
       ["agree_type", "2"],
       ["client_id", clientId],
       ["cuid", cuid],
