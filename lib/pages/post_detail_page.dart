@@ -8,6 +8,8 @@ import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
+import '../utils/browse_history_manager.dart';
+import '../models/browse_record.dart';
 import '../widgets/post_detail_header.dart';
 import '../widgets/post_reply_card.dart';
 
@@ -225,7 +227,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
           if (refresh) _error = "加载失败";
         }
       });
-      if (_data != null) _syncLikedFromData();
+      if (_data != null) {
+        _syncLikedFromData();
+        _saveBrowseRecord();
+      }
       _descAutoLoading = false;
       // 倒序且数据太少时自动触底加载
       if (_sortType == 1 &&
@@ -679,6 +684,54 @@ class _PostDetailPageState extends State<PostDetailPage> {
         ),
       ],
     );
+  }
+
+  // ========== 浏览记录 ==========
+
+  void _saveBrowseRecord() {
+    if (_data == null) return;
+    final data = _data!;
+    final title = data.hasThread() ? data.thread.title : '';
+    if (title.isEmpty) return;
+
+    // 尝试从多个来源获取作者信息
+    final usermodel.User? author;
+    if (data.hasFirstFloorPost() && data.firstFloorPost.hasAuthor()) {
+      author = data.firstFloorPost.author;
+    } else if (data.hasThread() && data.thread.hasAuthor()) {
+      author = data.thread.author;
+    } else if (data.userList.isNotEmpty) {
+      author = data.userList.first;
+    } else {
+      author = null;
+    }
+
+    final forumName = data.hasForum() && data.forum.name.isNotEmpty
+        ? data.forum.name
+        : '';
+    final threadAuthor = data.hasThread() && data.thread.hasAuthor()
+        ? data.thread.author
+        : null;
+
+    BrowseHistoryManager.saveRecord(BrowseRecord(
+      tid: widget.tid,
+      title: title,
+      authorName: author != null
+          ? (author.nameShow.isNotEmpty ? author.nameShow : author.name)
+          : (threadAuthor != null
+              ? (threadAuthor.nameShow.isNotEmpty
+                  ? threadAuthor.nameShow
+                  : threadAuthor.name)
+              : ''),
+      authorPortrait: (author?.portrait.isNotEmpty == true
+              ? author!.portrait
+              : null) ??
+          (threadAuthor?.portrait.isNotEmpty == true
+              ? threadAuthor!.portrait
+              : null),
+      forumName: forumName,
+      browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    ));
   }
 
   // ========== 回复点赞 ==========
