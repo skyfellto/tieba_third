@@ -34,6 +34,8 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tid = post?.tid ?? '';
+    // ignore: unused_local_variable
+    final theme = Theme.of(context);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -124,8 +126,8 @@ class PostCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       _abstract!,
-                      style: const TextStyle(
-                        color: Colors.black87,
+                      style: TextStyle(
+                        // color: theme.colorScheme.onSurface,
                         fontSize: 13,
                       ),
                       maxLines: 3,
@@ -225,7 +227,9 @@ class PostCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Color(0xFF3A3E5C)
+                          : Colors.grey[50],
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -242,7 +246,7 @@ class PostCard extends StatelessWidget {
                         Text(
                           _forumName,
                           style: TextStyle(
-                            color: Colors.grey[700],
+                            // color: Colors.grey[700],
                             fontSize: 12,
                           ),
                         ),

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tieba_third/constants/app_colors.dart';
 import '../generated/Agree.pb.dart';
 import '../generated/PbContent.pb.dart';
 import '../generated/PbFloor/PbFloorResponseData.pb.dart';
@@ -358,7 +357,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       appBar: AppBar(
         title: Text('${widget.floor} 楼的回复'),
         centerTitle: true,
-        backgroundColor: AppColors.moonlightGradient[1],
+        backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
         actions: [
           if (_showBackToTop)

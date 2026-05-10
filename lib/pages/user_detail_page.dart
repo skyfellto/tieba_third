@@ -39,9 +39,9 @@ class UserDetailPage extends StatelessWidget {
           // ========== 顶部信息栏 ==========
           Container(
             width: double.infinity,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: AppColors.moonlightGradient,
+                colors: AppColors.headerGradient(context),
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -57,11 +57,8 @@ class UserDetailPage extends StatelessWidget {
                 // 左侧：登出按钮
                 TextButton.icon(
                   onPressed: () => _showLogoutDialog(context),
-                  icon: const Icon(Icons.logout, color: Colors.white70, size: 20),
-                  label: const Text(
-                    "登出",
-                    style: TextStyle(color: Colors.white70, fontSize: 15),
-                  ),
+                  icon: const Icon(Icons.logout, size: 20),
+                  label: const Text("登出", style: TextStyle(fontSize: 15)),
                 ),
                 const Spacer(),
                 // 右侧：头像 + 用户名
@@ -72,8 +69,10 @@ class UserDetailPage extends StatelessWidget {
                       radius: 22,
                       backgroundColor: Colors.white,
                       backgroundImage: UserManager.portrait != null
-                          ? NetworkImage(UserManager.avatarUrl,
-                              headers: UserManager.avatarHeaders)
+                          ? NetworkImage(
+                              UserManager.avatarUrl,
+                              headers: UserManager.avatarHeaders,
+                            )
                           : null,
                     ),
                     const SizedBox(width: 10),
@@ -81,7 +80,7 @@ class UserDetailPage extends StatelessWidget {
                       UserManager.userName ?? "百度用户",
                       style: const TextStyle(
                         fontSize: 18,
-                        color: Colors.white,
+                        // color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -96,7 +95,8 @@ class UserDetailPage extends StatelessWidget {
             child: ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: 30,
-              itemBuilder: (context, index) => const PostCard(isPlaceholder: true),
+              itemBuilder: (context, index) =>
+                  const PostCard(isPlaceholder: true),
             ),
           ),
         ],

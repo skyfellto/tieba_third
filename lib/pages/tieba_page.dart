@@ -6,7 +6,6 @@ import '../models/forum_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/data_cache.dart';
 import '../utils/user_manager.dart';
-import '../constants/app_colors.dart';
 import '../widgets/followed_forum_tile.dart';
 
 class TiebaPage extends StatefulWidget {
@@ -188,21 +187,15 @@ class _TiebaPageState extends State<TiebaPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "贴吧",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.moonlightGradient[1],
+        title: const Text("贴吧",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           // 一键签到
           if (UserManager.isLogin && !_isSigningAll)
             TextButton.icon(
               onPressed: _handleSignAll,
-              icon: const Icon(Icons.task_alt, size: 20, color: Colors.white),
-              label: const Text(
-                "一键签到",
-                style: TextStyle(color: Colors.white, fontSize: 13),
-              ),
+              icon: const Icon(Icons.task_alt, size: 20),
+              label: const Text("一键签到", style: TextStyle(fontSize: 13)),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.only(right: 4),
               ),
@@ -213,10 +206,7 @@ class _TiebaPageState extends State<TiebaPage>
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
           IconButton(

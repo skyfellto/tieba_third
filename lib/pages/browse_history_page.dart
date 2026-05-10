@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../constants/app_colors.dart';
 import '../models/browse_record.dart';
 import '../utils/browse_history_manager.dart';
 
@@ -125,8 +124,8 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                 child: AppBar(
                   title: const Text('浏览记录'),
                   centerTitle: true,
-                  backgroundColor: AppColors.moonlightGradient[1],
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).primaryColor,
+                  // foregroundColor: Colors.white,
                   actions: [
                     IconButton(
                       icon: const Icon(Icons.more_horiz),
@@ -136,19 +135,16 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                 ),
               ),
               // Tab 栏（导航栏折叠后自动吸顶）
-              Container(
-                color: Colors.white,
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: AppColors.moonlightGradient[1],
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: AppColors.moonlightGradient[1],
-                  tabs: const [
-                    Tab(text: '帖子记录'),
-                    Tab(text: '经过贴吧'),
-                    Tab(text: '访问用户'),
-                  ],
-                ),
+              TabBar(
+                controller: _tabController,
+                labelColor: Theme.of(context).primaryColor,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Theme.of(context).primaryColor,
+                tabs: const [
+                  Tab(text: '帖子记录'),
+                  Tab(text: '经过贴吧'),
+                  Tab(text: '访问用户'),
+                ],
               ),
               // 内容区
               Expanded(
@@ -178,7 +174,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                 mini: true,
                 heroTag: null,
                 onPressed: _scrollToTop,
-                backgroundColor: AppColors.moonlightGradient[1],
+                backgroundColor: Theme.of(context).primaryColor,
                 child: const Icon(Icons.arrow_upward, color: Colors.white),
               ),
             ),
@@ -288,7 +284,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                     record.title,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
-                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                    style: TextStyle(fontSize: 13),
                   ),
                 ],
               ),
