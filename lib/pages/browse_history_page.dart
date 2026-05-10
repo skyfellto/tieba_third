@@ -235,11 +235,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
       padding: EdgeInsets.fromLTRB(16, isFirst ? 8 : 12, 16, 4),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Colors.black54,
-        ),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
       ),
     );
   }

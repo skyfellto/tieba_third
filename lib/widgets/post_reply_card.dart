@@ -6,6 +6,7 @@ import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../utils/post_content_parser.dart';
 import '../utils/user_manager.dart';
+import 'post_content_text.dart';
 import 'post_image_row.dart';
 
 /// 回复卡片（含楼中楼）
@@ -55,7 +56,6 @@ class PostReplyCard extends StatelessWidget {
     }
     final hasAuthor = author != null;
     final contentList = post.content;
-    final text = PostContentParser.extractText(contentList);
     final images = PostContentParser.extractImages(contentList);
     final timeStr = PostContentParser.formatTime(post.time);
     final pidStr = post.id.toString();
@@ -105,12 +105,12 @@ class PostReplyCard extends StatelessWidget {
                 ),
               ),
             const SizedBox(height: 6),
-            // 文字内容
-            if (text.isNotEmpty)
+            // 文字内容（含内联 emoji）
+            if (contentList.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text(
-                  text,
+                child: PostContentText(
+                  contents: contentList,
                   style: const TextStyle(fontSize: 14, height: 1.4),
                 ),
               ),
@@ -288,7 +288,6 @@ class PostReplyCard extends StatelessWidget {
         : '匿名用户';
 
     final replyTarget = PostContentParser.extractReplyTarget(sub.content);
-    final text = PostContentParser.extractTextNoMention(sub.content);
     final images = PostContentParser.extractImages(sub.content);
     final timeStr = PostContentParser.formatTime(sub.time);
 
@@ -299,9 +298,7 @@ class PostReplyCard extends StatelessWidget {
       TextSpan(
         text: authorName,
         style: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 12,
-          color: Colors.blue,
+          fontWeight: FontWeight.w500, fontSize: 12, color: Colors.blue,
         ),
       ),
     );
@@ -316,16 +313,10 @@ class PostReplyCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
               decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(3),
+                color: Colors.red[50], borderRadius: BorderRadius.circular(3),
               ),
-              child: const Text(
-                '楼主',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.red,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: const Text('楼主',
+                style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -336,33 +327,24 @@ class PostReplyCard extends StatelessWidget {
     // 回复目标
     if (replyTarget != null && replyTarget.isNotEmpty) {
       contentSpans.addAll([
-        const TextSpan(
-          text: ' 回复 ',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
-        ),
+        const TextSpan(text: ' 回复 ', style: TextStyle(fontSize: 12, color: Colors.grey)),
         TextSpan(
           text: replyTarget,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-            color: Colors.blueGrey,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.blueGrey),
         ),
       ]);
     }
 
-    // 冒号 + 正文
-    if (text.isNotEmpty) {
-      contentSpans.add(
-        TextSpan(
-          text: '：$text',
-          style: const TextStyle(
-            fontSize: 12,
-            // color: Colors.black87,
-            height: 1.3,
-          ),
-        ),
-      );
+    // 冒号 + 正文（含 emoji 图片）
+    final bodySpans = PostContentParser.buildContentSpans(
+      sub.content,
+      emojiSize: 14,
+      textStyle: const TextStyle(fontSize: 12, height: 1.3),
+      skipMention: true,
+    );
+    if (bodySpans.isNotEmpty) {
+      contentSpans.add(const TextSpan(text: '：'));
+      contentSpans.addAll(bodySpans);
     }
 
     return Container(

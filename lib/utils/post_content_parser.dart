@@ -1,17 +1,22 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../generated/PbContent.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
+import 'emoticon_helper.dart';
 
 /// 帖子内容解析工具类
 class PostContentParser {
   /// 纯文本类型集合（对应 tiebalite PureTextType）
-  static const textTypes = {0, 9, 27, 35, 40};
+  static const textTypes = {0, 9, 25, 27, 35, 39, 40};
 
-  /// 提取纯文本（包含 type 0/1/4）
+  /// 提取纯文本（包含 type 0/1/2/4）。type=2 为 emoji，名称在 c 字段
   static String extractText(List<PbContent> contents) {
     final buf = StringBuffer();
     for (final c in contents) {
-      if (textTypes.contains(c.type) && c.text.isNotEmpty) {
+      if (c.type == 2 && c.c.isNotEmpty) {
+        if (buf.isNotEmpty) buf.write('\n');
+        buf.write(c.c);
+      } else if (textTypes.contains(c.type) && c.text.isNotEmpty) {
         if (buf.isNotEmpty) buf.write('\n');
         buf.write(c.text);
       }
@@ -39,10 +44,15 @@ class PostContentParser {
     }
     for (int i = 0; i < contents.length; i++) {
       final c = contents[i];
-      if (replyStartIdx >= 0 && (i == replyStartIdx || i == replyStartIdx + 1))
+      if (replyStartIdx >= 0 &&
+          (i == replyStartIdx || i == replyStartIdx + 1)) {
         continue;
+      }
       if (c.uid.toInt() > 0) continue;
-      if (textTypes.contains(c.type) && c.text.isNotEmpty) {
+      if (c.type == 2 && c.c.isNotEmpty) {
+        if (buf.isNotEmpty) buf.write(' ');
+        buf.write(c.c.trim());
+      } else if (textTypes.contains(c.type) && c.text.isNotEmpty) {
         final cleanText = c.text.trim().replaceAll('\n', ' ');
         if (buf.isNotEmpty && cleanText.isNotEmpty) buf.write(' ');
         buf.write(cleanText);
@@ -53,7 +63,13 @@ class PostContentParser {
         buf.write(cleanText);
       }
     }
-    return buf.toString().trim();
+
+    String result = buf.toString().trim();
+    // 如果开头是中文或英文冒号，则移除
+    if (result.startsWith(':') || result.startsWith('：')) {
+      result = result.substring(1).trimLeft(); // 移除后再去掉可能残留的空格
+    }
+    return result;
   }
 
   /// 提取图片 URL 列表
@@ -108,5 +124,60 @@ class PostContentParser {
   /// 获取作者显示名（nameShow > name）
   static String getAuthorName(usermodel.User u) {
     return u.nameShow.isNotEmpty ? u.nameShow : u.name;
+  }
+
+  /// 将 PbContent 列表构建为 InlineSpan 列表（支持 emoji 图片内联）
+  /// [skipMention] 为 true 时跳过 "回复 xxx" 结构
+  static List<InlineSpan> buildContentSpans(
+    List<PbContent> contents, {
+    double emojiSize = 18,
+    TextStyle? textStyle,
+    bool skipMention = false,
+  }) {
+    int replyStartIdx = -1;
+    if (skipMention) {
+      for (int i = 0; i < contents.length; i++) {
+        if (contents[i].uid.toInt() > 0) {
+          replyStartIdx = i - 1;
+          break;
+        }
+      }
+    }
+
+    final spans = <InlineSpan>[];
+    for (int i = 0; i < contents.length; i++) {
+      final c = contents[i];
+      if (replyStartIdx >= 0 && (i == replyStartIdx || i == replyStartIdx + 1)) {
+        continue;
+      }
+      if (skipMention && c.uid.toInt() > 0) continue;
+
+      if (c.type == 2 && c.c.isNotEmpty) {
+        final imgPath = EmoticonHelper.getImagePath(c.c);
+        if (imgPath != null) {
+          spans.add(WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Image.asset(imgPath, width: emojiSize, height: emojiSize),
+          ));
+        } else {
+          spans.add(TextSpan(text: c.c, style: textStyle));
+        }
+      } else if (_isTextTypeForSpan(c.type) && c.text.isNotEmpty) {
+        var t = c.text.trim().replaceAll('\n', ' ');
+        // 如果第一个 span 以冒号开头，去掉（避免和手动添加的 ： 重复）
+        if (spans.isEmpty && (t.startsWith('：') || t.startsWith(':'))) {
+          t = t.substring(1).trimLeft();
+        }
+        if (t.isNotEmpty) {
+          spans.add(TextSpan(text: t, style: textStyle));
+        }
+      }
+    }
+    return spans;
+  }
+
+  static bool _isTextTypeForSpan(int type) {
+    return type == 0 || type == 1 || type == 4 || type == 9 ||
+        type == 25 || type == 27 || type == 35 || type == 39 || type == 40;
   }
 }
