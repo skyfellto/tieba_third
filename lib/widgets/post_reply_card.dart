@@ -127,8 +127,12 @@ class PostReplyCard extends StatelessWidget {
               ...subPostList
                   .take(3)
                   .map(
-                    (sub) =>
-                        _buildSubReplyItem(sub, authorMap, opAuthor: opAuthor),
+                    (sub) => _buildSubReplyItem(
+                      sub,
+                      authorMap,
+                      opAuthor: opAuthor,
+                      context: context,
+                    ),
                   ),
               if (subPostNumber > 3 || subPostList.length > 3)
                 GestureDetector(
@@ -268,6 +272,7 @@ class PostReplyCard extends StatelessWidget {
     SubPostList sub,
     Map<int, usermodel.User> authorMap, {
     usermodel.User? opAuthor,
+    required BuildContext context,
   }) {
     usermodel.User? author;
     if (sub.hasAuthor()) {
@@ -353,7 +358,7 @@ class PostReplyCard extends StatelessWidget {
           text: '：$text',
           style: const TextStyle(
             fontSize: 12,
-            color: Colors.black87,
+            // color: Colors.black87,
             height: 1.3,
           ),
         ),
@@ -365,7 +370,10 @@ class PostReplyCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        // color: Colors.grey[50],
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Color(0xFF3A3E5C)
+            : Colors.grey[50],
         borderRadius: BorderRadius.circular(6),
       ),
       child: Column(

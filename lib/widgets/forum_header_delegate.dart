@@ -48,6 +48,9 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     final name = forumInfo?.forumName ?? forumName ?? "贴吧";
     final avatarUrl = (forumInfo?.avatar.isNotEmpty == true ? forumInfo!.avatar : forumAvatar) ?? '';
+    final fgColor = Theme.of(context).brightness == Brightness.dark
+        ? Colors.white
+        : Colors.black87;
 
     final unitLeft = lerpDouble(16.0, 56.0, progress)!;
     final unitTop = lerpDouble(
@@ -62,9 +65,9 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: AppColors.moonlightGradient,
+              colors: AppColors.headerGradient(context),
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -72,7 +75,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         Positioned(
           bottom: 0, left: pad.left, right: pad.right, height: 48,
-          child: _buildTabBar(context),
+          child: _buildTabBar(context, fgColor),
         ),
         Positioned(
           left: unitLeft, top: unitTop,
@@ -93,14 +96,14 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(name, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: nameFontSize, fontWeight: FontWeight.bold, color: Colors.white),
+                    style: TextStyle(fontSize: nameFontSize, fontWeight: FontWeight.bold, color: fgColor),
                   ),
                   if (levelFade > 0)
                     Opacity(
                       opacity: levelFade,
                       child: Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: _buildLevelInfo(context),
+                        child: _buildLevelInfo(context, fgColor),
                       ),
                     ),
                 ],
@@ -111,9 +114,9 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
         Positioned(
           top: pad.top, right: pad.right,
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            IconButton(icon: const Icon(Icons.search, color: Colors.white, size: 22), onPressed: () {}, splashRadius: 20),
+            IconButton(icon: Icon(Icons.search, color: fgColor, size: 22), onPressed: () {}, splashRadius: 20),
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.white, size: 22), onSelected: (v) {},
+              icon: Icon(Icons.more_vert, color: fgColor, size: 22), onSelected: (v) {},
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'share', child: Text('分享')),
                 PopupMenuItem(value: 'report', child: Text('举报')),
@@ -123,7 +126,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         Positioned(
           top: pad.top, left: pad.left,
-          child: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: onPop, splashRadius: 20),
+          child: IconButton(icon: Icon(Icons.arrow_back, color: fgColor), onPressed: onPop, splashRadius: 20),
         ),
       ],
     );
@@ -148,7 +151,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       levelupScore != oldDelegate.levelupScore ||
       currentTab != oldDelegate.currentTab;
 
-  Widget _buildTabBar(BuildContext context) {
+  Widget _buildTabBar(BuildContext context, Color fgColor) {
     return SizedBox(
       height: 48,
       child: Material(
@@ -159,14 +162,14 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
               child: InkWell(
                 key: earliestTabKey, onTap: onTapEarliest,
                 child: Center(
-                  child: _tabLabel("最早", isActive: currentTab == 0, showDropdown: currentTab == 0),
+                  child: _tabLabel("最早", fgColor, isActive: currentTab == 0, showDropdown: currentTab == 0),
                 ),
               ),
             ),
             Expanded(
               child: InkWell(
                 onTap: onTapFeatured,
-                child: Center(child: _tabLabel("精选", isActive: currentTab == 1)),
+                child: Center(child: _tabLabel("精选", fgColor, isActive: currentTab == 1)),
               ),
             ),
           ],
@@ -175,7 +178,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  Widget _tabLabel(String text, {required bool isActive, bool showDropdown = false}) {
+  Widget _tabLabel(String text, Color fgColor, {required bool isActive, bool showDropdown = false}) {
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -187,19 +190,19 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
             style: TextStyle(
               fontSize: 15,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              color: isActive ? Colors.white : Colors.white60,
+              color: isActive ? fgColor : fgColor.withValues(alpha: 0.6),
             ),
           ),
           if (showDropdown) ...[
             const SizedBox(width: 2),
-            Icon(Icons.arrow_drop_down, size: 18, color: Colors.white.withValues(alpha: 0.7)),
+            Icon(Icons.arrow_drop_down, size: 18, color: fgColor.withValues(alpha: 0.7)),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildLevelInfo(BuildContext context) {
+  Widget _buildLevelInfo(BuildContext context, Color fgColor) {
     final expProgress = (isLike && levelupScore > 0 && curScore > 0)
         ? (curScore / levelupScore).clamp(0.0, 1.0)
         : null;
@@ -209,10 +212,10 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       children: [
         if (isLike) ...[
           Row(children: [
-            Text("Lv$userLevel", style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text("Lv$userLevel", style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(width: 8),
             if (levelName.isNotEmpty)
-              Text(levelName, style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12)),
+              Text(levelName, style: TextStyle(color: fgColor.withValues(alpha: 0.7), fontSize: 12)),
           ]),
           if (expProgress != null) ...[
             const SizedBox(height: 4),

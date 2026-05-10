@@ -358,68 +358,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
     return Scaffold(appBar: _buildAppBar(), body: _buildBody());
   }
 
-  // PreferredSizeWidget _buildAppBar() {
-  //   final forum = _data?.forum;
-  //   return AppBar(
-  //     backgroundColor: Theme.of(context).primaryColor,
-  //     foregroundColor: Colors.white,
-  //     titleSpacing: 0,
-  //     title: forum != null && forum.name.isNotEmpty
-  //         ? GestureDetector(
-  //             onTap: () {
-  //               final fid = forum.id.toInt();
-  //               if (fid > 0) {
-  //                 context.push(
-  //                   '/forum/$fid?name=${Uri.encodeComponent(forum.name)}&avatar=${Uri.encodeComponent(forum.avatar)}',
-  //                 );
-  //               }
-  //             },
-  //             child: Row(
-  //               mainAxisAlignment: MainAxisAlignment.center,
-  //               children: [
-  //                 CircleAvatar(
-  //                   radius: 14,
-  //                   backgroundColor: Colors.white24,
-  //                   backgroundImage: forum.avatar.isNotEmpty
-  //                       ? NetworkImage(
-  //                           forum.avatar,
-  //                           headers: UserManager.avatarHeaders,
-  //                         )
-  //                       : null,
-  //                 ),
-  //                 const SizedBox(width: 8),
-  //                 Text(
-  //                   forum.name,
-  //                   style: const TextStyle(fontSize: 15, color: Colors.white),
-  //                 ),
-  //                 // const SizedBox(width: 4),
-  //                 // Icon(
-  //                 //   Icons.chevron_right,
-  //                 //   size: 16,
-  //                 //   color: Colors.white.withValues(alpha: 0.6),
-  //                 // ),
-  //               ],
-  //             ),
-  //           )
-  //         : const Text(
-  //             '帖子详情',
-  //             style: TextStyle(fontSize: 15, color: Colors.white),
-  //           ),
-  //     actions: [
-  //       if (_showBackToTop)
-  //         IconButton(
-  //           icon: const Icon(Icons.arrow_upward, color: Colors.white),
-  //           onPressed: _scrollToTop,
-  //         ),
-  //     ],
-  //   );
-  // }
-
   PreferredSizeWidget _buildAppBar() {
     final forum = _data?.forum;
     return AppBar(
       backgroundColor: Theme.of(context).primaryColor,
-      foregroundColor: Colors.white,
+      // foregroundColor: Colors.white,
       titleSpacing: 0,
       // 固定左侧返回箭头的宽度，保证左侧占位永远一致
       leadingWidth: 56,
@@ -460,24 +403,21 @@ class _PostDetailPageState extends State<PostDetailPage> {
                           forum.name,
                           style: const TextStyle(
                             fontSize: 15,
-                            color: Colors.white,
+                            // color: Colors.white,
                           ),
                         ),
                       ],
                     ),
                   ),
                 )
-              : const Text(
-                  '帖子详情',
-                  style: TextStyle(fontSize: 15, color: Colors.white),
-                ),
+              : const Text('帖子详情', style: TextStyle(fontSize: 15)),
         ),
       ),
       // 核心修复：固定右侧actions的宽度，无论按钮是否显示，占位永远一致
       actions: [
         if (_showBackToTop)
           IconButton(
-            icon: const Icon(Icons.arrow_upward, color: Colors.white),
+            icon: const Icon(Icons.arrow_upward),
             onPressed: _scrollToTop,
           ),
         // 按钮隐藏时，用等宽的SizedBox占位，保证右侧宽度永远固定
@@ -713,25 +653,26 @@ class _PostDetailPageState extends State<PostDetailPage> {
         ? data.thread.author
         : null;
 
-    BrowseHistoryManager.saveRecord(BrowseRecord(
-      tid: widget.tid,
-      title: title,
-      authorName: author != null
-          ? (author.nameShow.isNotEmpty ? author.nameShow : author.name)
-          : (threadAuthor != null
-              ? (threadAuthor.nameShow.isNotEmpty
-                  ? threadAuthor.nameShow
-                  : threadAuthor.name)
-              : ''),
-      authorPortrait: (author?.portrait.isNotEmpty == true
-              ? author!.portrait
-              : null) ??
-          (threadAuthor?.portrait.isNotEmpty == true
-              ? threadAuthor!.portrait
-              : null),
-      forumName: forumName,
-      browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    ));
+    BrowseHistoryManager.saveRecord(
+      BrowseRecord(
+        tid: widget.tid,
+        title: title,
+        authorName: author != null
+            ? (author.nameShow.isNotEmpty ? author.nameShow : author.name)
+            : (threadAuthor != null
+                  ? (threadAuthor.nameShow.isNotEmpty
+                        ? threadAuthor.nameShow
+                        : threadAuthor.name)
+                  : ''),
+        authorPortrait:
+            (author?.portrait.isNotEmpty == true ? author!.portrait : null) ??
+            (threadAuthor?.portrait.isNotEmpty == true
+                ? threadAuthor!.portrait
+                : null),
+        forumName: forumName,
+        browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      ),
+    );
   }
 
   // ========== 回复点赞 ==========
@@ -751,6 +692,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         _likedAgreeMap[pid] = p.agree.agreeNum.toInt();
       }
     }
+
     for (final p in _data!.postList) {
       syncPost(p);
     }

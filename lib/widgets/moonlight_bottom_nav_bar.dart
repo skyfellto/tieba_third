@@ -33,18 +33,20 @@ class MoonlightBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: AppColors.moonlightGradient,
+          colors: AppColors.bottomNavGradient(context),
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black54,
+            color: isDark ? Colors.black54 : Colors.black12,
             blurRadius: 10,
-            offset: Offset(0, -3),
+            offset: const Offset(0, -3),
           ),
         ],
       ),
@@ -56,7 +58,7 @@ class MoonlightBottomNavBar extends StatelessWidget {
             children: List.generate(_navItems.length, (index) {
               final item = _navItems[index];
               final isSelected = currentIndex == index;
-              return _buildNavItem(item, isSelected, index);
+              return _buildNavItem(item, isSelected, index, isDark);
             }),
           ),
         ),
@@ -64,7 +66,12 @@ class MoonlightBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(Map<String, dynamic> item, bool isSelected, int index) {
+  Widget _buildNavItem(
+      Map<String, dynamic> item, bool isSelected, int index, bool isDark) {
+    final selectedColor = isDark ? Colors.white : const Color(0xFF222436);
+    final unselectedColor =
+        isDark ? Colors.white60 : const Color(0xFF8E8E93);
+
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
@@ -74,21 +81,14 @@ class MoonlightBottomNavBar extends StatelessWidget {
           Stack(
             alignment: Alignment.center,
             children: [
-              // 实心图标 (选中时显示)
-              Icon(item['icon_filled'], color: AppColors.selectedItem, size: 28)
+              Icon(item['icon_filled'], color: selectedColor, size: 28)
                   .animate(target: isSelected ? 1 : 0)
                   .fadeIn(duration: const Duration(milliseconds: 300))
                   .scale(
                     begin: const Offset(0.7, 0.7),
                     end: const Offset(1.0, 1.0),
                   ),
-
-              // 空心图标 (未选中时显示)
-              Icon(
-                    item['icon_outline'],
-                    color: AppColors.unselectedItem,
-                    size: 28,
-                  )
+              Icon(item['icon_outline'], color: unselectedColor, size: 28)
                   .animate(target: isSelected ? 0 : 1)
                   .fadeOut(duration: const Duration(milliseconds: 300))
                   .scale(
@@ -101,9 +101,7 @@ class MoonlightBottomNavBar extends StatelessWidget {
           Text(
             item['label'],
             style: TextStyle(
-              color: isSelected
-                  ? AppColors.selectedItem
-                  : AppColors.unselectedItem,
+              color: isSelected ? selectedColor : unselectedColor,
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),

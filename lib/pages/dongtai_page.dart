@@ -218,7 +218,9 @@ class _DongtaiPageState extends State<DongtaiPage>
                     post: p,
                     isLiked: _likedSet.contains(tid),
                     onForumTap: () {
-                      context.push('/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}');
+                      context.push(
+                        '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
+                      );
                     },
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),
@@ -273,8 +275,8 @@ class _DongtaiPageState extends State<DongtaiPage>
               ignoring: !_showBackToTop,
               child: FloatingActionButton(
                 mini: true,
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
+                // backgroundColor: Theme.of(context).primaryColor,
+                // foregroundColor: Colors.white,
                 onPressed: _scrollToTop,
                 child: const Icon(Icons.arrow_upward),
               ),

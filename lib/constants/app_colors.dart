@@ -1,14 +1,29 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // 底部导航栏背景渐变
+  // 底部导航栏背景渐变（随主题变化）
   static const List<Color> moonlightGradient = [
-    // Color(0xFF1A0A2E),
-    // Color(0xFF2D1B4E),
-    // Color(0xFF1E3A5F),
-    Color(0xFF222436), // 你的主色
+    Color(0xFF222436),
     Color(0xFF3A3E5C),
   ];
+  static const List<Color> lightBottomNavGradient = [
+    Color(0xFFF0F2F5),
+    Color(0xFFE8EAF0),
+  ];
+
+  static List<Color> bottomNavGradient(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? moonlightGradient
+        : lightBottomNavGradient;
+  }
+
+  // 顶部标题区渐变（随主题变化）
+  static List<Color> headerGradient(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark
+        ? moonlightGradient
+        : [const Color(0xFFE8F0FE), const Color(0xFFD4E4FC)];
+  }
 
   // 图标和文字颜色
   static const Color selectedItem = Colors.white;
