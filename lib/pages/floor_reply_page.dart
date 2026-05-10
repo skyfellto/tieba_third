@@ -362,7 +362,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         actions: [
           if (_showBackToTop)
             IconButton(
-              icon: const Icon(Icons.arrow_upward, color: Colors.white),
+              icon: const Icon(Icons.arrow_upward),
               onPressed: _scrollToTop,
             ),
           if (!_showBackToTop) const SizedBox(width: 48),

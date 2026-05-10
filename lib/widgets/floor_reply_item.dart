@@ -40,7 +40,6 @@ class FloorReplyItem extends StatelessWidget {
     }
 
     final replyTarget = PostContentParser.extractReplyTarget(subReply.content);
-    final text = PostContentParser.extractTextNoMention(subReply.content);
     final timeStr = PostContentParser.formatTime(subReply.time);
     final pidStr = subReply.id.toString();
     final isLiked = likedReplySet.contains(pidStr);
@@ -50,31 +49,25 @@ class FloorReplyItem extends StatelessWidget {
     final List<InlineSpan> contentSpans = [];
     if (replyTarget != null && replyTarget.isNotEmpty) {
       contentSpans.addAll([
-        const TextSpan(
-          text: '回复 ',
-          style: TextStyle(fontSize: 14, color: Colors.black87),
-        ),
+        const TextSpan(text: '回复 ', style: TextStyle(fontSize: 14, color: Colors.grey)),
         TextSpan(
           text: replyTarget,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 14,
-            color: Colors.blueGrey,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.blueGrey),
         ),
       ]);
     }
-    if (text.isNotEmpty) {
-      contentSpans.add(
-        TextSpan(
-          text: replyTarget != null ? '：$text' : text,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.black87,
-            height: 1.4,
-          ),
-        ),
-      );
+    // 正文（含 emoji 图片）
+    final bodySpans = PostContentParser.buildContentSpans(
+      subReply.content,
+      emojiSize: 16,
+      textStyle: const TextStyle(fontSize: 14, height: 1.4),
+      skipMention: true,
+    );
+    if (bodySpans.isNotEmpty) {
+      if (replyTarget != null && replyTarget.isNotEmpty) {
+        contentSpans.add(const TextSpan(text: '：'));
+      }
+      contentSpans.addAll(bodySpans);
     }
 
     return Container(

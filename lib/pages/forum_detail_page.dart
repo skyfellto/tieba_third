@@ -342,10 +342,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         .where((p) => p.tid.isNotEmpty)
         .map((p) {
           if (p.imageUrls.isNotEmpty && p.imageUrls.length <= 2) {
-            debugPrint(
-              "【帖子图片】tid=${p.tid} 图片数=${p.imageUrls.length} url0=${p.imageUrls.isNotEmpty ? p.imageUrls[0].substring(0, 40) : '无'}",
-            );
+            // debugPrint(
+            //   "【帖子图片】tid=${p.tid} 图片数=${p.imageUrls.length} url0=${p.imageUrls.isNotEmpty ? p.imageUrls[0].substring(0, 40) : '无'}",
+            // );
           } else if (p.imageUrls.isEmpty) {
+            // ignore: unused_local_variable
             int mediaCount = 0;
             for (final t in data.threadList) {
               if (t.id.toInt().toString() == p.tid) {
@@ -353,7 +354,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                 break;
               }
             }
-            debugPrint("【帖子图片】tid=${p.tid} 无图片 media数=$mediaCount");
+            // debugPrint("【帖子图片】tid=${p.tid} 无图片 media数=$mediaCount");
           }
           return p;
         })
@@ -771,7 +772,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                     );
                   }
                   final tid = p.tid;
-                  debugPrint("【点赞帖子】tid=$tid firstPostId=${p.firstPostId}");
+                  // debugPrint("【点赞帖子】tid=$tid firstPostId=${p.firstPostId}");
                   return PostCard(
                     post: p,
                     showForum: false,
@@ -793,7 +794,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                           _likedThreadSet.add(tid);
                           final idx = _threads.indexWhere((x) => x.tid == tid);
                           if (idx >= 0) {
-                            final cur = int.tryParse(_threads[idx].agreeNum) ?? 0;
+                            final cur =
+                                int.tryParse(_threads[idx].agreeNum) ?? 0;
                             _threads[idx].agreeNum = "${cur + 1}";
                             _likedAgreeMap[tid] = cur + 1;
                           }
@@ -898,7 +900,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                               (x) => x.tid == tid,
                             );
                             if (idx >= 0) {
-                              final cur = int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
+                              final cur =
+                                  int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
                               _goodThreads[idx].agreeNum = "${cur + 1}";
                               _likedAgreeMap[tid] = cur + 1;
                             }

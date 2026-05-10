@@ -4,6 +4,7 @@ import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../utils/post_content_parser.dart';
 import '../utils/user_manager.dart';
+import 'post_content_text.dart';
 import 'post_image_row.dart';
 
 /// 帖子详情头部（楼主信息、标题、内容、图片）
@@ -49,7 +50,6 @@ class PostDetailHeader extends StatelessWidget {
 
     final contentList = firstPost!.content;
     final images = PostContentParser.extractImages(contentList);
-    final text = PostContentParser.extractText(contentList);
     final timeStr = PostContentParser.formatTime(firstPost!.time);
 
     return Column(
@@ -76,12 +76,12 @@ class PostDetailHeader extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
             ),
           ),
-        // 文字内容
-        if (text.isNotEmpty)
+        // 文字内容（含内联 emoji）
+        if (contentList.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              text,
+            child: PostContentText(
+              contents: contentList,
               style: const TextStyle(fontSize: 15, height: 1.5),
             ),
           ),

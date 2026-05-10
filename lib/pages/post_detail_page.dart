@@ -568,7 +568,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           child: Text(
             '回复 $totalReplies',
             style: TextStyle(
-              color: Theme.of(context).primaryColor,
+              // color: Theme.of(context).primaryColor,
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
