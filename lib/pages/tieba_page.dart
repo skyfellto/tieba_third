@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forum_item.dart';
+import '../models/forum_browse_record.dart';
 import '../network/tieba_api.dart';
 import '../utils/data_cache.dart';
 import '../utils/user_manager.dart';
+import '../utils/forum_browse_history_manager.dart';
 import '../widgets/followed_forum_tile.dart';
 
 class TiebaPage extends StatefulWidget {
@@ -22,8 +24,11 @@ class _TiebaPageState extends State<TiebaPage>
   List<ForumItem> _forums = [];
   bool _isSigningAll = false;
   final Set<String> _signingForums = {};
+  List<ForumBrowseRecord> _forumRecords = [];
+  bool _forumCollapsed = false;
 
   static const String _storageKey = 'tieba_grid_layout';
+  static const String _forumCollapsedKey = 'tieba_forum_collapsed';
 
   @override
   bool get wantKeepAlive => true;
@@ -34,6 +39,8 @@ class _TiebaPageState extends State<TiebaPage>
     _initLayoutConfig();
     _loadForumsFromCache();
     _loadForums();
+    _loadForumRecords();
+    _initForumCollapsed();
   }
 
   Future<void> _loadForumsFromCache() async {
@@ -47,6 +54,24 @@ class _TiebaPageState extends State<TiebaPage>
       _isDoubleColumn = prefs.getBool(_storageKey) ?? true;
       _configLoaded = true;
     });
+  }
+
+  Future<void> _loadForumRecords() async {
+    final records = await ForumBrowseHistoryManager.loadRecords();
+    if (mounted) setState(() => _forumRecords = records);
+  }
+
+  Future<void> _initForumCollapsed() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(
+      () => _forumCollapsed = prefs.getBool(_forumCollapsedKey) ?? false,
+    );
+  }
+
+  Future<void> _toggleForumCollapsed() async {
+    setState(() => _forumCollapsed = !_forumCollapsed);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_forumCollapsedKey, _forumCollapsed);
   }
 
   Future<void> _saveLayoutConfig() async {
@@ -180,6 +205,7 @@ class _TiebaPageState extends State<TiebaPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    _loadForumRecords();
 
     if (!_configLoaded) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -187,10 +213,8 @@ class _TiebaPageState extends State<TiebaPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("贴吧",
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("贴吧", style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          // 一键签到
           if (UserManager.isLogin && !_isSigningAll)
             TextButton.icon(
               onPressed: _handleSignAll,
@@ -218,7 +242,105 @@ class _TiebaPageState extends State<TiebaPage>
           ),
         ],
       ),
-      body: _forums.isEmpty ? ListView() : _buildForumList(),
+      body: _forums.isEmpty
+          ? ListView()
+          : RefreshIndicator(
+              onRefresh: _refreshAll,
+              child: _buildForumList(),
+            ),
+    );
+  }
+
+  Future<void> _refreshAll() async {
+    await Future.wait([_loadForums(), _loadForumRecords()]);
+  }
+
+  Widget _buildPassedForums() {
+    if (_forumRecords.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  "经过贴吧",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  _forumCollapsed
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: Theme.of(context).iconTheme.color,
+                  size: 22,
+                ),
+                onPressed: _toggleForumCollapsed,
+                splashRadius: 16,
+                constraints: const BoxConstraints(),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+        ),
+        if (!_forumCollapsed)
+          SizedBox(
+            height: 32,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: _forumRecords.length,
+              itemBuilder: (context, index) {
+                final r = _forumRecords[index];
+                return GestureDetector(
+                  onTap: () => context.push(
+                    '/forum/${r.fid}?name=${Uri.encodeComponent(r.forumName)}&avatar=${Uri.encodeComponent(r.forumAvatar ?? '')}',
+                  ),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.fromLTRB(4, 6, 12, 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF3A3E5C)
+                          : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              r.forumAvatar != null && r.forumAvatar!.isNotEmpty
+                              ? NetworkImage(r.forumAvatar!)
+                              : null,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          r.forumName,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 
@@ -226,33 +348,30 @@ class _TiebaPageState extends State<TiebaPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildPassedForums(),
         const Padding(
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(
             "关注的吧",
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
         ),
-        // TODO: "经过的吧" 横向列表（后续接入 GetHistoryForum）
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadForums,
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 16),
-              itemCount: _forums.length,
-              itemBuilder: (context, index) => FollowedForumTile(
-                forum: _forums[index],
-                isSigning: _signingForums.contains(_forums[index].forumId),
-                onTap: () {
-                  final f = _forums[index];
-                  context.push(
-                    '/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}',
-                  );
-                },
-                onSign: () {
-                  _handleSignForum(_forums[index]);
-                },
-              ),
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: 16),
+            itemCount: _forums.length,
+            itemBuilder: (context, index) => FollowedForumTile(
+              forum: _forums[index],
+              isSigning: _signingForums.contains(_forums[index].forumId),
+              onTap: () {
+                final f = _forums[index];
+                context.push(
+                  '/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}',
+                );
+              },
+              onSign: () {
+                _handleSignForum(_forums[index]);
+              },
             ),
           ),
         ),

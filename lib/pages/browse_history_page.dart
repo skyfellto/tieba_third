@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/browse_record.dart';
+import '../models/forum_browse_record.dart';
 import '../utils/browse_history_manager.dart';
+import '../utils/forum_browse_history_manager.dart';
+import '../router/app_router.dart' show routeObserver;
 
 /// 浏览记录页面
 class BrowseHistoryPage extends StatefulWidget {
@@ -12,7 +15,7 @@ class BrowseHistoryPage extends StatefulWidget {
 }
 
 class _BrowseHistoryPageState extends State<BrowseHistoryPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   late TabController _tabController;
   final ScrollController _scrollController = ScrollController();
   bool _showBackToTop = false;
@@ -23,6 +26,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
   static const int _pageSize = 20;
 
   List<BrowseRecord> _allRecords = [];
+  List<ForumBrowseRecord> _forumRecords = [];
   int _loadedCount = 0;
 
   @override
@@ -34,7 +38,19 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    _loadHistory();
+  }
+
+  @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _tabController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -85,6 +101,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
 
   Future<void> _loadHistory() async {
     _allRecords = await BrowseHistoryManager.loadRecords();
+    _forumRecords = await ForumBrowseHistoryManager.loadRecords();
     if (mounted) {
       setState(() => _loadMore());
     }
@@ -109,32 +126,31 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
 
   @override
   Widget build(BuildContext context) {
-    final topPad = MediaQuery.of(context).padding.top;
-    final headerFullHeight = kToolbarHeight + topPad;
-
     return Scaffold(
       body: Stack(
         children: [
           Column(
             children: [
-              // 顶部导航栏（可折叠）
-              AnimatedContainer(
+              // 顶部导航栏（AnimatedSize 实现平滑折叠/展开）
+              AnimatedSize(
                 duration: const Duration(milliseconds: 250),
-                height: _headerCollapsed ? 0 : headerFullHeight,
-                child: AppBar(
-                  title: const Text('浏览记录'),
-                  centerTitle: true,
-                  backgroundColor: Theme.of(context).primaryColor,
-                  // foregroundColor: Colors.white,
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.more_horiz),
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter,
+                child: _headerCollapsed
+                    ? const SizedBox.shrink()
+                    : AppBar(
+                        title: const Text('浏览记录'),
+                        centerTitle: true,
+                        backgroundColor: Theme.of(context).primaryColor,
+                        actions: [
+                          IconButton(
+                            icon: const Icon(Icons.more_horiz),
+                            onPressed: () {},
+                          ),
+                        ],
+                      ),
               ),
-              // Tab 栏（导航栏折叠后自动吸顶）
+              // Tab 栏
               TabBar(
                 controller: _tabController,
                 labelColor: Theme.of(context).primaryColor,
@@ -152,9 +168,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                   controller: _tabController,
                   children: [
                     _buildPostRecordsTab(),
-                    const Center(
-                      child: Text('暂无数据', style: TextStyle(color: Colors.grey)),
-                    ),
+                    _buildForumRecordsTab(),
                     const Center(
                       child: Text('暂无数据', style: TextStyle(color: Colors.grey)),
                     ),
@@ -226,6 +240,83 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
             ),
           ),
         );
+      },
+    );
+  }
+
+  Widget _buildForumRecordsTab() {
+    if (_forumRecords.isEmpty) {
+      return const Center(
+        child: Text('暂无数据', style: TextStyle(color: Colors.grey)),
+      );
+    }
+    // 按 dateLabel 分组
+    final grouped = <String, List<ForumBrowseRecord>>{};
+    for (final r in _forumRecords) {
+      grouped.putIfAbsent(r.dateLabel, () => []).add(r);
+    }
+    final entries = grouped.entries.toList();
+    final totalItems = entries.fold<int>(
+      0,
+      (sum, e) => sum + 1 + e.value.length,
+    );
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.zero,
+      itemCount: totalItems,
+      itemBuilder: (context, index) {
+        int cursor = 0;
+        for (int g = 0; g < entries.length; g++) {
+          final entry = entries[g];
+          final groupSize = 1 + entry.value.length;
+          if (index < cursor + groupSize) {
+            if (index == cursor) {
+              return Padding(
+                padding: EdgeInsets.fromLTRB(16, g == 0 ? 0 : 12, 16, 4),
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    // color: Colors.black54
+                  ),
+                ),
+              );
+            }
+            final r = entry.value[index - cursor - 1];
+            return ListTile(
+              leading: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey[300],
+                backgroundImage:
+                    r.forumAvatar != null && r.forumAvatar!.isNotEmpty
+                    ? NetworkImage(r.forumAvatar!)
+                    : null,
+              ),
+              title: Text(
+                r.forumName,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              trailing: Text(
+                r.formattedTime,
+                style: TextStyle(
+                  color: Theme.of(context).iconTheme.color,
+                  fontSize: 12,
+                ),
+              ),
+              onTap: () => context.push(
+                '/forum/${r.fid}?name=${Uri.encodeComponent(r.forumName)}&avatar=${Uri.encodeComponent(r.forumAvatar ?? '')}',
+              ),
+            );
+          }
+          cursor += groupSize;
+        }
+        return const SizedBox.shrink();
       },
     );
   }

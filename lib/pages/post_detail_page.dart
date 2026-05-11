@@ -10,6 +10,8 @@ import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/browse_history_manager.dart';
 import '../models/browse_record.dart';
+import '../models/forum_browse_record.dart';
+import '../utils/forum_browse_history_manager.dart';
 import '../widgets/post_detail_header.dart';
 import '../widgets/post_reply_card.dart';
 
@@ -230,6 +232,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
       if (_data != null) {
         _syncLikedFromData();
         _saveBrowseRecord();
+        _saveForumBrowseRecord();
       }
       _descAutoLoading = false;
       // 倒序且数据太少时自动触底加载
@@ -673,6 +676,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
         browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       ),
     );
+  }
+
+  void _saveForumBrowseRecord() {
+    if (_data == null) return;
+    final data = _data!;
+    if (!data.hasForum()) return;
+    ForumBrowseHistoryManager.saveRecord(ForumBrowseRecord(
+      fid: data.forum.id.toString(),
+      forumName: data.forum.name,
+      forumAvatar: data.forum.avatar.isNotEmpty ? data.forum.avatar : null,
+      browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    ));
   }
 
   // ========== 回复点赞 ==========

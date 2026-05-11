@@ -9,6 +9,8 @@ import '../generated/User.pb.dart' as usermodel;
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
+import '../models/forum_browse_record.dart';
+import '../utils/forum_browse_history_manager.dart';
 import '../widgets/post_card.dart';
 import '../widgets/forum_header_delegate.dart';
 import '../widgets/image_viewer.dart';
@@ -311,7 +313,21 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _error = "加载失败";
         }
       });
+      _saveForumBrowseRecord();
     }
+  }
+
+  void _saveForumBrowseRecord() {
+    final name = _forumInfo?.forumName ?? widget.forumName;
+    if (name == null || name.isEmpty) return;
+    ForumBrowseHistoryManager.saveRecord(ForumBrowseRecord(
+      fid: widget.fid,
+      forumName: name,
+      forumAvatar: _forumInfo?.avatar.isNotEmpty == true
+          ? _forumInfo!.avatar
+          : widget.forumAvatar,
+      browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+    ));
   }
 
   /// 从 FrsPage 响应中提取帖子列表，补充作者信息

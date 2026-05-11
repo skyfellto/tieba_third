@@ -11,10 +11,14 @@ import '../pages/browse_history_page.dart';
 import '../utils/auth_notifier.dart';
 import '../widgets/moonlight_bottom_nav_bar.dart';
 
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
 // 全局路由配置
 final GoRouter appRouter = GoRouter(
   refreshListenable: AuthNotifier(),
   initialLocation: '/dongtai', // 初始页：动态
+  observers: [routeObserver],
   routes: [
     // 使用 StatefulShellRoute 实现底部导航
     StatefulShellRoute.indexedStack(

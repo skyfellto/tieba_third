@@ -6,6 +6,8 @@ import 'package:tieba_third/utils/emoticon_helper.dart';
 import 'package:tieba_third/constants/app_theme.dart';
 
 final ThemeNotifier themeNotifier = ThemeNotifier();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
