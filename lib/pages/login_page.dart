@@ -150,17 +150,20 @@ class _LoginPageState extends State<LoginPage> {
     if (result != null) {
       // 提取用户名、头像、tbs、userId
       final userName = result['user']?['name'] ?? '百度用户';
+      final nameShow = result['user']?['name_show']?.toString();
       final portrait = result['user']?['portrait'] as String?;
       // ignore: invalid_null_aware_operator
       final tbs =
           // ignore: invalid_null_aware_operator
           (result['anti'] as Map?)?.cast<String, dynamic>()?['tbs'] as String?;
       final userId = result['user']?['id']?.toString();
+      final displayName = nameShow ?? userName;
       // 保存登录信息
       await UserManager.login(
         bduss: bduss,
         stoken: stoken,
         userName: userName,
+        nameShow: nameShow,
         portrait: portrait,
         tbs: tbs,
         userId: userId,
@@ -171,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("登录成功！欢迎你，$userName")));
+        ).showSnackBar(SnackBar(content: Text("登录成功！欢迎你，$displayName")));
         Navigator.pop(context);
       }
     } else {

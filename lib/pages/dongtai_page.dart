@@ -6,6 +6,7 @@ import '../network/tieba_api.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/data_cache.dart';
 import '../utils/user_manager.dart';
+import '../utils/user_browse_history_manager.dart';
 import '../widgets/image_viewer.dart';
 import '../widgets/post_card.dart';
 
@@ -258,6 +259,10 @@ class _DongtaiPageState extends State<DongtaiPage>
                           title: "来自百度贴吧的帖子",
                         ),
                       );
+                    },
+                    onUserTap: (uid) {
+                      UserBrowseHistoryManager.saveRecord(uid: uid, userName: p.authorName, portrait: p.authorPortrait);
+                      context.push('/user/$uid');
                     },
                   );
                 },

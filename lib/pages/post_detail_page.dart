@@ -8,6 +8,7 @@ import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
+import '../utils/user_browse_history_manager.dart';
 import '../utils/browse_history_manager.dart';
 import '../models/browse_record.dart';
 import '../models/forum_browse_record.dart';
@@ -494,6 +495,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
             title: data.thread.title,
             firstPost: firstPost,
             opAuthor: opAuthor,
+            onUserTap: (uid, _) {
+              final name = opAuthor?.nameShow.isNotEmpty == true ? opAuthor!.nameShow : (opAuthor?.name ?? '');
+              UserBrowseHistoryManager.saveRecord(uid: uid, userName: name, portrait: opAuthor?.portrait);
+              context.push('/user/$uid');
+            },
           ),
         const Divider(height: 24),
         // 回复 Tab 栏（含楼主的总数）
@@ -516,6 +522,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
               context.push(
                 '/floor-replies/${widget.tid}?pid=$postId&floor=$floor&replyCount=$replyCount',
               );
+            },
+            onUserTap: (uid) {
+              final aid = p.authorId.toInt();
+              final author = authorMap[aid];
+              final name = author?.nameShow.isNotEmpty == true ? author!.nameShow : (author?.name ?? '');
+              UserBrowseHistoryManager.saveRecord(uid: uid, userName: name, portrait: author?.portrait);
+              context.push('/user/$uid');
             },
           ),
         ),

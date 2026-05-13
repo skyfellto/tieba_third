@@ -12,6 +12,7 @@ class FloorReplyItem extends StatelessWidget {
   final Set<String> likedReplySet;
   final String tid;
   final void Function(SubPostList subReply)? onLikeTap;
+  final void Function(String uid)? onUserTap;
 
   const FloorReplyItem({
     super.key,
@@ -20,6 +21,7 @@ class FloorReplyItem extends StatelessWidget {
     required this.likedReplySet,
     required this.tid,
     this.onLikeTap,
+    this.onUserTap,
   });
 
   Color _levelColor(usermodel.User author) {
@@ -114,7 +116,9 @@ class FloorReplyItem extends StatelessWidget {
   }
 
   Widget _buildAuthorRow(usermodel.User author) {
-    return Row(
+    return GestureDetector(
+      onTap: onUserTap != null ? () => onUserTap!(author.id.toInt().toString()) : null,
+      child: Row(
       children: [
         CircleAvatar(
           radius: 14,
@@ -149,6 +153,7 @@ class FloorReplyItem extends StatelessWidget {
           ),
         ],
       ],
+      ),
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
+import '../models/user_profile_data.dart';
 import '../generated/CommonRequest.pb.dart';
 import '../generated/Personalized.pb.dart';
 import '../generated/ForumGuide/ForumGuideRequest.pb.dart';
@@ -31,12 +32,20 @@ import '../generated/GetLevelInfo/GetLevelInfoResponse.pb.dart';
 import '../generated/GetLevelInfo/GetLevelInfoResponseData.pb.dart';
 import '../generated/FrsPage/FrsPage.pb.dart';
 import '../generated/FrsPage/AdParam.pb.dart' as frs_ad_param;
+import '../generated/Profile/ProfileRequest.pb.dart';
+import '../generated/Profile/ProfileRequestData.pb.dart';
+import '../generated/Profile/ProfileResponse.pb.dart';
+import '../generated/UserPost/UserPostRequest.pb.dart';
+import '../generated/UserPost/UserPostRequestData.pb.dart';
+import '../generated/UserPost/UserPostResponse.pb.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
   static const String _loginUrl = "$_baseHost/c/s/login";
   static const String _clientVersion = "12.64.1.1";
   static const String _v12ClientVersion = "12.52.1.0";
+
+  static String _s(dynamic v) => v?.toString() ?? '';
 
   static String _computeSign(List<List<String>> data) {
     data.sort((a, b) => a[0].compareTo(b[0]));
@@ -242,6 +251,7 @@ class TiebaApi {
     required String userId,
     required String threadId,
     String postId = "0",
+    bool allowAlreadyLiked = false,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei =
@@ -315,6 +325,10 @@ class TiebaApi {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
+        if (err == "3280001" && allowAlreadyLiked) {
+          debugPrint("【点赞帖子】已经点过赞了");
+          return -1;
+        }
         debugPrint("【点赞帖子失败】error_code=$err msg=${json["error_msg"]}");
         return null;
       }
@@ -1316,6 +1330,640 @@ class TiebaApi {
     } catch (e) {
       debugPrint("【点赞回复异常】$e");
       return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取用户资料（JSON API）
+  /// 参考 tiebalite MiniTiebaApi.profile
+  static Future<UserProfileData?> fetchUserProfile({
+    required String bduss,
+    required String stoken,
+    required String uid,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "11.10.8.6"],
+      ["_os_version", "12"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["from", "tieba"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["uid", uid],
+      ["need_post_count", "1"],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    debugPrint("【用户资料请求】uid=$uid");
+
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse("http://c.tieba.baidu.com/c/u/user/profile"),
+      )
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 11.10.8.6",
+          "Cookie": "ka=open",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint("【用户资料响应】状态码=${response.statusCode}");
+
+      if (response.statusCode != 200) return null;
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【用户资料失败】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      if (json["user"] == null) {
+        debugPrint("【用户资料失败】user 为空");
+        return null;
+      }
+
+      return UserProfileData.fromJson(json);
+    } catch (e) {
+      debugPrint("【用户资料异常】$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取用户帖子列表（JSON API）
+  /// 参考 tiebalite MiniTiebaApi.userPost
+  static Future<List<PostItem>> fetchUserPosts({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int page = 1,
+    int isThread = 1,
+    int rn = 20,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "11.10.8.6"],
+      ["_os_version", "12"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["from", "tieba"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["uid", uid],
+      ["page", "$page"],
+      ["is_thread", "$isThread"],
+      ["rn", "$rn"],
+      ["need_content", "1"],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    debugPrint("【用户帖子请求】uid=$uid page=$page");
+
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse("http://c.tieba.baidu.com/c/u/feed/userpost"),
+      )
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 11.10.8.6",
+          "Cookie": "ka=open",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint("【用户帖子响应】状态码=${response.statusCode}");
+
+      if (response.statusCode != 200) return [];
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【用户帖子失败】error_code=$err msg=${json["error_msg"]}");
+        return [];
+      }
+
+      final postList = json["post_list"];
+      if (postList is! List) return [];
+
+      final posts = <PostItem>[];
+      for (final item in postList) {
+        final itemMap = item as Map<String, dynamic>;
+        // 提取正文文本
+        String? absText;
+        final content = itemMap["content"];
+        if (content is List && content.isNotEmpty) {
+          final firstContent = content[0] as Map<String, dynamic>?;
+          if (firstContent != null) {
+            final postContent = firstContent["post_content"];
+            if (postContent is List && postContent.isNotEmpty) {
+              final texts = postContent
+                  .map((c) => (c as Map<String, dynamic>)["text"]?.toString() ?? "")
+                  .where((t) => t.isNotEmpty)
+                  .toList();
+              if (texts.isNotEmpty) absText = texts.join(" ");
+            }
+          }
+        }
+
+        // 尝试从 abstracts 提取
+        if ((absText == null || absText.isEmpty) && itemMap["abstracts"] is List) {
+          final abstractsList = itemMap["abstracts"] as List;
+          if (abstractsList.isNotEmpty) {
+            absText = abstractsList
+                .map((a) => (a as Map<String, dynamic>)["text"]?.toString() ?? "")
+                .where((t) => t.isNotEmpty)
+                .join(" ");
+          }
+        }
+
+        final tid = _s(itemMap["thread_id"]);
+        if (tid.isEmpty) continue;
+
+        final isThreadVal = _s(itemMap["is_thread"]);
+        String? lastTime;
+        try {
+          final ct = int.tryParse(_s(itemMap["create_time"]));
+          if (ct != null && ct > 0) {
+            final dt = DateTime.fromMillisecondsSinceEpoch(ct * 1000);
+            final now = DateTime.now();
+            if (now.year == dt.year) {
+              if (now.day == dt.day && now.month == dt.month) {
+                final diff = now.difference(dt);
+                if (diff.inMinutes < 1) {
+                  lastTime = null;
+                } else if (diff.inMinutes <= 40) {
+                  lastTime = "${diff.inMinutes} 分钟前";
+                } else {
+                  lastTime = "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+                }
+              } else {
+                lastTime = "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+              }
+            } else {
+              lastTime = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+            }
+          }
+        } catch (_) {}
+
+        posts.add(PostItem(
+          tid: tid,
+          title: _s(itemMap["title"]),
+          authorId: _s(itemMap["user_id"]),
+          authorName: _s(itemMap["name_show"]),
+          authorPortrait: itemMap["user_portrait"]?.toString(),
+          forumId: _s(itemMap["forum_id"]),
+          forumName: _s(itemMap["forum_name"]),
+          replyNum: _s(itemMap["reply_num"]),
+          agreeNum: _s(itemMap["agree_num"]),
+          abstractText: absText,
+          lastTime: lastTime,
+          isAd: false,
+          isTop: isThreadVal == "1" && int.tryParse(_s(itemMap["is_top"])) == 1,
+        ));
+      }
+      return posts;
+    } catch (e) {
+      debugPrint("【用户帖子异常】$e");
+      return [];
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取用户资料（Protobuf API）
+  /// POST /c/u/user/profile?cmd=303012&format=protobuf
+  /// 参考 tiebalite OfficialProtobufTiebaApi.profileFlow
+  /// 返回 (用户资料, 关注的吧列表)
+  static Future<(UserProfileData?, List<ForumItem>)> fetchUserProfilePb({
+    required String bduss,
+    required String stoken,
+    required String uid,
+  }) async {
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: "Android",
+      brand: "Android",
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+    );
+
+    final reqData = ProfileRequestData(
+      common: common,
+      uid: Int64.parseInt(uid),
+      needPostCount: 1,
+      friendUid: Int64.ZERO,
+      isGuest: 0,
+    );
+    final request = ProfileRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse(
+      "$_baseHost/c/u/user/profile?cmd=303012&format=protobuf",
+    );
+    debugPrint("【用户资料Pb】请求：$uri uid=$uid");
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "tieba/$_v12ClientVersion",
+          "Cookie": "ka=open; CUID=${common.cuid}; TBBRAND=Android",
+          "Charset": "UTF-8",
+          "Client-Type": "2",
+          "client_user_token": uid,
+          "Cuid": common.cuid,
+          "Cuid-Galaxy2": common.cuid,
+          "Cuid-Gid": "",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【用户资料Pb】状态码=${response.statusCode}");
+      debugPrint("【用户资料Pb】body长度=${response.bodyBytes.length}");
+
+      if (response.statusCode != 200) return (null, <ForumItem>[]);
+
+      final pb = ProfileResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        debugPrint("【用户资料Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return (null, <ForumItem>[]);
+      }
+      if (!pb.hasData() || !pb.data.hasUser()) {
+        debugPrint("【用户资料Pb】data 或 user 为空");
+        return (null, <ForumItem>[]);
+      }
+
+      final user = pb.data.user;
+      debugPrint("【用户资料Pb】uid=${user.id} name=${user.name} nameShow=${user.nameShow} "
+          "tbAge=${user.tbAge} concernNum=${user.concernNum} fansNum=${user.fansNum} "
+          "totalAgreeNum=${user.totalAgreeNum} intro长度=${user.intro.length}");
+
+      final forums = pb.data.concernedForumList
+          .where((f) => f.forumName.isNotEmpty)
+          .map((f) => ForumItem(
+                forumId: f.forumId.toInt().toString(),
+                forumName: f.forumName,
+                avatar: f.avatar,
+                levelId: 0,
+                isSign: false,
+              ))
+          .toList();
+      debugPrint("【用户资料Pb】concernedForumList=${forums.length}个");
+
+      return (UserProfileData.fromUserProto(user), forums);
+    } catch (e) {
+      debugPrint("【用户资料Pb异常】$e");
+      return (null, <ForumItem>[]);
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取用户帖子列表（Protobuf API）
+  /// POST /c/u/feed/userpost?cmd=303002&format=protobuf
+  /// 参考 tiebalite OfficialProtobufTiebaApi.userPostFlow
+  static Future<List<PostItem>> fetchUserPostsPb({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int page = 1,
+    int rn = 20,
+    int isThread = 1,
+    Map<String, String>? forumAvatarMap,
+  }) async {
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: "Android",
+      brand: "Android",
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+      qType: 2,
+    );
+
+    final reqData = UserPostRequestData(
+      common: common,
+      uid: Int64.parseInt(uid),
+      pn: page,
+      rn: rn,
+      isThread: isThread,
+      needContent: 1,
+    );
+    final request = UserPostRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse(
+      "$_baseHost/c/u/feed/userpost?cmd=303002&format=protobuf",
+    );
+    debugPrint("【用户帖子Pb】请求：$uri uid=$uid page=$page");
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "bdtb for Android 12.64.1.0",
+          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【用户帖子Pb】状态码=${response.statusCode}");
+      if (response.statusCode != 200) return [];
+
+      final pb = UserPostResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        debugPrint("【用户帖子Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return [];
+      }
+      if (!pb.hasData()) return [];
+
+      final posts = pb.data.postList.map((info) {
+        debugPrint("【用户帖子Pb】帖子 tid=${info.threadId} agreeNum=${info.agreeNum}");
+        // 提取正文文本
+        String? absText;
+        for (final pic in info.content) {
+          for (final a in pic.postContent) {
+            if (a.type == 0 && a.text.isNotEmpty) {
+              absText = (absText == null) ? a.text : "$absText ${a.text}";
+            }
+          }
+          if (absText != null && absText.length > 150) {
+            absText = absText.substring(0, 150);
+            break;
+          }
+        }
+
+        // 提取图片
+        final images = <String>[];
+        for (final m in info.media) {
+          if (m.bigPic.isNotEmpty) {
+            images.add(m.bigPic);
+          } else if (m.srcPic.isNotEmpty) {
+            images.add(m.srcPic);
+          }
+          if (images.length >= 3) break;
+        }
+
+        // 格式化时间
+        String? lastTime;
+        final ct = info.createTime;
+        if (ct > 0) {
+          final dt = DateTime.fromMillisecondsSinceEpoch(ct * 1000);
+          final now = DateTime.now();
+          if (now.year == dt.year) {
+            if (now.day == dt.day && now.month == dt.month) {
+              final diff = now.difference(dt);
+              if (diff.inMinutes < 1) {
+                lastTime = null;
+              } else if (diff.inMinutes <= 40) {
+                lastTime = "${diff.inMinutes} 分钟前";
+              } else {
+                lastTime = "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+              }
+            } else {
+              lastTime = "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+            }
+          } else {
+            lastTime = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+          }
+        }
+
+        return PostItem(
+          tid: info.threadId.toInt().toString(),
+          title: info.title,
+          authorId: info.userId.toInt().toString(),
+          authorName: info.nameShow.isNotEmpty ? info.nameShow : info.userName,
+          authorPortrait: info.userPortrait.isNotEmpty ? info.userPortrait : null,
+          forumId: info.forumId.toInt().toString(),
+          forumName: info.forumName,
+          forumAvatar: forumAvatarMap?[info.forumId.toInt().toString()],
+          replyNum: info.replyNum.toString(),
+          agreeNum: info.agreeNum.toString(),
+          abstractText: absText,
+          lastTime: lastTime,
+          imageUrls: images,
+          isAd: false,
+          isTop: false,
+          isLiked: false,
+          firstPostId: info.postId.toInt().toString(),
+        );
+      }).toList();
+
+      debugPrint("【用户帖子Pb】解析到 ${posts.length} 条帖子");
+      return posts;
+    } catch (e) {
+      debugPrint("【用户帖子Pb异常】$e");
+      return [];
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取用户关注的吧列表（JSON API）
+  /// POST /c/f/forum/like
+  /// 参考 tiebalite OfficialTiebaApi.userLikeForumFlow
+  static Future<List<ForumItem>> fetchUserLikeForums({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    String? friendUid,
+    int pageNo = 1,
+    int pageSize = 50,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final cuid = "cuid_$phoneImei";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "11.10.8.6"],
+      ["_os_version", "12"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["from", "tieba"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["uid", uid],
+      ["friend_uid", friendUid ?? uid],
+      ["is_guest", friendUid != null ? "1" : "0"],
+      ["page_no", "$pageNo"],
+      ["page_size", "$pageSize"],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    debugPrint("【用户关注吧】请求 uid=$uid friendUid=$friendUid page=$pageNo");
+
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse("$_baseHost/c/f/forum/like"),
+      )
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 12.41.7.1",
+          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+          "Cuid": cuid,
+          "Cuid-Galaxy2": cuid,
+          "Cuid-Gid": "",
+          "Client-Type": "2",
+          "Charset": "UTF-8",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint("【用户关注吧】状态码=${response.statusCode}");
+      debugPrint("【用户关注吧】响应=${response.body.length > 500 ? response.body.substring(0, 500) : response.body}");
+
+      if (response.statusCode != 200) return [];
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【用户关注吧失败】error_code=$err msg=${json["error_msg"]}");
+        return [];
+      }
+
+      // 响应结构：{"forum_list": {"non-gconforum": [...]}}
+      final forumListWrapper = json["forum_list"];
+      if (forumListWrapper is! Map) {
+        debugPrint("【用户关注吧】forum_list 不是对象");
+        return [];
+      }
+      final items = forumListWrapper["non-gconforum"];
+      if (items is! List) {
+        debugPrint("【用户关注吧】non-gconforum 为空或不是列表");
+        return [];
+      }
+
+      final forums = items.map((f) {
+        final fMap = f as Map<String, dynamic>;
+        return ForumItem(
+          forumId: _s(fMap["id"]),
+          forumName: _s(fMap["name"]),
+          avatar: _s(fMap["avatar"]),
+          levelId: int.tryParse(_s(fMap["level_id"])) ?? 0,
+          isSign: false,
+        );
+      }).toList();
+
+      debugPrint("【用户关注吧】解析到 ${forums.length} 个贴吧");
+      return forums;
+    } catch (e) {
+      debugPrint("【用户关注吧异常】$e");
+      return [];
     } finally {
       client.close();
     }

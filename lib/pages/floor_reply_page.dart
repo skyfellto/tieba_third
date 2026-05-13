@@ -8,7 +8,9 @@ import '../generated/PbFloor/PbFloorResponseData.pb.dart';
 import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../network/tieba_api.dart';
+import 'package:go_router/go_router.dart';
 import '../utils/user_manager.dart';
+import '../utils/user_browse_history_manager.dart';
 import '../widgets/post_detail_header.dart';
 import '../widgets/floor_reply_item.dart';
 
@@ -415,6 +417,14 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
               likedReplySet: _likedReplySet,
               tid: widget.tid,
               onLikeTap: _handleLikeReply,
+              onUserTap: (uid) {
+                final sr = _data!.subpostList[index - 1];
+                final aid = sr.authorId.toInt();
+                final author = sr.hasAuthor() ? sr.author : _authorMap[aid];
+                final name = author?.nameShow.isNotEmpty == true ? author!.nameShow : (author?.name ?? '');
+                UserBrowseHistoryManager.saveRecord(uid: uid, userName: name, portrait: author?.portrait);
+                context.push('/user/$uid');
+              },
             ),
           );
         }

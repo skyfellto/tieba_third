@@ -14,6 +14,7 @@ class PostDetailHeader extends StatelessWidget {
   final usermodel.User? opAuthor;
   final bool showLouZhuBadge;
   final bool showIpLocation;
+  final void Function(String uid, usermodel.User author)? onUserTap;
 
   const PostDetailHeader({
     super.key,
@@ -22,6 +23,7 @@ class PostDetailHeader extends StatelessWidget {
     this.opAuthor,
     this.showLouZhuBadge = true,
     this.showIpLocation = true,
+    this.onUserTap,
   });
 
   Color levelColor(usermodel.User author) {
@@ -96,7 +98,9 @@ class PostDetailHeader extends StatelessWidget {
   }
 
   Widget _buildAuthorInfo(usermodel.User author, String timeStr) {
-    return Row(
+    return GestureDetector(
+      onTap: onUserTap != null ? () => onUserTap!(author.id.toInt().toString(), author) : null,
+      child: Row(
       children: [
         CircleAvatar(
           radius: 18,
@@ -182,6 +186,7 @@ class PostDetailHeader extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 }

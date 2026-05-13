@@ -5,6 +5,7 @@ class UserManager {
   static String? bduss;
   static String? stoken;
   static String? userName;
+  static String? nameShow;
   static String? portrait;
   static String? tbs;
   static String? userId;
@@ -12,6 +13,7 @@ class UserManager {
   static const _keyBDUSS = 'bduss';
   static const _keySTOKEN = 'stoken';
   static const _keyUserName = 'user_name';
+  static const _keyNameShow = 'name_show';
   static const _keyPortrait = 'portrait';
   static const _keyTbs = 'tbs';
   static const _keyUserId = 'user_id';
@@ -28,6 +30,7 @@ class UserManager {
     bduss = sp.getString(_keyBDUSS);
     stoken = sp.getString(_keySTOKEN);
     userName = sp.getString(_keyUserName);
+    nameShow = sp.getString(_keyNameShow);
     portrait = sp.getString(_keyPortrait);
     tbs = sp.getString(_keyTbs);
     userId = sp.getString(_keyUserId);
@@ -38,6 +41,7 @@ class UserManager {
     required String bduss,
     required String stoken,
     String? userName,
+    String? nameShow,
     String? portrait,
     String? tbs,
     String? userId,
@@ -46,12 +50,14 @@ class UserManager {
     await sp.setString(_keyBDUSS, bduss);
     await sp.setString(_keySTOKEN, stoken);
     if (userName != null) await sp.setString(_keyUserName, userName);
+    if (nameShow != null) await sp.setString(_keyNameShow, nameShow);
     if (portrait != null) await sp.setString(_keyPortrait, portrait);
     if (tbs != null) await sp.setString(_keyTbs, tbs);
     if (userId != null) await sp.setString(_keyUserId, userId);
     UserManager.bduss = bduss;
     UserManager.stoken = stoken;
     UserManager.userName = userName;
+    UserManager.nameShow = nameShow;
     UserManager.portrait = portrait;
     UserManager.tbs = tbs;
     UserManager.userId = userId;

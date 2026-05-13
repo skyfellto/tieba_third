@@ -90,6 +90,12 @@ final GoRouter appRouter = GoRouter(
         replyCount: int.parse(state.uri.queryParameters['replyCount'] ?? '0'),
       ),
     ),
+    // 用户详情页（带uid，供其他页面跳转）
+    GoRoute(
+      path: '/user/:uid',
+      builder: (context, state) =>
+          UserDetailPage(uid: state.pathParameters['uid']!),
+    ),
     // 浏览记录页（独立路由）
     GoRoute(
       path: '/wode/browse-history',

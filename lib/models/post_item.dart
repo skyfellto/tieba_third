@@ -6,6 +6,7 @@ String _s(dynamic v) => v?.toString() ?? '';
 class PostItem {
   final String tid;
   final String title;
+  String authorId;
   String authorName;
   String? authorPortrait;
   final String forumId;
@@ -28,6 +29,7 @@ class PostItem {
     required this.tid,
     required this.title,
     required this.authorName,
+    this.authorId = '',
     this.authorPortrait,
     this.forumId = '',
     required this.forumName,
@@ -63,13 +65,16 @@ class PostItem {
       }
     } catch (_) {}
 
+    String authorId = '';
     String authorName = '';
     String? portrait;
     try {
       final a = t.author;
+      authorId = a.id.toInt().toString();
       authorName = _s(a.nameShow.isNotEmpty ? a.nameShow : a.name);
       portrait = a.portrait.isNotEmpty ? a.portrait : null;
     } catch (_) {}
+    if (authorId.isEmpty) authorId = t.authorId.toInt().toString();
 
     // 贴吧头像
     String? forumAvatar;
@@ -106,6 +111,7 @@ class PostItem {
       tid: t.threadId.toInt() > 0 ? _s(t.threadId) : _s(t.id),
       title: _s(t.title),
       authorName: authorName,
+      authorId: authorId,
       authorPortrait: portrait,
       forumId: t.forumId.toInt() > 0 ? _s(t.forumId) : '',
       forumName: _s(t.forumName),

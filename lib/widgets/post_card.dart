@@ -12,6 +12,7 @@ class PostCard extends StatelessWidget {
   final void Function(String tid)? onBodyTap;
   final void Function(String tid)? onLikeTap;
   final void Function(String tid)? onShareTap;
+  final void Function(String uid)? onUserTap;
   final bool isLiked;
   final bool showForum;
   final String? badge;
@@ -28,6 +29,7 @@ class PostCard extends StatelessWidget {
     this.onBodyTap,
     this.onLikeTap,
     this.onShareTap,
+    this.onUserTap,
     this.isLiked = false,
   });
 
@@ -46,25 +48,34 @@ class PostCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ========== 标题行 ==========
+            // ========== 标题行（头像 + 用户名可点击）==========
             Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: _authorAvatar,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _author,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+                GestureDetector(
+                  onTap: onUserTap != null && post?.authorId.isNotEmpty == true
+                      ? () => onUserTap!(post!.authorId)
+                      : null,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: _authorAvatar,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _author,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const Spacer(),
                 Text(
                   _time,
                   style: TextStyle(color: Colors.grey[400], fontSize: 12),

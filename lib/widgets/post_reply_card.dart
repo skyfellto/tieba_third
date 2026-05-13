@@ -20,6 +20,7 @@ class PostReplyCard extends StatelessWidget {
   final void Function(List<String> images, int index)? onImageTap;
   final void Function(String postId, int floor, int replyCount)?
   onShowAllReplies;
+  final void Function(String uid)? onUserTap;
 
   const PostReplyCard({
     super.key,
@@ -31,6 +32,7 @@ class PostReplyCard extends StatelessWidget {
     this.onLikeTap,
     this.onImageTap,
     this.onShowAllReplies,
+    this.onUserTap,
   });
 
   Color levelColor(usermodel.User author) {
@@ -165,7 +167,9 @@ class PostReplyCard extends StatelessWidget {
     usermodel.User? opAuthor,
     int aid,
   ) {
-    return Row(
+    return GestureDetector(
+      onTap: onUserTap != null ? () => onUserTap!(author.id.toInt().toString()) : null,
+      child: Row(
       children: [
         CircleAvatar(
           radius: 14,
@@ -215,6 +219,7 @@ class PostReplyCard extends StatelessWidget {
           ),
         ],
       ],
+      ),
     );
   }
 

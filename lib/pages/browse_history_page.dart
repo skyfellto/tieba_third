@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/browse_record.dart';
 import '../models/forum_browse_record.dart';
+import '../models/user_browse_record.dart';
 import '../utils/browse_history_manager.dart';
 import '../utils/forum_browse_history_manager.dart';
+import '../utils/user_browse_history_manager.dart';
+import '../utils/user_manager.dart';
 import '../router/app_router.dart' show routeObserver;
 
 /// 浏览记录页面
@@ -27,6 +30,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
 
   List<BrowseRecord> _allRecords = [];
   List<ForumBrowseRecord> _forumRecords = [];
+  List<UserBrowseRecord> _userRecords = [];
   int _loadedCount = 0;
 
   @override
@@ -102,6 +106,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
   Future<void> _loadHistory() async {
     _allRecords = await BrowseHistoryManager.loadRecords();
     _forumRecords = await ForumBrowseHistoryManager.loadRecords();
+    _userRecords = await UserBrowseHistoryManager.loadRecords();
     if (mounted) {
       setState(() => _loadMore());
     }
@@ -153,7 +158,12 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
               // Tab 栏
               TabBar(
                 controller: _tabController,
-                labelColor: Theme.of(context).primaryColor,
+                // labelColor: Theme.of(context).primaryColor,
+                labelColor: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
+                labelStyle: TextStyle(fontWeight: FontWeight.w800),
+                unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal),
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: Theme.of(context).primaryColor,
                 tabs: const [
@@ -169,9 +179,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                   children: [
                     _buildPostRecordsTab(),
                     _buildForumRecordsTab(),
-                    const Center(
-                      child: Text('暂无数据', style: TextStyle(color: Colors.grey)),
-                    ),
+                    _buildUserRecordsTab(),
                   ],
                 ),
               ),
@@ -188,8 +196,11 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
                 mini: true,
                 heroTag: null,
                 onPressed: _scrollToTop,
-                backgroundColor: Theme.of(context).primaryColor,
-                child: const Icon(Icons.arrow_upward, color: Colors.white),
+                // backgroundColor: Theme.of(context).primaryColor,
+                child: const Icon(
+                  Icons.arrow_upward,
+                  //  color: Colors.white
+                ),
               ),
             ),
           ),
@@ -312,6 +323,85 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
               onTap: () => context.push(
                 '/forum/${r.fid}?name=${Uri.encodeComponent(r.forumName)}&avatar=${Uri.encodeComponent(r.forumAvatar ?? '')}',
               ),
+            );
+          }
+          cursor += groupSize;
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildUserRecordsTab() {
+    if (_userRecords.isEmpty) {
+      return const Center(
+        child: Text('暂无数据', style: TextStyle(color: Colors.grey)),
+      );
+    }
+    // 按 dateLabel 分组
+    final grouped = <String, List<UserBrowseRecord>>{};
+    for (final r in _userRecords) {
+      grouped.putIfAbsent(r.dateLabel, () => []).add(r);
+    }
+    final entries = grouped.entries.toList();
+    final totalItems = entries.fold<int>(
+      0,
+      (sum, e) => sum + 1 + e.value.length,
+    );
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.zero,
+      itemCount: totalItems,
+      itemBuilder: (context, index) {
+        int cursor = 0;
+        for (int g = 0; g < entries.length; g++) {
+          final entry = entries[g];
+          final groupSize = 1 + entry.value.length;
+          if (index < cursor + groupSize) {
+            if (index == cursor) {
+              return Padding(
+                padding: EdgeInsets.fromLTRB(16, g == 0 ? 0 : 12, 16, 4),
+                child: Text(
+                  entry.key,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            }
+            final r = entry.value[index - cursor - 1];
+            final defaultAvatar = r.portrait != null && r.portrait!.isNotEmpty
+                ? 'http://tb.himg.baidu.com/sys/portrait/item/${r.portrait}'
+                : null;
+            return ListTile(
+              leading: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey[300],
+                backgroundImage: defaultAvatar != null
+                    ? NetworkImage(
+                        defaultAvatar,
+                        headers: UserManager.avatarHeaders,
+                      )
+                    : null,
+              ),
+              title: Text(
+                r.nameShow ?? r.userName,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              trailing: Text(
+                r.formattedTime,
+                style: TextStyle(
+                  color: Theme.of(context).iconTheme.color,
+                  fontSize: 12,
+                ),
+              ),
+              onTap: () => context.push('/user/${r.uid}'),
             );
           }
           cursor += groupSize;

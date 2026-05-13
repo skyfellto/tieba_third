@@ -84,7 +84,7 @@ class _WodePageState extends State<WodePage> {
                         ),
                         const SizedBox(width: 15),
                         Text(
-                          isLogin ? (UserManager.userName ?? "百度用户") : "登录",
+                          isLogin ? (UserManager.nameShow ?? UserManager.userName ?? "百度用户") : "登录",
                           style: const TextStyle(
                             fontSize: 22,
                             // color: Colors.white,

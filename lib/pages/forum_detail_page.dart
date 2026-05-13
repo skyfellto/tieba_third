@@ -9,6 +9,7 @@ import '../generated/User.pb.dart' as usermodel;
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
+import '../utils/user_browse_history_manager.dart';
 import '../models/forum_browse_record.dart';
 import '../utils/forum_browse_history_manager.dart';
 import '../widgets/post_card.dart';
@@ -825,6 +826,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                         title: "来自百度贴吧的帖子",
                       ),
                     ),
+                    onUserTap: (uid) {
+                      UserBrowseHistoryManager.saveRecord(uid: uid, userName: p.authorName, portrait: p.authorPortrait);
+                      context.push('/user/$uid');
+                    },
                   );
                 }, childCount: _threads.length + (_loadingMoreThreads ? 1 : 0)),
               ),
@@ -931,6 +936,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                           title: "来自百度贴吧的帖子",
                         ),
                       ),
+                      onUserTap: (uid) {
+                        UserBrowseHistoryManager.saveRecord(uid: uid, userName: p.authorName, portrait: p.authorPortrait);
+                        context.push('/user/$uid');
+                      },
                     );
                   },
                   childCount:
