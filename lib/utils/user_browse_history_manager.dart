@@ -35,6 +35,13 @@ class UserBrowseHistoryManager {
     await prefs.setString(_key, _encode(records));
   }
 
+  static Future<void> deleteRecords(Set<String> uids) async {
+    final prefs = await SharedPreferences.getInstance();
+    final records = await _load(prefs);
+    records.removeWhere((r) => uids.contains(r.uid));
+    await prefs.setString(_key, _encode(records));
+  }
+
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);

@@ -29,6 +29,21 @@ class ForumBrowseHistoryManager {
     );
   }
 
+  static Future<void> deleteRecords(Set<String> fids) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_storageKey);
+    if (raw == null || raw.isEmpty) return;
+    final list = jsonDecode(raw) as List<dynamic>;
+    final records = list
+        .map((e) => ForumBrowseRecord.fromJson(e as Map<String, dynamic>))
+        .toList();
+    records.removeWhere((r) => fids.contains(r.fid));
+    await prefs.setString(
+      _storageKey,
+      jsonEncode(records.map((r) => r.toJson()).toList()),
+    );
+  }
+
   static Future<List<ForumBrowseRecord>> loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_storageKey);

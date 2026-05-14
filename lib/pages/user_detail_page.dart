@@ -27,6 +27,7 @@ class _UserDetailPageState extends State<UserDetailPage>
   late TabController _tabController;
 
   UserProfileData? _profile;
+  bool _loadingProfile = false;
 
   // 帖子列表
   List<PostItem> _posts = [];
@@ -59,6 +60,7 @@ class _UserDetailPageState extends State<UserDetailPage>
         portrait: UserManager.portrait,
       );
     }
+    _loadingProfile = true;
     _loadProfile();
     _loadPosts(refresh: true);
     _loadForums();
@@ -75,6 +77,10 @@ class _UserDetailPageState extends State<UserDetailPage>
   Future<void> _loadProfile() async {
     if (!UserManager.isLogin || !mounted) return;
     final uid = _targetUid;
+    // 查看其他用户时，进入骨架屏加载状态
+    if (widget.uid != null && _profile == null) {
+      setState(() => _loadingProfile = true);
+    }
     if (uid.isEmpty) return;
     final (profile, _) = await TiebaApi.fetchUserProfilePb(
       bduss: UserManager.bduss!,
@@ -101,7 +107,12 @@ class _UserDetailPageState extends State<UserDetailPage>
           portrait: profile.portrait,
         );
       }
-      setState(() => _profile = profile);
+      setState(() {
+        _profile = profile;
+        _loadingProfile = false;
+      });
+    } else if (mounted) {
+      setState(() => _loadingProfile = false);
     }
   }
 
@@ -272,6 +283,7 @@ class _UserDetailPageState extends State<UserDetailPage>
                   tabBar: _buildTabBar(context: context),
                   onPop: () => context.pop(),
                   profile: _profile,
+                  isSkeleton: _loadingProfile && _profile == null,
                 ),
               ),
             ),

@@ -35,6 +35,22 @@ class BrowseHistoryManager {
     );
   }
 
+  /// 批量删除
+  static Future<void> deleteRecords(Set<String> tids) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_storageKey);
+    if (raw == null || raw.isEmpty) return;
+    final list = jsonDecode(raw) as List<dynamic>;
+    final records = list
+        .map((e) => BrowseRecord.fromJson(e as Map<String, dynamic>))
+        .toList();
+    records.removeWhere((r) => tids.contains(r.tid));
+    await prefs.setString(
+      _storageKey,
+      jsonEncode(records.map((r) => r.toJson()).toList()),
+    );
+  }
+
   /// 加载所有浏览记录（按时间倒序）
   static Future<List<BrowseRecord>> loadRecords() async {
     final prefs = await SharedPreferences.getInstance();
