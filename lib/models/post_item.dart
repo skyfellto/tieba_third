@@ -70,7 +70,8 @@ class PostItem {
     String? portrait;
     try {
       final a = t.author;
-      authorId = a.id.toInt().toString();
+      final aid = a.id.toInt();
+      if (aid > 0) authorId = aid.toString();
       authorName = _s(a.nameShow.isNotEmpty ? a.nameShow : a.name);
       portrait = a.portrait.isNotEmpty ? a.portrait : null;
     } catch (_) {}

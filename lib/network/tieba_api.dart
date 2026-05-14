@@ -1827,7 +1827,7 @@ class TiebaApi {
         return PostItem(
           tid: info.threadId.toInt().toString(),
           title: info.title,
-          authorId: info.userId.toInt().toString(),
+          authorId: info.userId.toInt() > 0 ? info.userId.toInt().toString() : '',
           authorName: info.nameShow.isNotEmpty ? info.nameShow : info.userName,
           authorPortrait: info.userPortrait.isNotEmpty ? info.userPortrait : null,
           forumId: info.forumId.toInt().toString(),

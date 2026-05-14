@@ -67,10 +67,16 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     // 骨架屏颜色
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final skeletonColor = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF0F0F0);
+    final skeletonColor = isDark
+        ? const Color(0xFF2A2A2A)
+        : const Color(0xFFF0F0F0);
     final divColor = isDark ? const Color(0xFF3A3A3A) : const Color(0xFFE0E0E0);
 
-    Widget skeletonRect({double? width, double? height, double borderRadius = 4}) {
+    Widget skeletonRect({
+      double? width,
+      double? height,
+      double borderRadius = 4,
+    }) {
       return Container(
         width: width,
         height: height,
@@ -116,7 +122,10 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
                 mainName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: nameFontSize, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: nameFontSize,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
         ClipRect(
           child: Align(
@@ -131,7 +140,10 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
                   const SizedBox(height: 2),
                   isSkeleton
                       ? skeletonRect(width: 100, height: 16)
-                      : Text(secondaryName, style: const TextStyle(fontSize: 16)),
+                      : Text(
+                          secondaryName,
+                          style: const TextStyle(fontSize: 16),
+                        ),
                   const SizedBox(height: 6),
                   statsRow,
                 ],
@@ -151,7 +163,8 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
             : CircleAvatar(
                 radius: avatarRadius,
                 backgroundColor: Colors.white24,
-                backgroundImage: isLogin && portrait != null && portrait.isNotEmpty
+                backgroundImage:
+                    isLogin && portrait != null && portrait.isNotEmpty
                     ? NetworkImage(
                         'http://tb.himg.baidu.com/sys/portrait/item/$portrait',
                         headers: UserManager.avatarHeaders,
@@ -172,7 +185,9 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
         : Padding(
             padding: const EdgeInsets.only(top: 18),
             child: Text(
-              profile?.intro?.isNotEmpty == true ? profile!.intro! : "这个人很懒，什么都没有写",
+              profile?.intro?.isNotEmpty == true
+                  ? profile!.intro!
+                  : "这个人很懒，什么都没有写",
               style: const TextStyle(fontSize: 16),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -196,10 +211,12 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
             padding: const EdgeInsets.only(top: 12),
             child: Row(
               children: [
-                if (profile != null) _tagChip(profile!.sexLabel, context: context),
+                if (profile != null)
+                  _tagChip(profile!.sexLabel, context: context),
                 if (profile != null) const SizedBox(width: 6),
                 _tagChip("ID: $userId", context: context),
-                if (profile?.ipAddress != null && profile!.ipAddress!.isNotEmpty) ...[
+                if (profile?.ipAddress != null &&
+                    profile!.ipAddress!.isNotEmpty) ...[
                   const SizedBox(width: 6),
                   _tagChip(profile!.ipAddress!, context: context),
                 ],
@@ -277,7 +294,10 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(number, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        Text(
+          number,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 2),
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
@@ -305,7 +325,7 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => topPadding + kToolbarHeight + 320;
+  double get maxExtent => topPadding + kToolbarHeight + 270;
 
   @override
   double get minExtent => topPadding + kToolbarHeight + 48;

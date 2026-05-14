@@ -310,10 +310,13 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
         mainAxisSize: MainAxisSize.min,
         children: [
           AppBar(
+            leadingWidth: _allCurrentSelected ? 80 : 55,
             leading: TextButton(
               onPressed: _toggleSelectAll,
               child: Text(
                 _allCurrentSelected ? '取消全选' : '全选',
+                maxLines: 1, // 强制只显示一行
+                softWrap: false, // 禁止自动换行
                 style: TextStyle(
                   color: theme.brightness == Brightness.dark
                       ? Colors.white
@@ -345,7 +348,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
               ),
             ],
           ),
-          tabBar,
+          Container(color: Theme.of(context).primaryColor, child: tabBar),
         ],
       );
     }
@@ -636,7 +639,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
           if (index < cursor + groupSize) {
             if (index == cursor) {
               return Padding(
-                padding: EdgeInsets.fromLTRB(16, g == 0 ? 0 : 12, 16, 4),
+                padding: EdgeInsets.fromLTRB(16, g == 0 ? 8 : 12, 16, 4),
                 child: Text(
                   entry.key,
                   style: const TextStyle(
@@ -746,7 +749,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
           if (index < cursor + groupSize) {
             if (index == cursor) {
               return Padding(
-                padding: EdgeInsets.fromLTRB(16, g == 0 ? 0 : 12, 16, 4),
+                padding: EdgeInsets.fromLTRB(16, g == 0 ? 8 : 12, 16, 4),
                 child: Text(
                   entry.key,
                   style: const TextStyle(

@@ -471,11 +471,6 @@ class _UserDetailPageState extends State<UserDetailPage>
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey[400],
-                  size: 20,
-                ),
                 onTap: () => context.push(
                   '/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}',
                 ),
