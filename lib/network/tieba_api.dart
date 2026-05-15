@@ -1968,4 +1968,312 @@ class TiebaApi {
       client.close();
     }
   }
+
+  /// 收藏帖子 — 参考 tiebalite OfficialTiebaApi.addStoreFlow
+  static Future<bool> addStore({
+    required String bduss,
+    required String stoken,
+    required String threadId,
+    required String userId,
+    required String tbs,
+    required String postId,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei = "000000000000000";
+    final cuid = "54DB841692F4284B7BF761C002103801|VY6ZEIVXY";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final today = DateTime.now();
+    final eventDay = "${today.year}${today.month}${today.day}";
+    final stNum = Random().nextInt(750) + 100;
+    final stTime = stNum.toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum).round().toString();
+    final hasStParams = stNum > 120;
+    // data: [{"pid":"真实postId","status":1,"tid":"threadId"}] — 匹配抓包
+    final data = jsonEncode([{"pid": postId, "status": 1, "tid": threadId}]);
+
+    final params = [
+      ["BDUSS", bduss],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "12.41.7.1"],
+      ["_os_version", "12"],
+      ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
+      ["baiduid", cuid],
+      ["brand", "Android"],
+      ["c3_aid", "${Random().nextInt(900000000) + 100000000}"],
+      ["cmode", "1"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["data", data],
+      ["event_day", eventDay],
+      ["extra", ""],
+      ["first_install_time", "1700000000000"],
+      ["framework_ver", "3340042"],
+      ["from", "tieba"],
+      ["is_teenager", "0"],
+      ["last_update_time", "1700000000000"],
+      ["mac", "02:00:00:00:00:00"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["sample_id", ""],
+      ["sdk_ver", "2.34.0"],
+      if (hasStParams) ["stErrorNums", "1"],
+      if (hasStParams) ["stMethod", "1"],
+      if (hasStParams) ["stMode", "1"],
+      if (hasStParams) ["stTimesNum", "1"],
+      if (hasStParams) ["stTime", stTime],
+      if (hasStParams) ["stSize", stSize],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["stoken", stoken],
+      ["swan_game_ver", "1038000"],
+      ["tbs", tbs],
+      ["timestamp", timestamp],
+      ["user_id", userId],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    debugPrint("【收藏addStore】请求体=$bodyStr");
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', Uri.parse("$_baseHost/c/c/post/addstore"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 12.41.7.1",
+          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+          "client_user_token": userId,
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "cuid_gid": "",
+          "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+          "_client_type": "2",
+          "Charset": "UTF-8",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(await client.send(request));
+      debugPrint("【收藏addStore】状态码=${response.statusCode} body=${response.body}");
+      if (response.statusCode != 200) return false;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      debugPrint("【收藏addStore】error_code=$err msg=${json["error_msg"]}");
+      return err == null || err == "0" || err == 0;
+    } catch (e) {
+      debugPrint("【收藏addStore异常】$e");
+      return false;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 取消收藏帖子 — 参考 tiebalite OfficialTiebaApi.removeStoreFlow
+  static Future<bool> removeStore({
+    required String bduss,
+    required String stoken,
+    required String threadId,
+    required String userId,
+    required String tbs,
+    String forumId = 'null',
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei = "000000000000000";
+    final cuid = "54DB841692F4284B7BF761C002103801|VY6ZEIVXY";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final today = DateTime.now();
+    final eventDay = "${today.year}${today.month}${today.day}";
+    final stNum = Random().nextInt(750) + 100;
+    final stTime = stNum.toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum).round().toString();
+    final hasStParams = stNum > 120;
+
+    final params = [
+      ["BDUSS", bduss],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "12.41.7.1"],
+      ["_os_version", "12"],
+      ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
+      ["baiduid", cuid],
+      ["brand", "Android"],
+      ["c3_aid", "${Random().nextInt(900000000) + 100000000}"],
+      ["cmode", "1"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["event_day", eventDay],
+      ["extra", ""],
+      ["fid", forumId],
+      ["first_install_time", "1700000000000"],
+      ["framework_ver", "3340042"],
+      ["from", "tieba"],
+      ["is_teenager", "0"],
+      ["last_update_time", "1700000000000"],
+      ["mac", "02:00:00:00:00:00"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["_phone_imei", phoneImei],
+      ["sample_id", ""],
+      ["sdk_ver", "2.34.0"],
+      if (hasStParams) ["stErrorNums", "1"],
+      if (hasStParams) ["stMethod", "1"],
+      if (hasStParams) ["stMode", "1"],
+      if (hasStParams) ["stTimesNum", "1"],
+      if (hasStParams) ["stTime", stTime],
+      if (hasStParams) ["stSize", stSize],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["stoken", stoken],
+      ["swan_game_ver", "1038000"],
+      ["tbs", tbs],
+      ["tid", threadId],
+      ["timestamp", timestamp],
+      ["user_id", userId],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    debugPrint("【收藏removeStore】请求体=$bodyStr");
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', Uri.parse("$_baseHost/c/c/post/rmstore"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 12.41.7.1",
+          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+          "client_user_token": userId,
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "cuid_gid": "",
+          "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+          "_client_type": "2",
+          "Charset": "UTF-8",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(await client.send(request));
+      debugPrint("【收藏removeStore】状态码=${response.statusCode} body=${response.body}");
+      if (response.statusCode != 200) return false;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      debugPrint("【收藏removeStore】error_code=$err msg=${json["error_msg"]}");
+      return err == null || err == "0" || err == 0;
+    } catch (e) {
+      debugPrint("【收藏removeStore异常】$e");
+      return false;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取收藏列表 — 参考 tiebalite 抓包
+  static Future<List<Map<String, dynamic>>> fetchThreadStore({
+    required String bduss,
+    required String stoken,
+    int rn = 20,
+    int offset = 0,
+    String userId = '',
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final phoneImei = "000000000000000";
+    final cuid = "54DB841692F4284B7BF761C002103801|VY6ZEIVXY";
+    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final today = DateTime.now();
+    final eventDay = "${today.year}${today.month}${today.day}";
+    final stNum = Random().nextInt(750) + 100;
+    final stTime = stNum.toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum).round().toString();
+    final hasStParams = stNum > 120;
+
+    final params = [
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", clientId],
+      ["_client_type", "2"],
+      ["_client_version", "11.10.8.6"],
+      ["_os_version", "12"],
+      ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
+      ["baiduid", cuid],
+      ["brand", "Android"],
+      ["c3_aid", "${Random().nextInt(900000000) + 100000000}"],
+      ["cmode", "1"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["event_day", eventDay],
+      ["extra", ""],
+      ["first_install_time", "1700000000000"],
+      ["framework_ver", "3340042"],
+      ["from", "tieba"],
+      ["is_teenager", "0"],
+      ["last_update_time", "1700000000000"],
+      ["mac", "02:00:00:00:00:00"],
+      ["model", "Android"],
+      ["net_type", "1"],
+      ["offset", "$offset"],
+      ["_phone_imei", phoneImei],
+      ["rn", "$rn"],
+      ["sample_id", ""],
+      ["sdk_ver", "2.34.0"],
+      if (hasStParams) ["stErrorNums", "1"],
+      if (hasStParams) ["stMethod", "1"],
+      if (hasStParams) ["stMode", "1"],
+      if (hasStParams) ["stTimesNum", "1"],
+      if (hasStParams) ["stTime", stTime],
+      if (hasStParams) ["stSize", stSize],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["stoken", stoken],
+      ["swan_game_ver", "1038000"],
+      ["timestamp", timestamp],
+      ["user_id", userId],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    debugPrint("【收藏threadStore】请求体=$bodyStr");
+
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', Uri.parse("http://c.tieba.baidu.com/c/f/post/threadstore"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "bdtb for Android 11.10.8.6",
+          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+          "client_user_token": userId,
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "cuid_gid": "",
+          "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+          "_client_type": "2",
+          "Charset": "UTF-8",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
+
+      final response = await http.Response.fromStream(await client.send(request));
+      debugPrint("【收藏threadStore】状态码=${response.statusCode}");
+      if (response.statusCode != 200) return [];
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) return [];
+      final list = json["store_thread"];
+      if (list is! List) return [];
+      return list.cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint("【收藏列表异常】$e");
+      return [];
+    } finally {
+      client.close();
+    }
+  }
 }

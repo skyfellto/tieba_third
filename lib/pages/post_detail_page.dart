@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../generated/PbPage/PbPageResponseData.pb.dart';
 import '../generated/Post.pb.dart';
@@ -33,6 +34,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
   bool _showBackToTop = false;
   double _lastScrollPosition = 0;
   bool _isAnimatingToTop = false;
+
+  bool _isBottomBarVisible = true;
+  // 帖子级点赞
+  bool _isThreadLiked = false;
+  int _threadAgreeNum = 0;
+  // 收藏
+  bool _isCollected = false;
+  // int _threadStoreCount = 0;
 
   bool _seeLz = false;
   int _sortType = 0; // 0=正序, 1=倒序
@@ -102,6 +111,16 @@ class _PostDetailPageState extends State<PostDetailPage> {
       _atBottom = false;
     }
 
+    // 上滑显示底部栏，下滑隐藏，顶部隐藏
+    final diff = current - _lastScrollPosition;
+    if (current <= 30) {
+      if (_isBottomBarVisible) setState(() => _isBottomBarVisible = false);
+    } else if (diff < -10) {
+      if (!_isBottomBarVisible) setState(() => _isBottomBarVisible = true);
+    } else if (diff > 10) {
+      if (_isBottomBarVisible) setState(() => _isBottomBarVisible = false);
+    }
+
     // 回顶按钮
     if (current < _lastScrollPosition && current > 100) {
       if (!_showBackToTop) setState(() => _showBackToTop = true);
@@ -157,7 +176,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
       if (!refresh) setState(() => _loadingMore = false);
       return;
     }
-    debugPrint("【详情页加载】page=$page refresh=$refresh");
+    // debugPrint("【详情页加载】page=$page refresh=$refresh");
     final data = await TiebaApi.fetchPostDetail(
       bduss: UserManager.bduss!,
       stoken: UserManager.stoken!,
@@ -174,6 +193,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         _totalPages = (data.thread.replyNum / 15).ceil();
         // 保留第1页数据作为基础（含楼主帖 floor<=1），清除第1页回复
         _data = data;
+        _syncThreadState();
         _data!.postList.removeWhere((p) => p.floor > 1);
       }
       if (_sortType == 1 &&
@@ -205,12 +225,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
               }
             } else {
               _data = data;
+              _syncThreadState();
             }
             _hasMore = _descRequestCount < _totalPages;
           } else {
             _currentPage = page;
             if (refresh) {
               _data = data;
+              _syncThreadState();
             } else if (_data != null) {
               final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
               for (final p in data.postList) {
@@ -281,7 +303,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
     // 最后一页加载失败时自动重试一次
     if (data == null && mounted) {
-      debugPrint("【倒序】最后一页(${_totalPages})加载失败，自动重试...");
+      // debugPrint("【倒序】最后一页(${_totalPages})加载失败，自动重试...");
       data = await TiebaApi.fetchPostDetail(
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
@@ -296,7 +318,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
     // 重试仍然失败时，回退到第1页数据防止内容消失
     if (data == null && mounted) {
-      debugPrint("【倒序】重试仍然失败，回退到第1页");
+      // debugPrint("【倒序】重试仍然失败，回退到第1页");
       data = await TiebaApi.fetchPostDetail(
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
@@ -328,6 +350,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
             }
           } else {
             _data = data;
+            _syncThreadState();
           }
           _hasMore = _descRequestCount < _totalPages;
           _descRetryCount = 0;
@@ -355,11 +378,208 @@ class _PostDetailPageState extends State<PostDetailPage> {
     }
   }
 
+  void _syncThreadState() {
+    if (_data?.hasThread() == true) {
+      final t = _data!.thread;
+      _isThreadLiked = t.hasAgree() && t.agree.hasAgree == 1;
+      _threadAgreeNum = t.agreeNum;
+      _isCollected = t.collectStatus != 0;
+    }
+  }
+
+  Future<void> _handleThreadLike() async {
+    if (!UserManager.isLogin) return;
+    final tid = widget.tid;
+    final score = await TiebaApi.likePost(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      tbs: UserManager.tbs ?? '',
+      userId: UserManager.userId ?? '',
+      threadId: tid,
+    );
+    if (score != null && mounted) {
+      setState(() {
+        _isThreadLiked = true;
+        _threadAgreeNum = _threadAgreeNum + 1;
+      });
+    }
+  }
+
+  Future<void> _handleCollect() async {
+    if (!UserManager.isLogin) return;
+    final tid = widget.tid;
+    // debugPrint("【收藏】_handleCollect tid=$tid isCollected=$_isCollected");
+    if (_isCollected) {
+      final ok = await TiebaApi.removeStore(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        threadId: tid,
+        userId: UserManager.userId ?? '',
+        tbs: UserManager.tbs ?? '',
+      );
+      // debugPrint("【收藏】removeStore 返回 ok=$ok");
+      if (ok && mounted) setState(() => _isCollected = false);
+    } else {
+      String pid;
+      if (_data?.hasThread() == true &&
+          _data!.thread.firstPostId > Int64.ZERO) {
+        pid = _data!.thread.firstPostId.toInt().toString();
+      } else if (_data?.postList.isNotEmpty == true) {
+        pid = _data!.postList.first.id.toInt().toString();
+      } else {
+        pid = '0';
+      }
+      final ok = await TiebaApi.addStore(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        threadId: tid,
+        userId: UserManager.userId ?? '',
+        tbs: UserManager.tbs ?? '',
+        postId: pid,
+      );
+      // debugPrint("【收藏】addStore 返回 ok=$ok");
+      if (ok && mounted) setState(() => _isCollected = true);
+    }
+  }
+
+  // 替换原有的 _buildBottomBar 方法
+  Widget _buildBottomBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Positioned(
+      left: 16, // 左右边距
+      right: 16,
+      bottom: MediaQuery.of(context).padding.bottom + 12, // 底部安全区+边距
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 200),
+        offset: _isBottomBarVisible ? Offset.zero : const Offset(0, 2),
+        child: Container(
+          height: 43, // 固定高度
+          decoration: BoxDecoration(
+            color: isDark ? Color(0xFF222436) : Colors.white,
+            borderRadius: BorderRadius.circular(26), // 大圆角（高度的一半）
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // 点赞按钮
+              Expanded(
+                child: GestureDetector(
+                  onTap: _handleThreadLike,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isThreadLiked
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          size: 22,
+                          color: _isThreadLiked
+                              ? Colors.red
+                              : theme.iconTheme.color,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '$_threadAgreeNum',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _isThreadLiked
+                                ? Colors.red
+                                : theme.textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // 收藏按钮
+              Expanded(
+                child: GestureDetector(
+                  onTap: _handleCollect,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _isCollected ? Icons.star : Icons.star_border,
+                          size: 22,
+                          color: _isCollected
+                              ? Color(0xFFFF7043)
+                              : theme.iconTheme.color,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isCollected ? '已收藏' : '收藏',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _isCollected
+                                ? Color(0xFFFF7043)
+                                : theme.textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // 分享按钮
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => SharePlus.instance.share(
+                    ShareParams(
+                      text: "https://tieba.baidu.com/p/${widget.tid}",
+                      title: "来自百度贴吧的帖子",
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.share_outlined,
+                          size: 22,
+                          color: theme.iconTheme.color,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '分享',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: theme.textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ========== Build ==========
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: _buildAppBar(), body: _buildBody());
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: Stack(children: [_buildBody(), _buildBottomBar(context)]),
+    );
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -496,8 +716,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
             firstPost: firstPost,
             opAuthor: opAuthor,
             onUserTap: (uid, _) {
-              final name = opAuthor?.nameShow.isNotEmpty == true ? opAuthor!.nameShow : (opAuthor?.name ?? '');
-              UserBrowseHistoryManager.saveRecord(uid: uid, userName: name, portrait: opAuthor?.portrait);
+              final name = opAuthor?.nameShow.isNotEmpty == true
+                  ? opAuthor!.nameShow
+                  : (opAuthor?.name ?? '');
+              UserBrowseHistoryManager.saveRecord(
+                uid: uid,
+                userName: name,
+                portrait: opAuthor?.portrait,
+              );
               context.push('/user/$uid');
             },
           ),
@@ -526,8 +752,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
             onUserTap: (uid) {
               final aid = p.authorId.toInt();
               final author = authorMap[aid];
-              final name = author?.nameShow.isNotEmpty == true ? author!.nameShow : (author?.name ?? '');
-              UserBrowseHistoryManager.saveRecord(uid: uid, userName: name, portrait: author?.portrait);
+              final name = author?.nameShow.isNotEmpty == true
+                  ? author!.nameShow
+                  : (author?.name ?? '');
+              UserBrowseHistoryManager.saveRecord(
+                uid: uid,
+                userName: name,
+                portrait: author?.portrait,
+              );
               context.push('/user/$uid');
             },
           ),
@@ -695,12 +927,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (_data == null) return;
     final data = _data!;
     if (!data.hasForum()) return;
-    ForumBrowseHistoryManager.saveRecord(ForumBrowseRecord(
-      fid: data.forum.id.toString(),
-      forumName: data.forum.name,
-      forumAvatar: data.forum.avatar.isNotEmpty ? data.forum.avatar : null,
-      browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    ));
+    ForumBrowseHistoryManager.saveRecord(
+      ForumBrowseRecord(
+        fid: data.forum.id.toString(),
+        forumName: data.forum.name,
+        forumAvatar: data.forum.avatar.isNotEmpty ? data.forum.avatar : null,
+        browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      ),
+    );
   }
 
   // ========== 回复点赞 ==========

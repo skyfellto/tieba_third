@@ -31,7 +31,7 @@ class _WodePageState extends State<WodePage> {
     }
   }
 
-  void _handleFavoritesTap() {}
+  void _handleFavoritesTap() => context.push('/wode/favorites');
   void _handleBrowseHistoryTap() => context.push('/wode/browse-history');
   void _handleThemeTap() => themeNotifier.toggle();
   void _handleServiceTap() {}
