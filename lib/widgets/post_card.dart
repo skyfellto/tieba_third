@@ -97,9 +97,7 @@ class PostCard extends StatelessWidget {
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
                               child: Padding(
-                                padding: const EdgeInsets.only(
-                                  right: 5,
-                                ), // 标签与标题之间的间距
+                                padding: const EdgeInsets.only(right: 5),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 5,

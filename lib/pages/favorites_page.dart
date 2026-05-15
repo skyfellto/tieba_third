@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
-
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
 

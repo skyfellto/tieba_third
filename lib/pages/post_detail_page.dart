@@ -16,6 +16,7 @@ import '../models/forum_browse_record.dart';
 import '../utils/forum_browse_history_manager.dart';
 import '../widgets/post_detail_header.dart';
 import '../widgets/post_reply_card.dart';
+import '../widgets/vote_panel.dart';
 
 class PostDetailPage extends StatefulWidget {
   final String tid;
@@ -727,6 +728,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
               context.push('/user/$uid');
             },
           ),
+        // 投票展示区（需确认有实际投票数据）
+        if (data.hasThread() &&
+            data.thread.hasOriginThreadInfo() &&
+            data.thread.originThreadInfo.hasPollInfo() &&
+            data.thread.originThreadInfo.pollInfo.title.isNotEmpty &&
+            data.thread.originThreadInfo.pollInfo.options.isNotEmpty)
+          VotePanel(pollInfo: data.thread.originThreadInfo.pollInfo),
         const Divider(height: 24),
         // 回复 Tab 栏（含楼主的总数）
         _buildReplyTabBar(
