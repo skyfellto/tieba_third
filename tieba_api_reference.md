@@ -234,6 +234,7 @@
 | **优先级** | ⭐⭐ 中 |
 
 **Protobuf 文件：**
+
 - 请求：`protos/SearchSug/SearchSug.proto` → `SearchSugRequest` / `SearchSugRequestData`
 - 响应：`protos/SearchSug/SearchSug.proto` → `SearchSugResponse` / `SearchSugResponseData`
 - 公共依赖：`CommonRequest.proto`、`Error.proto`、`User.proto`、`SimpleForum.proto`
@@ -711,3 +712,16 @@
 
 
 我的需求是新增判断帖子是否含有投票功能。在帖子的预览卡片中判断是否含有投票功能，如果是在帖子的标题前面增加“投”字样，具体样式同贴吧详情页的精选帖子的“精”样式，不过颜色不一样。在帖子详情页，如果含有投票功能，则在楼主的帖子内容的图片（没有则在帖子内容的文字部分下方）下方增加投票数据显示部分：顶部显示“投票·{投票标题}”，并且左对齐；投票选项为圆角矩形，内部水平布局，左侧选项文字（左对齐） + 右侧票数百分比（右对齐），文字是该选项的选项名，票数百分比是{票数}人 | {百分比}%，选项框从最左侧开始填充占整个选项框的百分比的提示色，剩余部分仍是选项框的背景色；底部则是“已有X位吧友参与投票”。投票信息的路径在PbPageResponseData.pb.dart -> Post.pb.dart / ThreadInfo.pb.dart -> OriginThreadInfo.pb.dart -> PollInfo.pb.dart -> PollOption.pb.dart  ，其中，是否含有投票功能可以查看Post.pb.dart中的isVote，投票标题是PollInfo.pb 中的title，总人数是totalPoll，投票选项的选项名是PollInfo.pb.dart 中的options（类为PollOption.pb.dart）中的text,票数是num,百分比则应该可以拿票数处以总人数。颜色要符合两种主题，代码应该尽量拆分
+
+
+
+
+
+我的需求是改动动态页面来添加搜索功能。在动态页面添加顶部，最左侧显示“动态”，最右侧显示搜索图标，点击跳转搜索页面。搜索页面可以由路由管理，顶部显示搜索框，搜索框左侧默认显示“发现更多”，右侧则是搜索按钮，点击则请求搜索框内内容的搜索；在搜索框内输入内容后，根据内容变化实时请求搜索联想接口，如果得到到搜索联想的响应数据，则不显示搜索历史部分，改为显示搜索联想部分，搜索联想部分为垂直布局，根据响应数据的内容，如果包含详细贴吧的联想数据，则在第一个展示该贴吧的信息，该贴吧信息为水平布局，左侧为贴吧头像，右侧垂直布局，第一行贴吧名，第二行贴吧简介，随后展示普通搜索联想项，单条普通搜索联想项为水平布局，左侧显示搜索图标，右边是联想文字，点击贴吧信息则会跳转到对应贴吧的详情页，点击单条普通搜索联想项则请求对应内容的搜索；下方展示搜索历史部分，搜索历史本地存储搜索的词条，搜索历史部分顶部左侧显示“搜索历史”，右侧显示“清除全部”，点击则清除全部搜索历史；下方则是单条搜索记录，由圆角矩形包裹，长按单条搜索记录则在该搜索记录右上角显示叉号，点击则清除该单条搜索记录，单条搜索记录在不展开的情况下最多显示7条；下方则是展开箭头，点击则展开所有搜索记录，再次点击则收起搜索记录。以上所有的搜索请求均预留接口，搜索联想具体实现。搜索联想：**端点**  `POST  /c/s/searchSugcmd=309438&format=protobuf`，
+
+- 请求：`protos/SearchSug/SearchSug.proto` → `SearchSugRequest` / `SearchSugRequestData`
+- 响应：`protos/SearchSug/SearchSug.proto` → `SearchSugResponse` / `SearchSugResponseData`
+- 公共依赖：`CommonRequest.proto`、`Error.proto`、`User.proto`、`SimpleForum.proto`
+
+以上内容颜色均要符合不同主题
+

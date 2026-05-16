@@ -38,6 +38,10 @@ import '../generated/Profile/ProfileResponse.pb.dart';
 import '../generated/UserPost/UserPostRequest.pb.dart';
 import '../generated/UserPost/UserPostRequestData.pb.dart';
 import '../generated/UserPost/UserPostResponse.pb.dart';
+import '../generated/SearchSug/SearchSugRequest.pb.dart';
+import '../generated/SearchSug/SearchSugRequestData.pb.dart';
+import '../generated/SearchSug/SearchSugResponse.pb.dart';
+import '../generated/SearchSug/SearchSugResponseData.pb.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
@@ -547,7 +551,9 @@ class TiebaApi {
     final request = PbFloorRequest(data: reqData);
     final bodyBytes = request.writeToBuffer();
 
-    final uri = Uri.parse("$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf&rn=30");
+    final uri = Uri.parse(
+      "$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf&rn=30",
+    );
     debugPrint("\n================================================");
     debugPrint("【调试】PbFloor 请求：$uri tid=$threadId pid=$postId page=$page");
     debugPrint("================================================\n");
@@ -635,28 +641,31 @@ class TiebaApi {
     ];
     final sign = _computeSign(params);
     params.add(["sign", sign]);
-    final bodyStr =
-        params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
 
     final client = http.Client();
     try {
-      final request = http.Request(
-        'POST',
-        Uri.parse("http://c.tieba.baidu.com/c/f/pb/floor"),
-      )
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 7.2.0.0",
-          "Cookie": "ka=open",
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("http://c.tieba.baidu.com/c/f/pb/floor"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 7.2.0.0",
+              "Cookie": "ka=open",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
-      final response =
-          await http.Response.fromStream(await client.send(request));
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
@@ -1376,20 +1385,21 @@ class TiebaApi {
 
     final client = http.Client();
     try {
-      final request = http.Request(
-        'POST',
-        Uri.parse("http://c.tieba.baidu.com/c/u/user/profile"),
-      )
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 11.10.8.6",
-          "Cookie": "ka=open",
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("http://c.tieba.baidu.com/c/u/user/profile"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 11.10.8.6",
+              "Cookie": "ka=open",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
@@ -1465,20 +1475,21 @@ class TiebaApi {
 
     final client = http.Client();
     try {
-      final request = http.Request(
-        'POST',
-        Uri.parse("http://c.tieba.baidu.com/c/u/feed/userpost"),
-      )
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 11.10.8.6",
-          "Cookie": "ka=open",
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("http://c.tieba.baidu.com/c/u/feed/userpost"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 11.10.8.6",
+              "Cookie": "ka=open",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
@@ -1509,7 +1520,10 @@ class TiebaApi {
             final postContent = firstContent["post_content"];
             if (postContent is List && postContent.isNotEmpty) {
               final texts = postContent
-                  .map((c) => (c as Map<String, dynamic>)["text"]?.toString() ?? "")
+                  .map(
+                    (c) =>
+                        (c as Map<String, dynamic>)["text"]?.toString() ?? "",
+                  )
                   .where((t) => t.isNotEmpty)
                   .toList();
               if (texts.isNotEmpty) absText = texts.join(" ");
@@ -1518,11 +1532,14 @@ class TiebaApi {
         }
 
         // 尝试从 abstracts 提取
-        if ((absText == null || absText.isEmpty) && itemMap["abstracts"] is List) {
+        if ((absText == null || absText.isEmpty) &&
+            itemMap["abstracts"] is List) {
           final abstractsList = itemMap["abstracts"] as List;
           if (abstractsList.isNotEmpty) {
             absText = abstractsList
-                .map((a) => (a as Map<String, dynamic>)["text"]?.toString() ?? "")
+                .map(
+                  (a) => (a as Map<String, dynamic>)["text"]?.toString() ?? "",
+                )
                 .where((t) => t.isNotEmpty)
                 .join(" ");
           }
@@ -1546,32 +1563,38 @@ class TiebaApi {
                 } else if (diff.inMinutes <= 40) {
                   lastTime = "${diff.inMinutes} 分钟前";
                 } else {
-                  lastTime = "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+                  lastTime =
+                      "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
                 }
               } else {
-                lastTime = "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+                lastTime =
+                    "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
               }
             } else {
-              lastTime = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+              lastTime =
+                  "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
             }
           }
         } catch (_) {}
 
-        posts.add(PostItem(
-          tid: tid,
-          title: _s(itemMap["title"]),
-          authorId: _s(itemMap["user_id"]),
-          authorName: _s(itemMap["name_show"]),
-          authorPortrait: itemMap["user_portrait"]?.toString(),
-          forumId: _s(itemMap["forum_id"]),
-          forumName: _s(itemMap["forum_name"]),
-          replyNum: _s(itemMap["reply_num"]),
-          agreeNum: _s(itemMap["agree_num"]),
-          abstractText: absText,
-          lastTime: lastTime,
-          isAd: false,
-          isTop: isThreadVal == "1" && int.tryParse(_s(itemMap["is_top"])) == 1,
-        ));
+        posts.add(
+          PostItem(
+            tid: tid,
+            title: _s(itemMap["title"]),
+            authorId: _s(itemMap["user_id"]),
+            authorName: _s(itemMap["name_show"]),
+            authorPortrait: itemMap["user_portrait"]?.toString(),
+            forumId: _s(itemMap["forum_id"]),
+            forumName: _s(itemMap["forum_name"]),
+            replyNum: _s(itemMap["reply_num"]),
+            agreeNum: _s(itemMap["agree_num"]),
+            abstractText: absText,
+            lastTime: lastTime,
+            isAd: false,
+            isTop:
+                isThreadVal == "1" && int.tryParse(_s(itemMap["is_top"])) == 1,
+          ),
+        );
       }
       return posts;
     } catch (e) {
@@ -1669,19 +1692,23 @@ class TiebaApi {
       }
 
       final user = pb.data.user;
-      debugPrint("【用户资料Pb】uid=${user.id} name=${user.name} nameShow=${user.nameShow} "
-          "tbAge=${user.tbAge} concernNum=${user.concernNum} fansNum=${user.fansNum} "
-          "totalAgreeNum=${user.totalAgreeNum} intro长度=${user.intro.length}");
+      debugPrint(
+        "【用户资料Pb】uid=${user.id} name=${user.name} nameShow=${user.nameShow} "
+        "tbAge=${user.tbAge} concernNum=${user.concernNum} fansNum=${user.fansNum} "
+        "totalAgreeNum=${user.totalAgreeNum} intro长度=${user.intro.length}",
+      );
 
       final forums = pb.data.concernedForumList
           .where((f) => f.forumName.isNotEmpty)
-          .map((f) => ForumItem(
-                forumId: f.forumId.toInt().toString(),
-                forumName: f.forumName,
-                avatar: f.avatar,
-                levelId: 0,
-                isSign: false,
-              ))
+          .map(
+            (f) => ForumItem(
+              forumId: f.forumId.toInt().toString(),
+              forumName: f.forumName,
+              avatar: f.avatar,
+              levelId: 0,
+              isSign: false,
+            ),
+          )
           .toList();
       debugPrint("【用户资料Pb】concernedForumList=${forums.length}个");
 
@@ -1814,22 +1841,29 @@ class TiebaApi {
               } else if (diff.inMinutes <= 40) {
                 lastTime = "${diff.inMinutes} 分钟前";
               } else {
-                lastTime = "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+                lastTime =
+                    "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
               }
             } else {
-              lastTime = "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+              lastTime =
+                  "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
             }
           } else {
-            lastTime = "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
+            lastTime =
+                "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
           }
         }
 
         return PostItem(
           tid: info.threadId.toInt().toString(),
           title: info.title,
-          authorId: info.userId.toInt() > 0 ? info.userId.toInt().toString() : '',
+          authorId: info.userId.toInt() > 0
+              ? info.userId.toInt().toString()
+              : '',
           authorName: info.nameShow.isNotEmpty ? info.nameShow : info.userName,
-          authorPortrait: info.userPortrait.isNotEmpty ? info.userPortrait : null,
+          authorPortrait: info.userPortrait.isNotEmpty
+              ? info.userPortrait
+              : null,
           forumId: info.forumId.toInt().toString(),
           forumName: info.forumName,
           forumAvatar: forumAvatarMap?[info.forumId.toInt().toString()],
@@ -1903,29 +1937,29 @@ class TiebaApi {
 
     final client = http.Client();
     try {
-      final request = http.Request(
-        'POST',
-        Uri.parse("$_baseHost/c/f/forum/like"),
-      )
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 12.41.7.1",
-          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
-          "Cuid": cuid,
-          "Cuid-Galaxy2": cuid,
-          "Cuid-Gid": "",
-          "Client-Type": "2",
-          "Charset": "UTF-8",
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request('POST', Uri.parse("$_baseHost/c/f/forum/like"))
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 12.41.7.1",
+              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "Cuid": cuid,
+              "Cuid-Galaxy2": cuid,
+              "Cuid-Gid": "",
+              "Client-Type": "2",
+              "Charset": "UTF-8",
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
       );
       debugPrint("【用户关注吧】状态码=${response.statusCode}");
-      debugPrint("【用户关注吧】响应=${response.body.length > 500 ? response.body.substring(0, 500) : response.body}");
+      debugPrint(
+        "【用户关注吧】响应=${response.body.length > 500 ? response.body.substring(0, 500) : response.body}",
+      );
 
       if (response.statusCode != 200) return [];
 
@@ -1986,10 +2020,14 @@ class TiebaApi {
     final eventDay = "${today.year}${today.month}${today.day}";
     final stNum = Random().nextInt(750) + 100;
     final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum).round().toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
     final hasStParams = stNum > 120;
     // data: [{"pid":"真实postId","status":1,"tid":"threadId"}] — 匹配抓包
-    final data = jsonEncode([{"pid": postId, "status": 1, "tid": threadId}]);
+    final data = jsonEncode([
+      {"pid": postId, "status": 1, "tid": threadId},
+    ]);
 
     final params = [
       ["BDUSS", bduss],
@@ -2035,30 +2073,37 @@ class TiebaApi {
     ];
     final sign = _computeSign(params);
     params.add(["sign", sign]);
-    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
     debugPrint("【收藏addStore】请求体=$bodyStr");
 
     final client = http.Client();
     try {
-      final request = http.Request('POST', Uri.parse("$_baseHost/c/c/post/addstore"))
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 12.41.7.1",
-          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
-          "client_user_token": userId,
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "cuid_gid": "",
-          "c3_aid": "${Random().nextInt(900000000) + 100000000}",
-          "_client_type": "2",
-          "Charset": "UTF-8",
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request('POST', Uri.parse("$_baseHost/c/c/post/addstore"))
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 12.41.7.1",
+              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "client_user_token": userId,
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "cuid_gid": "",
+              "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+              "_client_type": "2",
+              "Charset": "UTF-8",
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
-      final response = await http.Response.fromStream(await client.send(request));
-      debugPrint("【收藏addStore】状态码=${response.statusCode} body=${response.body}");
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint(
+        "【收藏addStore】状态码=${response.statusCode} body=${response.body}",
+      );
       if (response.statusCode != 200) return false;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
@@ -2089,7 +2134,9 @@ class TiebaApi {
     final eventDay = "${today.year}${today.month}${today.day}";
     final stNum = Random().nextInt(750) + 100;
     final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum).round().toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
     final hasStParams = stNum > 120;
 
     final params = [
@@ -2137,30 +2184,37 @@ class TiebaApi {
     ];
     final sign = _computeSign(params);
     params.add(["sign", sign]);
-    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
     debugPrint("【收藏removeStore】请求体=$bodyStr");
 
     final client = http.Client();
     try {
-      final request = http.Request('POST', Uri.parse("$_baseHost/c/c/post/rmstore"))
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 12.41.7.1",
-          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
-          "client_user_token": userId,
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "cuid_gid": "",
-          "c3_aid": "${Random().nextInt(900000000) + 100000000}",
-          "_client_type": "2",
-          "Charset": "UTF-8",
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request('POST', Uri.parse("$_baseHost/c/c/post/rmstore"))
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 12.41.7.1",
+              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "client_user_token": userId,
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "cuid_gid": "",
+              "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+              "_client_type": "2",
+              "Charset": "UTF-8",
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
-      final response = await http.Response.fromStream(await client.send(request));
-      debugPrint("【收藏removeStore】状态码=${response.statusCode} body=${response.body}");
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint(
+        "【收藏removeStore】状态码=${response.statusCode} body=${response.body}",
+      );
       if (response.statusCode != 200) return false;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
@@ -2190,7 +2244,9 @@ class TiebaApi {
     final eventDay = "${today.year}${today.month}${today.day}";
     final stNum = Random().nextInt(750) + 100;
     final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum).round().toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
     final hasStParams = stNum > 120;
 
     final params = [
@@ -2238,29 +2294,37 @@ class TiebaApi {
     ];
     final sign = _computeSign(params);
     params.add(["sign", sign]);
-    final bodyStr = params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&");
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
     debugPrint("【收藏threadStore】请求体=$bodyStr");
 
     final client = http.Client();
     try {
-      final request = http.Request('POST', Uri.parse("http://c.tieba.baidu.com/c/f/post/threadstore"))
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 11.10.8.6",
-          "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
-          "client_user_token": userId,
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "cuid_gid": "",
-          "c3_aid": "${Random().nextInt(900000000) + 100000000}",
-          "_client_type": "2",
-          "Charset": "UTF-8",
-          "client_logid": timestamp,
-        })
-        ..body = bodyStr;
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("http://c.tieba.baidu.com/c/f/post/threadstore"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 11.10.8.6",
+              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "client_user_token": userId,
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "cuid_gid": "",
+              "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+              "_client_type": "2",
+              "Charset": "UTF-8",
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
 
-      final response = await http.Response.fromStream(await client.send(request));
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
       debugPrint("【收藏threadStore】状态码=${response.statusCode}");
       if (response.statusCode != 200) return [];
       final json = jsonDecode(response.body) as Map<String, dynamic>;
@@ -2272,6 +2336,69 @@ class TiebaApi {
     } catch (e) {
       debugPrint("【收藏列表异常】$e");
       return [];
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 搜索联想（Protobuf）
+  static Future<SearchSugResponseData?> fetchSearchSug({
+    required String bduss,
+    required String stoken,
+    required String word,
+    String isforum = '0',
+  }) async {
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      phoneImei:
+          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 2.0,
+    );
+
+    final reqData = SearchSugRequestData(
+      common: common,
+      word: word,
+      isforum: isforum,
+    );
+
+    final request = SearchSugRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse(
+      "$_baseHost/c/s/searchSug?cmd=309438&format=protobuf",
+    );
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "bdtb for Android $_clientVersion",
+          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) return null;
+
+      final pb = SearchSugResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) return null;
+
+      return pb.data;
+    } catch (e) {
+      debugPrint("【搜索联想异常】$e");
+      return null;
     } finally {
       client.close();
     }

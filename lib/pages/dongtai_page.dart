@@ -166,15 +166,41 @@ class _DongtaiPageState extends State<DongtaiPage>
     }
   }
 
+  Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final topPad = MediaQuery.of(context).padding.top;
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 8),
+      color: theme.scaffoldBackgroundColor,
+      child: Row(
+        children: [
+          Text(
+            '动态',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 22,
+              color: theme.textTheme.bodyLarge?.color,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => context.push('/search'),
+            child: Icon(Icons.search, color: theme.iconTheme.color, size: 24),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (_posts.isEmpty && !_isLoading) {
-      return ListView();
-    }
-
-    return Stack(
+    return Column(
+      children: [
+        _buildHeader(context),
+        Expanded(
+          child: _posts.isEmpty && !_isLoading ? ListView() : Stack(
       children: [
         Positioned.fill(
           child: RefreshIndicator(
@@ -288,7 +314,10 @@ class _DongtaiPageState extends State<DongtaiPage>
             ),
           ),
         ),
-      ],
-    );
+      ],    // Stack children
+    ),      // Stack
+    ),      // Expanded
+  ],        // Column children
+);          // return Column
   }
 }
