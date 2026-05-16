@@ -107,7 +107,7 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
@@ -148,6 +148,7 @@ class _SearchPageState extends State<SearchPage> {
                     child: TextField(
                       controller: _controller,
                       focusNode: _focusNode,
+                      textAlignVertical: TextAlignVertical.center,
                       autofocus: true,
                       textInputAction: TextInputAction.search,
                       onChanged: _onSearchChanged,
@@ -161,11 +162,22 @@ class _SearchPageState extends State<SearchPage> {
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,
+                          vertical: 11,
                         ),
-                        prefixIcon: Icon(
-                          Icons.search,
-                          color: Colors.grey[400],
-                          size: 20,
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.only(
+                            left: 12,
+                            right: 8,
+                          ), // 调整图标左右间距
+                          child: Icon(
+                            Icons.search,
+                            color: Colors.grey[400],
+                            size: 20,
+                          ),
+                        ),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                          minHeight: 0, // 移除prefixIcon的默认最小高度限制
                         ),
                       ),
                       style: TextStyle(
@@ -182,7 +194,8 @@ class _SearchPageState extends State<SearchPage> {
                   child: Text(
                     '搜索',
                     style: TextStyle(
-                      color: theme.primaryColor,
+                      // color: theme.primaryColor,
+                      color: isDark ? Colors.white : Colors.black,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
