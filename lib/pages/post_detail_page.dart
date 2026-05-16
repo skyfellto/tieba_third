@@ -57,6 +57,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // 已点赞的回复 pid 集合
   final Set<String> _likedReplySet = {};
+  // ignore: prefer_final_fields
   Map<String, int> _likedAgreeMap = {};
   int _descRetryCount = 0;
   static const String _likedStorageKey = 'post_detail_liked_cnt';
@@ -606,33 +607,29 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       );
                     }
                   },
-                  // 左右加对称padding，避免内容过长时被返回箭头/按钮遮挡
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 56),
-                    child: Row(
-                      // 让Row只包裹内容，不额外占宽，配合Center实现完美居中
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.white24,
-                          backgroundImage: forum.avatar.isNotEmpty
-                              ? NetworkImage(
-                                  forum.avatar,
-                                  headers: UserManager.avatarHeaders,
-                                )
-                              : null,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.white24,
+                        backgroundImage: forum.avatar.isNotEmpty
+                            ? NetworkImage(
+                                forum.avatar,
+                                headers: UserManager.avatarHeaders,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
                           forum.name,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            // color: Colors.white,
-                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 15),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 )
               : const Text('帖子详情', style: TextStyle(fontSize: 15)),

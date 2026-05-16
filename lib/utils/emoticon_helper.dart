@@ -9,6 +9,7 @@ class EmoticonHelper {
     if (_emoticonMap != null) return;
     final jsonStr = await rootBundle.loadString('emoticon/emoticon.json');
     final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+    // ignore: unnecessary_brace_in_string_interps
     _emoticonMap = map.map((k, v) => MapEntry(k, 'emoticon/${v}.webp'));
   }
 

@@ -41,13 +41,23 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final pad = MediaQuery.of(context).padding;
     final totalExpand = maxExtent - minExtent;
-    final progress = totalExpand > 0 ? (shrinkOffset / totalExpand).clamp(0.0, 1.0) : 1.0;
+    final progress = totalExpand > 0
+        ? (shrinkOffset / totalExpand).clamp(0.0, 1.0)
+        : 1.0;
 
     final name = forumInfo?.forumName ?? forumName ?? "贴吧";
-    final avatarUrl = (forumInfo?.avatar.isNotEmpty == true ? forumInfo!.avatar : forumAvatar) ?? '';
+    final avatarUrl =
+        (forumInfo?.avatar.isNotEmpty == true
+            ? forumInfo!.avatar
+            : forumAvatar) ??
+        '';
     final fgColor = Theme.of(context).brightness == Brightness.dark
         ? Colors.white
         : Colors.black87;
@@ -74,11 +84,15 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
           ),
         ),
         Positioned(
-          bottom: 0, left: pad.left, right: pad.right, height: 48,
+          bottom: 0,
+          left: pad.left,
+          right: pad.right,
+          height: 48,
           child: _buildTabBar(context, fgColor),
         ),
         Positioned(
-          left: unitLeft, top: unitTop,
+          left: unitLeft,
+          top: unitTop,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -86,8 +100,12 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                 radius: avatarRadius,
                 backgroundColor: Colors.white24,
                 backgroundImage: avatarUrl.isNotEmpty
-                    ? NetworkImage(avatarUrl, headers: UserManager.avatarHeaders)
+                    ? NetworkImage(
+                        avatarUrl,
+                        headers: UserManager.avatarHeaders,
+                      )
                     : null,
+                // ignore: unnecessary_underscores
                 onBackgroundImageError: (_, __) {},
               ),
               SizedBox(width: nameGap),
@@ -95,8 +113,14 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(name, overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: nameFontSize, fontWeight: FontWeight.bold, color: fgColor),
+                  Text(
+                    name,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: nameFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: fgColor,
+                    ),
                   ),
                   if (levelFade > 0)
                     Opacity(
@@ -112,21 +136,35 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
           ),
         ),
         Positioned(
-          top: pad.top, right: pad.right,
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            IconButton(icon: Icon(Icons.search, color: fgColor, size: 22), onPressed: () {}, splashRadius: 20),
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: fgColor, size: 22), onSelected: (v) {},
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'share', child: Text('分享')),
-                PopupMenuItem(value: 'report', child: Text('举报')),
-              ],
-            ),
-          ]),
+          top: pad.top,
+          right: pad.right,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.search, color: fgColor, size: 22),
+                onPressed: () {},
+                splashRadius: 20,
+              ),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert, color: fgColor, size: 22),
+                onSelected: (v) {},
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'share', child: Text('分享')),
+                  PopupMenuItem(value: 'report', child: Text('举报')),
+                ],
+              ),
+            ],
+          ),
         ),
         Positioned(
-          top: pad.top, left: pad.left,
-          child: IconButton(icon: Icon(Icons.arrow_back, color: fgColor), onPressed: onPop, splashRadius: 20),
+          top: pad.top,
+          left: pad.left,
+          child: IconButton(
+            icon: Icon(Icons.arrow_back, color: fgColor),
+            onPressed: onPop,
+            splashRadius: 20,
+          ),
         ),
       ],
     );
@@ -160,16 +198,24 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
           children: [
             Expanded(
               child: InkWell(
-                key: earliestTabKey, onTap: onTapEarliest,
+                key: earliestTabKey,
+                onTap: onTapEarliest,
                 child: Center(
-                  child: _tabLabel("最早", fgColor, isActive: currentTab == 0, showDropdown: currentTab == 0),
+                  child: _tabLabel(
+                    "最早",
+                    fgColor,
+                    isActive: currentTab == 0,
+                    showDropdown: currentTab == 0,
+                  ),
                 ),
               ),
             ),
             Expanded(
               child: InkWell(
                 onTap: onTapFeatured,
-                child: Center(child: _tabLabel("精选", fgColor, isActive: currentTab == 1)),
+                child: Center(
+                  child: _tabLabel("精选", fgColor, isActive: currentTab == 1),
+                ),
               ),
             ),
           ],
@@ -178,7 +224,12 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  Widget _tabLabel(String text, Color fgColor, {required bool isActive, bool showDropdown = false}) {
+  Widget _tabLabel(
+    String text,
+    Color fgColor, {
+    required bool isActive,
+    bool showDropdown = false,
+  }) {
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -186,16 +237,21 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(text,
+          Text(
+            text,
             style: TextStyle(
-              fontSize: 15,
+              fontSize: isActive ? 17 : 15,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               color: isActive ? fgColor : fgColor.withValues(alpha: 0.6),
             ),
           ),
           if (showDropdown) ...[
             const SizedBox(width: 2),
-            Icon(Icons.arrow_drop_down, size: 18, color: fgColor.withValues(alpha: 0.7)),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 18,
+              color: fgColor.withValues(alpha: 0.7),
+            ),
           ],
         ],
       ),
@@ -211,12 +267,27 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (isLike) ...[
-          Row(children: [
-            Text("Lv$userLevel", style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(width: 8),
-            if (levelName.isNotEmpty)
-              Text(levelName, style: TextStyle(color: fgColor.withValues(alpha: 0.7), fontSize: 12)),
-          ]),
+          Row(
+            children: [
+              Text(
+                "Lv$userLevel",
+                style: TextStyle(
+                  color: fgColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (levelName.isNotEmpty)
+                Text(
+                  levelName,
+                  style: TextStyle(
+                    color: fgColor.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                ),
+            ],
+          ),
           if (expProgress != null) ...[
             const SizedBox(height: 4),
             SizedBox(
@@ -232,8 +303,13 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
               ),
             ),
             const SizedBox(height: 1),
-            Text('$curScore / $levelupScore',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10)),
+            Text(
+              '$curScore / $levelupScore',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.4),
+                fontSize: 10,
+              ),
+            ),
           ],
         ] else ...[
           Material(
@@ -242,9 +318,22 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
               borderRadius: BorderRadius.circular(16),
               onTap: () {},
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: const Text("+ 关注", style: TextStyle(color: Color(0xFF222436), fontSize: 14, fontWeight: FontWeight.w600)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  "+ 关注",
+                  style: TextStyle(
+                    color: Color(0xFF222436),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ),

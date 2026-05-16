@@ -55,10 +55,15 @@ class PostItem {
     try {
       for (final m in t.media) {
         // 取第一个可用的图片 URL：originPic > bigPic > srcPic > dynamicPic
-        final url = _s(m.originPic.isNotEmpty ? m.originPic :
-                     (m.bigPic.isNotEmpty ? m.bigPic :
-                     (m.srcPic.isNotEmpty ? m.srcPic :
-                     (m.dynamicPic.isNotEmpty ? m.dynamicPic : ''))));
+        final url = _s(
+          m.originPic.isNotEmpty
+              ? m.originPic
+              : (m.bigPic.isNotEmpty
+                    ? m.bigPic
+                    : (m.srcPic.isNotEmpty
+                          ? m.srcPic
+                          : (m.dynamicPic.isNotEmpty ? m.dynamicPic : ''))),
+        );
         if (url.isNotEmpty) {
           imgs.add(url);
         }

@@ -29,7 +29,13 @@ class _SearchPageState extends State<SearchPage> {
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    // 等 200ms 首帧渲染稳定后再弹出键盘，避免键盘动画与页面首帧冲突
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadHistory();
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) _focusNode.requestFocus();
+      });
+    });
   }
 
   @override
@@ -72,10 +78,18 @@ class _SearchPageState extends State<SearchPage> {
 
   void _onSearch(String keyword) {
     if (keyword.trim().isEmpty) return;
+    if (_showDeleteMode) {
+      setState(() {
+        _showDeleteMode = false;
+        _longPressKeyword = null;
+      });
+    }
     SearchHistoryManager.save(keyword.trim());
     _loadHistory();
-    _controller.text = keyword.trim();
-    debugPrint("【搜索】keyword=$keyword");
+    _focusNode.unfocus();
+    context.push(
+      '/search-result?keyword=${Uri.encodeComponent(keyword.trim())}',
+    );
   }
 
   void _onSuggestionTap(String keyword) {
@@ -112,101 +126,132 @@ class _SearchPageState extends State<SearchPage> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          // 顶部安全区 + 搜索框
-          Container(
-            padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // 返回按钮
-                GestureDetector(
-                  onTap: () => context.pop(),
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Icon(Icons.arrow_back, color: theme.iconTheme.color),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent, // 关键：允许点击穿透到子组件
+        onTap: () {
+          // 点击任意空白处时隐藏删除标识
+          if (_showDeleteMode) {
+            setState(() {
+              _showDeleteMode = false;
+              _longPressKeyword = null;
+            });
+          }
+          FocusScope.of(context).unfocus();
+        },
+        child: Column(
+          children: [
+            // 顶部安全区 + 搜索框
+            Container(
+              padding: EdgeInsets.fromLTRB(16, topPad + 8, 16, 12),
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-                // 搜索框
-                Expanded(
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[800] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // 返回按钮
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(
+                        Icons.arrow_back,
+                        color: theme.iconTheme.color,
+                      ),
                     ),
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      textAlignVertical: TextAlignVertical.center,
-                      autofocus: true,
-                      textInputAction: TextInputAction.search,
-                      onChanged: _onSearchChanged,
-                      onSubmitted: (v) => _onSearch(v),
-                      decoration: InputDecoration(
-                        hintText: '发现更多',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 15,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 11,
-                        ),
-                        prefixIcon: Padding(
-                          padding: EdgeInsets.only(
-                            left: 12,
-                            right: 8,
-                          ), // 调整图标左右间距
-                          child: Icon(
-                            Icons.search,
+                  ),
+                  // 搜索框
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.grey[800] : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        textAlignVertical: TextAlignVertical.center,
+                        textInputAction: TextInputAction.search,
+                        onChanged: _onSearchChanged,
+                        onSubmitted: (v) => _onSearch(v),
+                        onTap: () {
+                          if (_showDeleteMode) {
+                            setState(() {
+                              _showDeleteMode = false;
+                              _longPressKeyword = null;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          hintText: '发现更多',
+                          hintStyle: TextStyle(
                             color: Colors.grey[400],
-                            size: 20,
+                            fontSize: 15,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 11,
+                          ),
+                          prefixIcon: Padding(
+                            padding: EdgeInsets.only(
+                              left: 8,
+                              right: 8,
+                            ), // 调整图标左右间距
+                            child: Icon(
+                              Icons.search,
+                              color: Colors.grey[400],
+                              size: 20,
+                            ),
+                          ),
+                          prefixIconConstraints: const BoxConstraints(
+                            minWidth: 0,
+                            minHeight: 0, // 移除prefixIcon的默认最小高度限制
                           ),
                         ),
-                        prefixIconConstraints: const BoxConstraints(
-                          minWidth: 0,
-                          minHeight: 0, // 移除prefixIcon的默认最小高度限制
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: theme.textTheme.bodyLarge?.color,
                         ),
                       ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 搜索按钮
+                  GestureDetector(
+                    onTap: () {
+                      if (_showDeleteMode) {
+                        setState(() {
+                          _showDeleteMode = false;
+                          _longPressKeyword = null;
+                        });
+                      }
+                      _onSearch(_controller.text);
+                    },
+                    child: Text(
+                      '搜索',
                       style: TextStyle(
-                        fontSize: 15,
-                        color: theme.textTheme.bodyLarge?.color,
+                        // color: theme.primaryColor,
+                        color: isDark ? Colors.white : Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                // 搜索按钮
-                GestureDetector(
-                  onTap: () => _onSearch(_controller.text),
-                  child: Text(
-                    '搜索',
-                    style: TextStyle(
-                      // color: theme.primaryColor,
-                      color: isDark ? Colors.white : Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          // 内容区域
-          Expanded(child: _buildContent(theme, isDark)),
-        ],
+            // 内容区域
+            Expanded(child: _buildContent(theme, isDark)),
+          ],
+        ),
       ),
     );
   }
@@ -321,10 +366,23 @@ class _SearchPageState extends State<SearchPage> {
               ),
               const Spacer(),
               GestureDetector(
-                onTap: _clearAll,
+                onTap: () {
+                  if (_showDeleteMode) {
+                    setState(() {
+                      _showDeleteMode = false;
+                      _longPressKeyword = null;
+                    });
+                  }
+                  _clearAll();
+                },
                 child: Text(
                   '清除全部',
-                  style: TextStyle(color: theme.primaryColor, fontSize: 14),
+                  style: TextStyle(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.purple
+                        : const Color.fromARGB(255, 7, 61, 188),
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
@@ -371,6 +429,7 @@ class _SearchPageState extends State<SearchPage> {
     bool isDark,
   ) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         GestureDetector(
           onTap: () => _onSearch(record.keyword),
@@ -397,8 +456,8 @@ class _SearchPageState extends State<SearchPage> {
         ),
         if (isLongPressed)
           Positioned(
-            top: -6,
-            right: -6,
+            top: -4,
+            right: -4,
             child: GestureDetector(
               onTap: () {
                 _deleteRecord(record.keyword);
@@ -408,11 +467,19 @@ class _SearchPageState extends State<SearchPage> {
                 });
               },
               child: Container(
-                width: 20,
-                height: 20,
+                width: 18,
+                height: 18,
                 decoration: BoxDecoration(
                   color: Colors.grey[600],
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    // 添加轻微阴影，提升层次感
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
                 child: const Icon(Icons.close, size: 14, color: Colors.white),
               ),

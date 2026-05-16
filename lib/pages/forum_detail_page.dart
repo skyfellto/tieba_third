@@ -78,6 +78,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   final GlobalKey _scrollTopKey0 = GlobalKey();
   final GlobalKey _scrollTopKey1 = GlobalKey();
 
+  // ignore: prefer_final_fields
   Map<String, int> _likedAgreeMap = {};
   static const String _likedStorageKey = 'forum_detail_liked_cnt';
 
@@ -321,14 +322,16 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   void _saveForumBrowseRecord() {
     final name = _forumInfo?.forumName ?? widget.forumName;
     if (name == null || name.isEmpty) return;
-    ForumBrowseHistoryManager.saveRecord(ForumBrowseRecord(
-      fid: widget.fid,
-      forumName: name,
-      forumAvatar: _forumInfo?.avatar.isNotEmpty == true
-          ? _forumInfo!.avatar
-          : widget.forumAvatar,
-      browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    ));
+    ForumBrowseHistoryManager.saveRecord(
+      ForumBrowseRecord(
+        fid: widget.fid,
+        forumName: name,
+        forumAvatar: _forumInfo?.avatar.isNotEmpty == true
+            ? _forumInfo!.avatar
+            : widget.forumAvatar,
+        browseTime: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      ),
+    );
   }
 
   /// 从 FrsPage 响应中提取帖子列表，补充作者信息
@@ -339,6 +342,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     }
     return data.threadList
         .map((t) {
+          // debugPrint("threadTypes :: ${t.threadTypes}");
           final p = PostItem.fromThreadInfo(t);
           // 如果 fromThreadInfo 未能获取作者信息，从 userList 补充
           if ((p.authorName.isEmpty || p.authorPortrait == null) &&
@@ -481,8 +485,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   }
 
   Future<void> _loadMoreGoodThreads() async {
-    if (_loadingMoreGoodThreads || !_hasMoreGoodThreads || !UserManager.isLogin)
+    if (_loadingMoreGoodThreads ||
+        !_hasMoreGoodThreads ||
+        !UserManager.isLogin) {
       return;
+    }
     setState(() => _loadingMoreGoodThreads = true);
     final info = _forumInfo;
     final forumName = info?.forumName ?? widget.forumName;
@@ -827,7 +834,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       ),
                     ),
                     onUserTap: (uid) {
-                      UserBrowseHistoryManager.saveRecord(uid: uid, userName: p.authorName, portrait: p.authorPortrait);
+                      UserBrowseHistoryManager.saveRecord(
+                        uid: uid,
+                        userName: p.authorName,
+                        portrait: p.authorPortrait,
+                      );
                       context.push('/user/$uid');
                     },
                   );
@@ -937,7 +948,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                         ),
                       ),
                       onUserTap: (uid) {
-                        UserBrowseHistoryManager.saveRecord(uid: uid, userName: p.authorName, portrait: p.authorPortrait);
+                        UserBrowseHistoryManager.saveRecord(
+                          uid: uid,
+                          userName: p.authorName,
+                          portrait: p.authorPortrait,
+                        );
                         context.push('/user/$uid');
                       },
                     );

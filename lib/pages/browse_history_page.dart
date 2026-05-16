@@ -292,7 +292,7 @@ class _BrowseHistoryPageState extends State<BrowseHistoryPage>
       labelColor: theme.brightness == Brightness.dark
           ? Colors.white
           : Colors.black,
-      labelStyle: TextStyle(fontWeight: FontWeight.w800),
+      labelStyle: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
       unselectedLabelColor: theme.brightness == Brightness.dark
           ? Colors.grey
           : Colors.grey[100],

@@ -54,6 +54,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   static const String _likedStorageKey = 'floor_reply_liked_cnt';
 
   /// 从本地恢复点赞状态及点赞数，加载数据后由 _syncLikedFromData 调用
+  // ignore: prefer_final_fields
   Map<String, int> _likedAgreeMap = {};
 
   Future<void> _initLikedData() async {
@@ -101,8 +102,9 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     _lastScrollPosition = current;
 
     // 触底加载更多
-    if (!_hasMore || _loadingMore || _scrollController.position.outOfRange)
+    if (!_hasMore || _loadingMore || _scrollController.position.outOfRange) {
       return;
+    }
     if (current >= _scrollController.position.maxScrollExtent - 100) {
       _loadMore();
     }
@@ -421,8 +423,14 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
                 final sr = _data!.subpostList[index - 1];
                 final aid = sr.authorId.toInt();
                 final author = sr.hasAuthor() ? sr.author : _authorMap[aid];
-                final name = author?.nameShow.isNotEmpty == true ? author!.nameShow : (author?.name ?? '');
-                UserBrowseHistoryManager.saveRecord(uid: uid, userName: name, portrait: author?.portrait);
+                final name = author?.nameShow.isNotEmpty == true
+                    ? author!.nameShow
+                    : (author?.name ?? '');
+                UserBrowseHistoryManager.saveRecord(
+                  uid: uid,
+                  userName: name,
+                  portrait: author?.portrait,
+                );
                 context.push('/user/$uid');
               },
             ),
