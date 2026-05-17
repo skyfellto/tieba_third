@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
 import '../models/user_profile_data.dart';
+import '../generated/CommonReq.pb.dart';
 import '../generated/CommonRequest.pb.dart';
 import '../generated/Personalized.pb.dart';
 import '../generated/ForumGuide/ForumGuideRequest.pb.dart';
@@ -42,6 +43,8 @@ import '../generated/SearchSug/SearchSugRequest.pb.dart';
 import '../generated/SearchSug/SearchSugRequestData.pb.dart';
 import '../generated/SearchSug/SearchSugResponse.pb.dart';
 import '../generated/SearchSug/SearchSugResponseData.pb.dart';
+import '../generated/VoteRequest.pb.dart';
+import '../generated/VoteResponse.pb.dart';
 
 class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
@@ -50,6 +53,14 @@ class TiebaApi {
   static const String _v12ClientVersion = "12.52.1.0";
 
   static String _s(dynamic v) => v?.toString() ?? '';
+
+  static String _randomHex(int length) {
+    const chars = '0123456789abcdef';
+    return List.generate(
+      length,
+      (_) => chars[Random().nextInt(chars.length)],
+    ).join();
+  }
 
   static String _computeSign(List<List<String>> data) {
     data.sort((a, b) => a[0].compareTo(b[0]));
@@ -2506,6 +2517,188 @@ class TiebaApi {
     } catch (e) {
       debugPrint("【搜索用户异常】$e");
       return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 提交投票 — POST /c/c/post/addPollPost
+  static Future<bool> voteSubmit({
+    required String bduss,
+    required String stoken,
+    required String tid,
+    required String optionIds,
+    required String fid,
+    String? userId = "7019922344",
+    String? zId,
+  }) async {
+    final cuid = "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC";
+
+    final now = DateTime.now();
+    final msTs = now.millisecondsSinceEpoch;
+    final eventDay = "${now.year}${now.month}${now.day}";
+    final clientId = "wappc_${msTs}_${Random().nextInt(1000)}";
+    final c3Aid = "A00-G5SVL5N6FGYPAYMWPKJBSLHMBMFDSAWN-6IQNVRQZ";
+    final installTs = msTs - 3600000; // ~1 hour ago
+
+    final common = CommonReq(
+      bDUSS: bduss,
+      stoken: stoken,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      clientId: clientId,
+      clientType: 2,
+      clientVersion: "22.5.3.0",
+      timestamp: Int64(msTs),
+      netType: 1,
+      scrW: 1080,
+      scrH: 1920,
+      scrDip: 1.75,
+      c3Aid: c3Aid,
+      cmode: 1,
+      sdkVer: "3.36.0",
+      frameworkVer: "4220001",
+      pversion: "1.0.3",
+      startType: 1,
+      eventDay: eventDay,
+      activeTimestamp: Int64(installTs + 60000),
+      firstInstallTime: Int64(installTs),
+      lastUpdateTime: Int64(installTs),
+      personalizedRecSwitch: 1,
+      zId: zId,
+    );
+
+    // 手动 setter 避免 from 命名冲突
+    common.from = "1015363f";
+
+    debugPrint("【投票CommonReq】from=${common.from} clientId=$clientId");
+
+    final requestPb = VoteRequest(
+      tid: Int64.parseInt(tid),
+      optionIds: optionIds,
+      fid: Int64.parseInt(fid),
+      common: common,
+    );
+
+    final bodyBytes = requestPb.writeToBuffer();
+
+    // ST 反垃圾参数
+    final stNum = Random().nextInt(750) + 100;
+    final stTime = stNum.toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
+    const stMethod = "1";
+    const stMode = "1";
+    const stTimesNum = "1";
+    const stErrorNums = "1";
+
+    // 计算 sign：所有表单字段（data 和 sign 除外），按 key 排序
+    final signFields = <List<String>>[
+      ["BDUSS", bduss],
+      ["stErrorNums", stErrorNums],
+      ["stMethod", stMethod],
+      ["stMode", stMode],
+      ["stSize", stSize],
+      ["stTime", stTime],
+      ["stTimesNum", stTimesNum],
+      ["stoken", stoken],
+    ];
+    signFields.sort((a, b) => a[0].compareTo(b[0]));
+    final signBuf = StringBuffer();
+    for (final f in signFields) {
+      signBuf.write("${f[0]}=${f[1]}");
+    }
+    final sign = md5
+        .convert(utf8.encode("${signBuf.toString()}tiebaclient!!!"))
+        .toString()
+        .toUpperCase();
+    debugPrint("【投票sign】$sign stNum=$stNum stTime=$stTime stSize=$stSize");
+
+    final uri = Uri.parse(
+      "https://tiebac.baidu.com/c/c/post/addPollPost?cmd=309006&format=protobuf",
+    );
+
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final logid = timestamp;
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": "bdtb for Android 22.5.3.0",
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "cuid_gid": "",
+          "c3_aid": c3Aid,
+          // "c3_aid": "A00-${Random().nextInt(900000000) + 100000000}",
+          "Charset": "UTF-8",
+          "client_logid": logid,
+          "client_user_token": userId ?? '',
+          "Connection": "Keep-Alive",
+          "Accept-Encoding": "gzip",
+          "X-Bd-Traceid":
+              "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        )
+        ..fields['BDUSS'] = bduss
+        ..fields['sign'] = sign
+        ..fields['stErrorNums'] = stErrorNums
+        ..fields['stMethod'] = stMethod
+        ..fields['stMode'] = stMode
+        ..fields['stSize'] = stSize
+        ..fields['stTime'] = stTime
+        ..fields['stTimesNum'] = stTimesNum
+        ..fields['stoken'] = stoken;
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint("【投票请求】uri=$uri");
+      debugPrint("【投票请求】optionIds=$optionIds tid=$tid fid=$fid");
+
+      if (response.statusCode != 200) {
+        debugPrint("【投票响应】状态码=${response.statusCode}");
+        return false;
+      }
+
+      debugPrint("【投票响应】body字节数=${response.bodyBytes.length}");
+
+      // 尝试解析为 VoteResponse
+      try {
+        final voteResp = VoteResponse.fromBuffer(response.bodyBytes);
+        final code1 = voteResp.hasRes1() ? voteResp.res1.code : -1;
+        final msg1 = voteResp.hasRes1() ? voteResp.res1.msg : '';
+        final code2 = voteResp.hasRes2() ? voteResp.res2.code : -1;
+        final msg2 = voteResp.hasRes2() ? voteResp.res2.msg : '';
+        final extra2 = voteResp.hasRes2() ? voteResp.res2.extra : '';
+        debugPrint("【投票响应】res1: code=$code1 msg=$msg1");
+        debugPrint("【投票响应】res2: code=$code2 msg=$msg2 extra=$extra2");
+        if (voteResp.hasRes1() && voteResp.res1.code == 0) {
+          debugPrint("【投票成功】");
+          return true;
+        }
+        return false;
+      } catch (e) {
+        debugPrint("【投票解析失败】$e");
+        // 尝试解析为 JSON（错误时返回 JSON）
+        try {
+          final text = String.fromCharCodes(response.bodyBytes);
+          final json = jsonDecode(text) as Map<String, dynamic>;
+          debugPrint(
+            "【投票JSON响应】error_code=${json['error_code']} error_msg=${json['error_msg']}",
+          );
+        } catch (_) {
+          debugPrint("【投票原始响应】${String.fromCharCodes(response.bodyBytes)}");
+        }
+        return false;
+      }
+    } catch (e) {
+      debugPrint("【投票提交异常】$e");
+      return false;
     } finally {
       client.close();
     }

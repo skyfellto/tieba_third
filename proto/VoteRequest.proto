@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package tieba;
+import "CommonReq.proto";
+
+message VoteRequest {
+  CommonReq common = 3;      // 公共头（字段3）
+  int64 tid = 1;             // 帖子 ID
+  string option_ids = 2;     // 选项 ID 串
+  int64 fid = 4;             // 吧 ID
+}

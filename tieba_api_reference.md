@@ -735,3 +735,100 @@
 
 
 
+我的需求是在帖子有投票功能的情况下增加投票功能。在帖子详情页中，如果用户还未进行过投票，则不显示投票展示区中的进度条与右侧投票信息文字，并在投票统计的同一行的最右侧增加”投票“按钮（若投票已结束或者已投票则不再显示），点击后将所有选中的投票选项进行投票，投票成功后显示进度条与右侧投票信息文字，并且用户选中的选项的进度条与其他的进度条颜色不同；投票选项在用户还未进行投票并且投票未截止时可以单击选中，根据投票是单选还是多选判断是否可以选择多个，对于选中的投票选项，投票选项内的最右侧显示已选中图标，再次单击已选中的选项可以取消选中该选项。进行投票的接口为https://tiebac.baidu.com/c/c/post/addPollPost?cmd=309006&format=protobuf，相关proto文件是VoteRequest.pb.dart，其中判断用户是否进行过投票的是PbPageResponseData.thread.originThreadInfo.pollInfo.isPolled，是否是多选是PbPageResponseData.thread.originThreadInfo.pollInfo.isMulti，是否结束不确定是不是PbPageResponseData.thread.originThreadInfo.pollInfo.status，先用PbPageResponseData.thread.originThreadInfo.pollInfo.endtime判断吧，投票选项的id是PbPageResponseData.thread.originThreadInfo.pollInfo.options.id。  
+
+**VoteRequest 业务字段**（必须）：
+
+- tid：帖子 ID（Int64）
+- optionIds：用户选择的选项 ID，多选用逗号分隔（String）
+- fid：吧 ID（Int64，建议填写）
+
+**CommonReq 公共头字段**（必须）：
+
+- bDUSS：用户登录凭证（String）
+- stoken：安全令牌（String）
+- cuid：设备/用户唯一标识（String）
+- clientType：客户端类型，2 代表 Android（int）
+- clientVersion：客户端版本号，如 "22.5.3.0"（String）
+- timestamp：当前毫秒时间戳（Int64）
+
+**CommonReq 建议填充的字段**：
+
+- cuidGalaxy2：通常与 cuid 相同（String）
+
+- zId：用户的 zId（String）
+
+- c3Aid：广告标识（String）
+
+- netType：网络类型，1 代表 WiFi（int）
+
+- userAgent：客户端 User-Agent 字符串（String）
+
+- scrW：屏幕宽度（int）
+
+- scrH：屏幕高度（int）
+
+- scrDip：屏幕密度（double）
+
+  
+
+具体填充内容参考1 {
+  3 {
+    10: "HA1UjBXMmotMld3dmdCUWkySjljWU45eXdaTTNiMVhpeDdVRVl1MEs3bTRQQzVxSVFBQUFBJCQAAAAAAQAAAAEAAACog2uizOzMw8uud2F0ZXIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALivBmq4rwZqT"
+    3: "wappc_1778822989595_244"
+    1: 2
+    2: "22.5.3.0"
+    8: 1778853034059
+    49: 1778823006381
+    35: "A00-G5SVL5N6FGYPAYMWPKJBSLHMBMFDSAWN-6IQNVRQZ"
+    66: ""
+    55: 1
+    7: "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC"
+    32: "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC"
+    33: ""
+    70 {
+      6: 46
+      6: 0x30353031
+      6: 48
+      6: 0x3637373238323833
+    }
+    68: "N4AIo_4Z2ogTaA87YPAiiQqqB"
+    74: ""
+    76: "p4mkjQ5mBQqSB"
+    53: "2026515"
+    61: ""
+    50: 1778822998117
+    43: "4220001"
+    6: "1015363f"
+    64: "_a2q8_aq28_qa28qALNqA"
+    41: 0
+    51: 1778822998117
+    73: "pfs9RYaA-iqqC"
+    28: "3.0.0"
+    44: "2035000"
+    82: 1
+    81: 1
+    12: 1
+    75 {
+      13: 0x43717151
+    }
+    88: "hybrid-main-pb_1.0.302.1"
+    63: 1
+    24: "1.0.3"
+    40: 0
+    36: "216381_1-219941_2-220250_1-220383_4-219919_2-221270_7-223379_1-223518_2-223857_1-223891_1-223970_5-223989_1-224145_2-224221_1-224278_2-224399_2-224650_2-225188_1-225471_2"
+    39: 0x3ffc000000000000
+    38: 1920
+    37: 1080
+    42: "3.36.0"
+    56: ""
+    57: 1
+    30: "aeb7f03cecedeb1ecefc9eaaf245a65e53c7437717354c1cd931ffc4008169a5"
+    87: "jepgwebp"
+    62: "Mozilla/5.0 (Linux; Android 12; SM-S9280 Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/22.5.3.0"
+    31: "FonXGKlF5WJ3QMt9-Pd1ymedu6kRr_6VC4Hp2281avbWufQcuHE3YwCQybBXwhgZvNXMudBn2TnJw1PZac5XltA"
+  }
+  4: 27964632
+  2: "2"
+  1: 10713007093
+}

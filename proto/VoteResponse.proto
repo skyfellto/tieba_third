@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package tieba;
+
+message VoteResponse {
+  message SubResponse {
+    int32 code = 1;      // 错误码，0表示成功
+    string msg = 2;      // 提示信息，如"投票成功"
+    string extra = 3;    // 附加信息（可选，对应响应中字段3）
+  }
+  SubResponse res1 = 1;  // 对应响应中的字段1
+  SubResponse res2 = 2;  // 对应响应中的字段2
+}

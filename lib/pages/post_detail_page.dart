@@ -687,6 +687,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (data.hasFirstFloorPost()) {
       firstPost = data.firstFloorPost;
     }
+    debugPrint(
+      "【投票】voteCrypt=${firstPost?.voteCrypt} isVote=${firstPost?.isVote}",
+    );
+
     // 回复列表（排除 floor=1 的楼主帖，楼主帖已在详情区展示）
     final replyPosts = <Post>[];
     for (final p in data.postList) {
@@ -731,7 +735,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
             data.thread.originThreadInfo.hasPollInfo() &&
             data.thread.originThreadInfo.pollInfo.title.isNotEmpty &&
             data.thread.originThreadInfo.pollInfo.options.isNotEmpty)
-          VotePanel(pollInfo: data.thread.originThreadInfo.pollInfo),
+          VotePanel(
+            pollInfo: data.thread.originThreadInfo.pollInfo,
+            tid: widget.tid,
+            fid: data.forum.id.toInt().toString(),
+            onVoteSubmitted: () => _loadData(refresh: true),
+          ),
         const Divider(height: 24),
         // 回复 Tab 栏（含楼主的总数）
         _buildReplyTabBar(
