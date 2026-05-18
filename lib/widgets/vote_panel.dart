@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../generated/PollInfo.pb.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
-import '../utils/sofire_utils.dart';
+// import '../utils/sofire_utils.dart';
 
 class VotePanel extends StatefulWidget {
   final PollInfo pollInfo;
@@ -43,11 +43,7 @@ class _VotePanelState extends State<VotePanel> {
     }
   }
 
-  // TODO: 投票功能接口已保留（sofire_utils.dart、voteSubmit API、VotePanel 交互逻辑）
-  //       将 _isVotable 改为 true 即可启用交互投票
-  bool get _isVotable => false;
-  // ignore: unused_element
-  bool get _isEnded => false;
+  bool get _isVotable => _poll.isPolled == 0;
   bool get _isMulti => _poll.isMulti == 1;
   bool get _hasSelection => _selectedIds.isNotEmpty;
 
@@ -103,14 +99,14 @@ class _VotePanelState extends State<VotePanel> {
     setState(() => _submitting = true);
 
     final optionIdsStr = _selectedIds.join(',');
-    String? zId = await getCachedZid();
-    if (zId == null || zId.isEmpty) {
-      zId = await getZid();
-    }
-    if (zId == null || zId.isEmpty) {
-      zId =
-          "FonXGKlF5WJ3QMt9-Pd1ymedu6kRr_6VC4Hp2281avbUq5UukGjzqktYqpkUgvWDELejOyA0vStZl_Yh0F4UPUQ";
-    }
+    // String? zId = await getCachedZid();
+    // if (zId == null || zId.isEmpty) {
+    //   zId = await getZid();
+    // }
+    // if (zId == null || zId.isEmpty) {
+    //   zId =
+    //       "FonXGKlF5WJ3QMt9-Pd1ymedu6kRr_6VC4Hp2281avbUq5UukGjzqktYqpkUgvWDELejOyA0vStZl_Yh0F4UPUQ";
+    // }
 
     final success = await TiebaApi.voteSubmit(
       bduss: UserManager.bduss!,
@@ -119,7 +115,7 @@ class _VotePanelState extends State<VotePanel> {
       optionIds: optionIdsStr,
       fid: widget.fid,
       userId: UserManager.userId,
-      zId: zId,
+      // zId: zId,
     );
 
     if (!mounted) return;
@@ -127,6 +123,7 @@ class _VotePanelState extends State<VotePanel> {
     if (success) {
       setState(() {
         _poll.isPolled = 1;
+        _poll.polledValue = _selectedIds.join(',');
         // 更新每个选项的票数（本地乐观更新 +1）
         for (final opt in _poll.options) {
           if (_selectedIds.contains(opt.id)) {
@@ -150,7 +147,7 @@ class _VotePanelState extends State<VotePanel> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final totalVotes = _totalVotes;
-    debugPrint("endTime :: ${_poll.endTime}");
+    // debugPrint("endTime :: ${_poll.endTime}");
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,27 +193,17 @@ class _VotePanelState extends State<VotePanel> {
           );
         }),
         const SizedBox(height: 8),
-        // 投票按钮 / 统计
-        if (_isVotable)
-          _buildVoteButton(theme)
-        else
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '已有$totalVotes位吧友参与投票',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-              ),
-              if (_poll.endTime > -1)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _formatEndtime(_poll.endTime),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                  ),
-                ),
-            ],
-          ),
+        // 投票人数（始终显示）+ 投票按钮
+        Row(
+          children: [
+            Text(
+              '已有$totalVotes位吧友参与投票${_poll.endTime > -1 ? _formatEndtime(_poll.endTime) : ""}',
+              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            ),
+            const Spacer(),
+            if (_isVotable) _buildVoteButton(theme),
+          ],
+        ),
         const SizedBox(height: 4),
       ],
     );
@@ -272,7 +259,7 @@ class _VotePanelState extends State<VotePanel> {
     ThemeData theme,
   ) {
     final barColor = userVotedFor
-        ? theme.primaryColor
+        ? Colors.blueAccent
         : (isDark ? Colors.blue.withValues(alpha: 0.25) : Colors.blue[50]);
 
     return ClipRRect(
@@ -338,39 +325,34 @@ class _VotePanelState extends State<VotePanel> {
   // ========== 投票按钮 ==========
 
   Widget _buildVoteButton(ThemeData theme) {
-    return Row(
-      children: [
-        const Spacer(),
-        GestureDetector(
-          onTap: _hasSelection && !_submitting ? _submitVote : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              color: _hasSelection && !_submitting
-                  ? theme.primaryColor
-                  : Colors.grey[300],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: _submitting
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Text(
-                    '投票',
-                    style: TextStyle(
-                      color: _hasSelection ? Colors.white : Colors.grey[500],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-          ),
+    return GestureDetector(
+      onTap: _hasSelection && !_submitting ? _submitVote : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: _hasSelection && !_submitting
+              ? theme.primaryColor
+              : Colors.grey[300],
+          borderRadius: BorderRadius.circular(16),
         ),
-      ],
+        child: _submitting
+            ? SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.grey[500],
+                ),
+              )
+            : Text(
+                '投票',
+                style: TextStyle(
+                  color: _hasSelection ? Colors.white : Colors.blue,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
     );
   }
 }

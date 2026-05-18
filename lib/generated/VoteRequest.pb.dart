@@ -21,16 +21,10 @@ export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 class VoteRequest extends $pb.GeneratedMessage {
   factory VoteRequest({
-    $fixnum.Int64? tid,
-    $core.String? optionIds,
-    $0.CommonReq? common,
-    $fixnum.Int64? fid,
+    Data? data,
   }) {
     final result = create();
-    if (tid != null) result.tid = tid;
-    if (optionIds != null) result.optionIds = optionIds;
-    if (common != null) result.common = common;
-    if (fid != null) result.fid = fid;
+    if (data != null) result.data = data;
     return result;
   }
 
@@ -47,11 +41,7 @@ class VoteRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'VoteRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
       createEmptyInstance: create)
-    ..aInt64(1, _omitFieldNames ? '' : 'tid')
-    ..aOS(2, _omitFieldNames ? '' : 'optionIds')
-    ..aOM<$0.CommonReq>(3, _omitFieldNames ? '' : 'common',
-        subBuilder: $0.CommonReq.create)
-    ..aInt64(4, _omitFieldNames ? '' : 'fid')
+    ..aOM<Data>(1, _omitFieldNames ? '' : 'data', subBuilder: Data.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -72,6 +62,71 @@ class VoteRequest extends $pb.GeneratedMessage {
   static VoteRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<VoteRequest>(create);
   static VoteRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  Data get data => $_getN(0);
+  @$pb.TagNumber(1)
+  set data(Data value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasData() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearData() => $_clearField(1);
+  @$pb.TagNumber(1)
+  Data ensureData() => $_ensure(0);
+}
+
+class Data extends $pb.GeneratedMessage {
+  factory Data({
+    $fixnum.Int64? tid,
+    $core.String? optionIds,
+    $0.CommonReq? common,
+    $fixnum.Int64? fid,
+  }) {
+    final result = create();
+    if (tid != null) result.tid = tid;
+    if (optionIds != null) result.optionIds = optionIds;
+    if (common != null) result.common = common;
+    if (fid != null) result.fid = fid;
+    return result;
+  }
+
+  Data._();
+
+  factory Data.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Data.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Data',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      createEmptyInstance: create)
+    ..aInt64(1, _omitFieldNames ? '' : 'tid')
+    ..aOS(2, _omitFieldNames ? '' : 'optionIds')
+    ..aOM<$0.CommonReq>(3, _omitFieldNames ? '' : 'common',
+        subBuilder: $0.CommonReq.create)
+    ..aInt64(4, _omitFieldNames ? '' : 'fid')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Data clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Data copyWith(void Function(Data) updates) =>
+      super.copyWith((message) => updates(message as Data)) as Data;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Data create() => Data._();
+  @$core.override
+  Data createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Data getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Data>(create);
+  static Data? _defaultInstance;
 
   @$pb.TagNumber(1)
   $fixnum.Int64 get tid => $_getI64(0);

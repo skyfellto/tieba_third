@@ -739,7 +739,6 @@ class _PostDetailPageState extends State<PostDetailPage> {
             pollInfo: data.thread.originThreadInfo.pollInfo,
             tid: widget.tid,
             fid: data.forum.id.toInt().toString(),
-            onVoteSubmitted: () => _loadData(refresh: true),
           ),
         const Divider(height: 24),
         // 回复 Tab 栏（含楼主的总数）

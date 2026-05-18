@@ -2530,7 +2530,7 @@ class TiebaApi {
     required String optionIds,
     required String fid,
     String? userId = "7019922344",
-    String? zId,
+    // String? zId,
   }) async {
     final cuid = "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC";
 
@@ -2540,15 +2540,19 @@ class TiebaApi {
     final clientId = "wappc_${msTs}_${Random().nextInt(1000)}";
     final c3Aid = "A00-G5SVL5N6FGYPAYMWPKJBSLHMBMFDSAWN-6IQNVRQZ";
     final installTs = msTs - 3600000; // ~1 hour ago
+    // final clientId = "wappc_1778822989595_244";
 
     final common = CommonReq(
+      // userAgent: "bdtb for Android 22.5.3.0",
+      userAgent: "bdtb for Android ${_clientVersion}",
       bDUSS: bduss,
       stoken: stoken,
       cuid: cuid,
       cuidGalaxy2: cuid,
       clientId: clientId,
       clientType: 2,
-      clientVersion: "22.5.3.0",
+      // clientVersion: "22.5.3.0",
+      clientVersion: _clientVersion,
       timestamp: Int64(msTs),
       netType: 1,
       scrW: 1080,
@@ -2565,7 +2569,11 @@ class TiebaApi {
       firstInstallTime: Int64(installTs),
       lastUpdateTime: Int64(installTs),
       personalizedRecSwitch: 1,
-      zId: zId,
+      // zId: zId,
+      needDecrypt: 1,
+      needCamDecrypt: 1,
+      phoneImei:
+          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
     );
 
     // 手动 setter 避免 from 命名冲突
@@ -2574,10 +2582,12 @@ class TiebaApi {
     debugPrint("【投票CommonReq】from=${common.from} clientId=$clientId");
 
     final requestPb = VoteRequest(
-      tid: Int64.parseInt(tid),
-      optionIds: optionIds,
-      fid: Int64.parseInt(fid),
-      common: common,
+      data: Data(
+        tid: Int64.parseInt(tid),
+        optionIds: optionIds,
+        fid: Int64.parseInt(fid),
+        common: common,
+      ),
     );
 
     final bodyBytes = requestPb.writeToBuffer();
@@ -2626,8 +2636,11 @@ class TiebaApi {
     try {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
+          "Content-Type":
+              "multipart/form-data; boundary=--------7da3d81520810*",
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android 22.5.3.0",
+          // "User-Agent": "bdtb for Android 22.5.3.0",
+          "User-Agent": "bdtb for Android $_clientVersion",
           "cuid": cuid,
           "cuid_galaxy2": cuid,
           "cuid_gid": "",
@@ -2640,6 +2653,7 @@ class TiebaApi {
           "Accept-Encoding": "gzip",
           "X-Bd-Traceid":
               "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
+          "Host": "tiebac.baidu.com",
         })
         ..files.add(
           http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
@@ -2658,7 +2672,7 @@ class TiebaApi {
       final response = await http.Response.fromStream(streamedResponse);
 
       debugPrint("【投票请求】uri=$uri");
-      debugPrint("【投票请求】optionIds=$optionIds tid=$tid fid=$fid");
+      debugPrint("【投票请求】optionIds=$optionIds tid=$tid, fid=$fid");
 
       if (response.statusCode != 200) {
         debugPrint("【投票响应】状态码=${response.statusCode}");
