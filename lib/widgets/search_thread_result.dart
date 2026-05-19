@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
+import '../utils/like_manager.dart';
 import '../utils/user_manager.dart';
 import '../widgets/post_card.dart';
 
@@ -17,7 +18,7 @@ class SearchThreadResult extends StatefulWidget {
 class _SearchThreadResultState extends State<SearchThreadResult>
     with AutomaticKeepAliveClientMixin {
   final List<PostItem> _posts = [];
-  final Set<String> _likedSet = {};
+  final LikeManager _likeManager = LikeManager();
   bool _isLoading = false;
 
   @override
@@ -70,6 +71,11 @@ class _SearchThreadResultState extends State<SearchThreadResult>
     final rawItems = list is List ? list.cast<Map<String, dynamic>>() : <Map<String, dynamic>>[];
     final items = rawItems.map(_toPostItem).toList();
     final hasMore = data['has_more'] == 1;
+
+    // Sync initial like state into manager
+    for (final p in items) {
+      _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+    }
 
     setState(() {
       _isLoading = false;
@@ -197,7 +203,7 @@ class _SearchThreadResultState extends State<SearchThreadResult>
             return PostCard(
               post: p,
               showForum: true,
-              isLiked: _likedSet.contains(tid),
+              isLiked: _likeManager.isLiked(tid),
               onBodyTap: (_) => context.push('/post/$tid'),
               onForumTap: p.forumId.isNotEmpty
                   ? () => context.push(
@@ -207,25 +213,55 @@ class _SearchThreadResultState extends State<SearchThreadResult>
               onUserTap: (uid) {
                 context.push('/user/$uid');
               },
-              onLikeTap: (tid) async {
+              onLikeTap: (tid) {
                 if (!UserManager.isLogin) return;
-                final score = await TiebaApi.likePost(
-                  bduss: UserManager.bduss!,
-                  stoken: UserManager.stoken!,
-                  tbs: UserManager.tbs ?? '',
-                  userId: UserManager.userId ?? '',
-                  threadId: tid,
-                );
-                if (score != null && mounted) {
-                  setState(() {
-                    _likedSet.add(tid);
-                    final i = _posts.indexWhere((x) => x.tid == tid);
-                    if (i >= 0) {
-                      final cur = int.tryParse(_posts[i].agreeNum) ?? 0;
-                      _posts[i].agreeNum = '${cur + 1}';
-                    }
-                  });
-                }
+                if (!mounted) return;
+                final scaffold = ScaffoldMessenger.of(context);
+                final pIdx = _posts.indexWhere((x) => x.tid == tid);
+                if (pIdx < 0) return;
+                setState(() {
+                  final (_, newAgree) = _likeManager.toggle(
+                    key: tid,
+                    serverLiked: _posts[pIdx].isLiked,
+                    serverAgreeNum: int.tryParse(_posts[pIdx].agreeNum) ?? 0,
+                    request: (opType) async {
+                      final score = await TiebaApi.likePost(
+                        bduss: UserManager.bduss!,
+                        stoken: UserManager.stoken!,
+                        tbs: UserManager.tbs ?? '',
+                        userId: UserManager.userId ?? '',
+                        threadId: tid,
+                        opType: opType,
+                        allowAlreadyLiked: true,
+                      );
+                      return score != null;
+                    },
+                    onUpdate: (isRollback) {
+                      if (!mounted) return;
+                      setState(() {
+                        final i = _posts.indexWhere((x) => x.tid == tid);
+                        if (i >= 0) {
+                          _posts[i].agreeNum =
+                              _likeManager.agreeNum(tid).toString();
+                        }
+                      });
+                      if (isRollback) {
+                        final nowLiked = _likeManager.isLiked(tid);
+                        scaffold.showSnackBar(SnackBar(
+                          content: Text(
+                            nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ));
+                      }
+                    },
+                  );
+                  final idx = _posts.indexWhere((x) => x.tid == tid);
+                  if (idx >= 0) {
+                    _posts[idx].agreeNum = newAgree.toString();
+                    _posts[idx].isLiked = _likeManager.isLiked(tid);
+                  }
+                });
               },
               onShareTap: (tid) {
                 SharePlus.instance.share(

@@ -266,6 +266,7 @@ class TiebaApi {
     required String userId,
     required String threadId,
     String postId = "0",
+    int opType = 0,
     bool allowAlreadyLiked = false,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
@@ -290,7 +291,7 @@ class TiebaApi {
       ["model", "Android"],
       ["net_type", "1"],
       ["obj_type", "3"],
-      ["op_type", "0"],
+      ["op_type", "$opType"],
       ["os_version", "12"],
       ["phone_imei", phoneImei],
       ["post_id", postId],
@@ -353,7 +354,7 @@ class TiebaApi {
         debugPrint("【点赞帖子失败】data=null");
         return null;
       }
-      debugPrint("【点赞帖子成功】返回1");
+      debugPrint("【点赞/取消点赞帖子成功】返回1 opType=$opType");
       return 1;
     } catch (e) {
       debugPrint("【点赞帖子异常】$e");
@@ -1269,6 +1270,7 @@ class TiebaApi {
     required String threadId,
     required String postId,
     int objType = 1,
+    int opType = 0,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei =
@@ -1292,7 +1294,7 @@ class TiebaApi {
       ["model", "Android"],
       ["net_type", "1"],
       ["obj_type", "$objType"],
-      ["op_type", "0"],
+      ["op_type", "$opType"],
       ["os_version", "12"],
       ["phone_imei", phoneImei],
       ["post_id", postId],
@@ -2532,7 +2534,11 @@ class TiebaApi {
     String? userId = "7019922344",
     // String? zId,
   }) async {
-    final cuid = "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC";
+    // final cuid = "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC";
+    final phoneImei =
+        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    // ignore: unnecessary_brace_in_string_interps
+    final cuid = "cuid_${phoneImei}";
 
     final now = DateTime.now();
     final msTs = now.millisecondsSinceEpoch;

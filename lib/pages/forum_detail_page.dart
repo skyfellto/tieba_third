@@ -8,6 +8,7 @@ import '../generated/FrsPage/FrsPage.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
+import '../utils/like_manager.dart';
 import '../utils/user_manager.dart';
 import '../utils/user_browse_history_manager.dart';
 import '../models/forum_browse_record.dart';
@@ -62,7 +63,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   bool _loadingMoreThreads = false;
   bool _hasMoreThreads = true;
   int _threadPage = 1;
-  final Set<String> _likedThreadSet = {};
+  final LikeManager _likeManager = LikeManager();
   List<PostItem> _goodThreads = [];
   bool _loadingGoodThreads = false;
   bool _loadingMoreGoodThreads = false;
@@ -82,14 +83,25 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   Map<String, int> _likedAgreeMap = {};
   static const String _likedStorageKey = 'forum_detail_liked_cnt';
 
+  /// 从本地持久化恢复点赞数据
   Future<void> _initLikedSet() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_likedStorageKey);
     if (raw != null && raw.isNotEmpty) {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      for (final e in map.entries) {
-        _likedThreadSet.add(e.key);
-        _likedAgreeMap[e.key] = (e.value as num).toInt();
+      try {
+        _likedAgreeMap = (jsonDecode(raw) as Map<String, dynamic>)
+            .map((k, v) => MapEntry(k, (v as num).toInt()));
+      } catch (_) {}
+    }
+  }
+
+  void _syncLikedFromPosts(List<PostItem> posts) {
+    for (final p in posts) {
+      _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+      final saved = _likedAgreeMap[p.tid];
+      if (saved != null) {
+        final apiNum = int.tryParse(p.agreeNum) ?? 0;
+        p.agreeNum = "${saved > apiNum ? saved : apiNum}";
       }
     }
   }
@@ -97,22 +109,6 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   Future<void> _saveLikedSet() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_likedStorageKey, jsonEncode(_likedAgreeMap));
-  }
-
-  /// 从本地持久化恢复点赞数，同时同步 API 返回的 isLiked
-  void _syncLikedFromPosts(List<PostItem> posts) {
-    for (final p in posts) {
-      if (_likedThreadSet.contains(p.tid)) {
-        final saved = _likedAgreeMap[p.tid];
-        if (saved != null) {
-          final apiNum = int.tryParse(p.agreeNum) ?? 0;
-          p.agreeNum = "${saved > apiNum ? saved : apiNum}";
-        }
-      } else if (p.isLiked) {
-        _likedThreadSet.add(p.tid);
-        _likedAgreeMap[p.tid] = int.tryParse(p.agreeNum) ?? 0;
-      }
-    }
   }
 
   @override
@@ -800,32 +796,64 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                   return PostCard(
                     post: p,
                     showForum: false,
-                    isLiked: _likedThreadSet.contains(tid),
+                    isLiked: _likeManager.isLiked(tid),
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),
                     onBodyTap: (_) => context.push('/post/$tid'),
-                    onLikeTap: (_) async {
+                    onLikeTap: (_) {
                       if (!UserManager.isLogin) return;
-                      final score = await TiebaApi.likePost(
-                        bduss: UserManager.bduss!,
-                        stoken: UserManager.stoken!,
-                        tbs: UserManager.tbs ?? '',
-                        userId: UserManager.userId ?? '',
-                        threadId: tid,
-                      );
-                      if (score != null && mounted) {
-                        setState(() {
-                          _likedThreadSet.add(tid);
-                          final idx = _threads.indexWhere((x) => x.tid == tid);
-                          if (idx >= 0) {
-                            final cur =
-                                int.tryParse(_threads[idx].agreeNum) ?? 0;
-                            _threads[idx].agreeNum = "${cur + 1}";
-                            _likedAgreeMap[tid] = cur + 1;
-                          }
-                        });
-                        _saveLikedSet();
-                      }
+                      if (!mounted) return;
+                      final scaffold = ScaffoldMessenger.of(context);
+                      final pIdx = _threads.indexWhere((x) => x.tid == tid);
+                      if (pIdx < 0) return;
+                      setState(() {
+                        final (_, newAgree) = _likeManager.toggle(
+                          key: tid,
+                          serverLiked: _threads[pIdx].isLiked,
+                          serverAgreeNum: int.tryParse(_threads[pIdx].agreeNum) ?? 0,
+                          request: (opType) async {
+                            final score = await TiebaApi.likePost(
+                              bduss: UserManager.bduss!,
+                              stoken: UserManager.stoken!,
+                              tbs: UserManager.tbs ?? '',
+                              userId: UserManager.userId ?? '',
+                              threadId: tid,
+                              opType: opType,
+                              allowAlreadyLiked: true,
+                            );
+                            return score != null;
+                          },
+                          onUpdate: (isRollback) {
+                            if (!mounted) return;
+                            setState(() {
+                              final i = _threads.indexWhere((x) => x.tid == tid);
+                              if (i >= 0) {
+                                _threads[i].agreeNum =
+                                    _likeManager.agreeNum(tid).toString();
+                                _likedAgreeMap[tid] =
+                                    int.tryParse(_threads[i].agreeNum) ?? 0;
+                              }
+                            });
+                            _saveLikedSet();
+                            if (isRollback) {
+                              final nowLiked = _likeManager.isLiked(tid);
+                              scaffold.showSnackBar(SnackBar(
+                                content: Text(
+                                  nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ));
+                            }
+                          },
+                        );
+                        final idx = _threads.indexWhere((x) => x.tid == tid);
+                        if (idx >= 0) {
+                          _threads[idx].agreeNum = newAgree.toString();
+                          _threads[idx].isLiked = _likeManager.isLiked(tid);
+                          _likedAgreeMap[tid] = newAgree;
+                        }
+                      });
+                      _saveLikedSet();
                     },
                     onShareTap: (_) => SharePlus.instance.share(
                       ShareParams(
@@ -912,34 +940,63 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       post: p,
                       showForum: false,
                       badge: "精",
-                      isLiked: _likedThreadSet.contains(tid),
+                      isLiked: _likeManager.isLiked(tid),
                       onImageTap: (images, i) =>
                           ImageViewer.show(context, images, index: i),
                       onBodyTap: (_) => context.push('/post/$tid'),
-                      onLikeTap: (_) async {
+                      onLikeTap: (_) {
                         if (!UserManager.isLogin) return;
-                        final score = await TiebaApi.likePost(
-                          bduss: UserManager.bduss!,
-                          stoken: UserManager.stoken!,
-                          tbs: UserManager.tbs ?? '',
-                          userId: UserManager.userId ?? '',
-                          threadId: tid,
-                        );
-                        if (score != null && mounted) {
-                          setState(() {
-                            _likedThreadSet.add(tid);
-                            final idx = _goodThreads.indexWhere(
-                              (x) => x.tid == tid,
-                            );
-                            if (idx >= 0) {
-                              final cur =
-                                  int.tryParse(_goodThreads[idx].agreeNum) ?? 0;
-                              _goodThreads[idx].agreeNum = "${cur + 1}";
-                              _likedAgreeMap[tid] = cur + 1;
-                            }
-                          });
-                          _saveLikedSet();
-                        }
+                        if (!mounted) return;
+                        final scaffold = ScaffoldMessenger.of(context);
+                        final pIdx = _goodThreads.indexWhere((x) => x.tid == tid);
+                        if (pIdx < 0) return;
+                        setState(() {
+                          final (_, newAgree) = _likeManager.toggle(
+                            key: tid,
+                            serverLiked: _goodThreads[pIdx].isLiked,
+                            serverAgreeNum: int.tryParse(_goodThreads[pIdx].agreeNum) ?? 0,
+                            request: (opType) async {
+                              final score = await TiebaApi.likePost(
+                                bduss: UserManager.bduss!,
+                                stoken: UserManager.stoken!,
+                                tbs: UserManager.tbs ?? '',
+                                userId: UserManager.userId ?? '',
+                                threadId: tid,
+                                opType: opType,
+                              );
+                              return score != null;
+                            },
+                            onUpdate: (isRollback) {
+                              if (!mounted) return;
+                              setState(() {
+                                final i = _goodThreads.indexWhere((x) => x.tid == tid);
+                                if (i >= 0) {
+                                  _goodThreads[i].agreeNum =
+                                      _likeManager.agreeNum(tid).toString();
+                                  _likedAgreeMap[tid] =
+                                      int.tryParse(_goodThreads[i].agreeNum) ?? 0;
+                                }
+                              });
+                              _saveLikedSet();
+                              if (isRollback) {
+                                final nowLiked = _likeManager.isLiked(tid);
+                                scaffold.showSnackBar(SnackBar(
+                                  content: Text(
+                                    nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ));
+                              }
+                            },
+                          );
+                          final idx = _goodThreads.indexWhere((x) => x.tid == tid);
+                          if (idx >= 0) {
+                            _goodThreads[idx].agreeNum = newAgree.toString();
+                            _goodThreads[idx].isLiked = _likeManager.isLiked(tid);
+                            _likedAgreeMap[tid] = newAgree;
+                          }
+                        });
+                        _saveLikedSet();
                       },
                       onShareTap: (_) => SharePlus.instance.share(
                         ShareParams(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/data_cache.dart';
+import 'webview_login_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -100,6 +101,32 @@ class _LoginPageState extends State<LoginPage> {
                         "登录",
                         style: TextStyle(fontSize: 18, color: Colors.white),
                       ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.deepPurple,
+                  side: const BorderSide(color: Colors.deepPurple),
+                ),
+                onPressed: _isLoading
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const WebViewLoginPage(),
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.language),
+                label: const Text(
+                  "WebView 登录（百度官方登录页）",
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],

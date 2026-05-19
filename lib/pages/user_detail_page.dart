@@ -6,6 +6,7 @@ import '../models/post_item.dart';
 import '../models/forum_item.dart';
 import '../models/user_profile_data.dart';
 import '../network/tieba_api.dart';
+import '../utils/like_manager.dart';
 import '../utils/user_manager.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/user_browse_history_manager.dart';
@@ -36,9 +37,9 @@ class _UserDetailPageState extends State<UserDetailPage>
   bool _hasMorePosts = true;
   int _postPage = 1;
 
-  // 点赞状态追踪（参照 forum_detail_page 模式）
+  // 点赞状态追踪
   final Map<String, int> _likedAgreeMap = {};
-  final Set<String> _likedSet = {};
+  final LikeManager _likeManager = LikeManager();
 
   // 贴吧头像缓存 forumId → avatarUrl
   final Map<String, String> _forumAvatarCache = {};
@@ -118,11 +119,9 @@ class _UserDetailPageState extends State<UserDetailPage>
 
   void _syncLikedFromPosts() {
     for (final p in _posts) {
-      if (p.isLiked) {
-        _likedSet.add(p.tid);
-        if (!_likedAgreeMap.containsKey(p.tid)) {
-          _likedAgreeMap[p.tid] = int.tryParse(p.agreeNum) ?? 0;
-        }
+      _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+      if (p.isLiked && !_likedAgreeMap.containsKey(p.tid)) {
+        _likedAgreeMap[p.tid] = int.tryParse(p.agreeNum) ?? 0;
       }
     }
   }
@@ -357,11 +356,10 @@ class _UserDetailPageState extends State<UserDetailPage>
                   delegate: SliverChildBuilderDelegate((context, index) {
                     final p = _posts[index];
                     final tid = p.tid;
-                    final isLiked = _likedSet.contains(tid);
                     return PostCard(
                       post: p,
                       showForum: true,
-                      isLiked: isLiked,
+                      isLiked: _likeManager.isLiked(tid),
                       onImageTap: (images, i) =>
                           ImageViewer.show(context, images, index: i),
                       onBodyTap: (_) => context.push('/post/$tid'),
@@ -370,32 +368,56 @@ class _UserDetailPageState extends State<UserDetailPage>
                               '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
                             )
                           : null,
-                      onLikeTap: (_) async {
+                      onLikeTap: (_) {
                         if (!UserManager.isLogin) return;
-                        final score = await TiebaApi.likePost(
-                          bduss: UserManager.bduss!,
-                          stoken: UserManager.stoken!,
-                          tbs: UserManager.tbs ?? '',
-                          userId: UserManager.userId ?? '',
-                          threadId: tid,
-                          allowAlreadyLiked: true,
-                        );
-                        if (score == null || !mounted) return;
+                        if (!mounted) return;
+                        final scaffold = ScaffoldMessenger.of(context);
+                        final pIdx = _posts.indexWhere((x) => x.tid == tid);
+                        if (pIdx < 0) return;
                         setState(() {
-                          _likedSet.add(tid);
+                          final (_, newAgree) = _likeManager.toggle(
+                            key: tid,
+                            serverLiked: _posts[pIdx].isLiked,
+                            serverAgreeNum: int.tryParse(_posts[pIdx].agreeNum) ?? 0,
+                            request: (opType) async {
+                              final score = await TiebaApi.likePost(
+                                bduss: UserManager.bduss!,
+                                stoken: UserManager.stoken!,
+                                tbs: UserManager.tbs ?? '',
+                                userId: UserManager.userId ?? '',
+                                threadId: tid,
+                                opType: opType,
+                                allowAlreadyLiked: true,
+                              );
+                              return score != null;
+                            },
+                            onUpdate: (isRollback) {
+                              if (!mounted) return;
+                              setState(() {
+                                final i = _posts.indexWhere((x) => x.tid == tid);
+                                if (i >= 0) {
+                                  _posts[i].agreeNum =
+                                      _likeManager.agreeNum(tid).toString();
+                                  _likedAgreeMap[tid] =
+                                      int.tryParse(_posts[i].agreeNum) ?? 0;
+                                }
+                              });
+                              if (isRollback) {
+                                final nowLiked = _likeManager.isLiked(tid);
+                                scaffold.showSnackBar(SnackBar(
+                                  content: Text(
+                                    nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ));
+                              }
+                            },
+                          );
                           final idx = _posts.indexWhere((x) => x.tid == tid);
                           if (idx >= 0) {
-                            if (score > 0) {
-                              // 新点赞
-                              final cur =
-                                  int.tryParse(_posts[idx].agreeNum) ?? 0;
-                              _posts[idx].agreeNum = "${cur + 1}";
-                              _likedAgreeMap[tid] = cur + 1;
-                            } else {
-                              // 已经点过赞了（score == -1），只标记不增加
-                              _likedAgreeMap[tid] =
-                                  int.tryParse(_posts[idx].agreeNum) ?? 0;
-                            }
+                            _posts[idx].agreeNum = newAgree.toString();
+                            _posts[idx].isLiked = _likeManager.isLiked(tid);
+                            _likedAgreeMap[tid] = newAgree;
                           }
                         });
                       },

@@ -4,7 +4,7 @@ import '../utils/user_manager.dart';
 import '../utils/auth_notifier.dart';
 import '../constants/app_colors.dart';
 import '../main.dart' show themeNotifier;
-import 'login_page.dart';
+import 'webview_login_page.dart';
 
 class WodePage extends StatefulWidget {
   const WodePage({super.key});
@@ -26,7 +26,7 @@ class _WodePageState extends State<WodePage> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+        MaterialPageRoute(builder: (_) => const WebViewLoginPage()),
       ).then((_) => setState(() {}));
     }
   }

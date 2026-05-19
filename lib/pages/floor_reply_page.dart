@@ -9,6 +9,7 @@ import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../network/tieba_api.dart';
 import 'package:go_router/go_router.dart';
+import '../utils/like_manager.dart';
 import '../utils/user_manager.dart';
 import '../utils/user_browse_history_manager.dart';
 import '../widgets/post_detail_header.dart';
@@ -41,7 +42,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   bool _showBackToTop = false;
   double _lastScrollPosition = 0;
   bool _isAnimatingToTop = false;
-  final Set<String> _likedReplySet = {};
+  final LikeManager _likeManager = LikeManager();
   final Map<int, usermodel.User> _authorMap = {};
 
   int _currentPage = 1;
@@ -53,6 +54,14 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
 
   static const String _likedStorageKey = 'floor_reply_liked_cnt';
 
+  Set<String> get _likedReplySet {
+    if (_data == null) return {};
+    return _data!.subpostList
+        .where((s) => _likeManager.isLiked('floor:${s.id}'))
+        .map((s) => s.id.toString())
+        .toSet();
+  }
+
   /// 从本地恢复点赞状态及点赞数，加载数据后由 _syncLikedFromData 调用
   // ignore: prefer_final_fields
   Map<String, int> _likedAgreeMap = {};
@@ -61,11 +70,10 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_likedStorageKey);
     if (raw != null && raw.isNotEmpty) {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      for (final e in map.entries) {
-        _likedReplySet.add(e.key);
-        _likedAgreeMap[e.key] = (e.value as num).toInt();
-      }
+      try {
+        _likedAgreeMap = (jsonDecode(raw) as Map<String, dynamic>)
+            .map((k, v) => MapEntry(k, (v as num).toInt()));
+      } catch (_) {}
     }
   }
 
@@ -312,47 +320,74 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     if (_data == null) return;
     for (final s in _data!.subpostList) {
       final pid = s.id.toString();
-      // 从本地恢复点赞状态
-      if (_likedReplySet.contains(pid)) {
-        // 恢复点赞数
-        final saved = _likedAgreeMap[pid];
-        if (saved != null && s.hasAgree()) {
-          s.agree.agreeNum = Int64(saved);
-        }
-      } else if (s.hasAgree() && s.agree.hasAgree == 1) {
-        // API 返回已点赞
-        _likedReplySet.add(pid);
-        _likedAgreeMap[pid] = s.agree.agreeNum.toInt();
+      final isLiked = s.hasAgree() && s.agree.hasAgree == 1;
+      final agreeNum = s.hasAgree() ? s.agree.agreeNum.toInt() : 0;
+      _likeManager.sync('floor:$pid', serverLiked: isLiked, serverAgreeNum: agreeNum);
+
+      final saved = _likedAgreeMap[pid];
+      if (saved != null && s.hasAgree()) {
+        s.agree.agreeNum = Int64(saved);
+      } else if (isLiked) {
+        _likedAgreeMap[pid] = agreeNum;
       }
     }
   }
 
   Future<void> _handleLikeReply(SubPostList subReply) async {
     if (!UserManager.isLogin) return;
+    if (!mounted) return;
+    final scaffold = ScaffoldMessenger.of(context);
     final pidStr = subReply.id.toString();
-    if (_likedReplySet.contains(pidStr)) return;
+    final replyKey = 'floor:$pidStr';
+    final serverLiked = subReply.hasAgree() && subReply.agree.hasAgree == 1;
+    final serverAgree = subReply.hasAgree() ? subReply.agree.agreeNum.toInt() : 0;
 
-    final score = await TiebaApi.likeReply(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      tbs: UserManager.tbs ?? '',
-      userId: UserManager.userId ?? '',
-      threadId: widget.tid,
-      postId: pidStr,
-      objType: 2, // SubPostList = 楼中楼, obj_type=2
+    final (nowLiked, nowAgree) = _likeManager.toggle(
+      key: replyKey,
+      serverLiked: serverLiked,
+      serverAgreeNum: serverAgree,
+      request: (opType) async {
+        final score = await TiebaApi.likeReply(
+          bduss: UserManager.bduss!,
+          stoken: UserManager.stoken!,
+          tbs: UserManager.tbs ?? '',
+          userId: UserManager.userId ?? '',
+          threadId: widget.tid,
+          postId: pidStr,
+          objType: 2,
+          opType: opType,
+        );
+        return score != null;
+      },
+      onUpdate: (isRollback) {
+        if (!mounted) return;
+        setState(() {
+          final newAgreeLocal = _likeManager.agreeNum(replyKey);
+          if (subReply.hasAgree()) {
+            subReply.agree.agreeNum = Int64(newAgreeLocal);
+          }
+          _likedAgreeMap[pidStr] = newAgreeLocal;
+        });
+        _saveLikedData();
+        if (isRollback) {
+          final nowLikedLocal = _likeManager.isLiked(replyKey);
+          scaffold.showSnackBar(SnackBar(
+            content: Text(
+              nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+            ),
+            duration: const Duration(seconds: 2),
+          ));
+        }
+      },
     );
 
-    if (score != null && mounted) {
-      setState(() {
-        _likedReplySet.add(pidStr);
-        if (subReply.hasAgree()) {
-          final newNum = subReply.agree.agreeNum.toInt() + 1;
-          subReply.agree.agreeNum = Int64(newNum);
-          _likedAgreeMap[pidStr] = newNum;
-        }
-      });
-      _saveLikedData();
-    }
+    setState(() {
+      if (subReply.hasAgree()) {
+        subReply.agree.agreeNum = Int64(nowAgree);
+      }
+      _likedAgreeMap[pidStr] = nowAgree;
+    });
+    _saveLikedData();
   }
 
   @override

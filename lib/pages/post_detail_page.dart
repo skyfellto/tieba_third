@@ -8,6 +8,7 @@ import '../generated/PbPage/PbPageResponseData.pb.dart';
 import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../network/tieba_api.dart';
+import '../utils/like_manager.dart';
 import '../utils/user_manager.dart';
 import '../utils/user_browse_history_manager.dart';
 import '../utils/browse_history_manager.dart';
@@ -38,8 +39,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   bool _isBottomBarVisible = true;
   // 帖子级点赞
-  bool _isThreadLiked = false;
-  int _threadAgreeNum = 0;
+  final LikeManager _likeManager = LikeManager();
   // 收藏
   bool _isCollected = false;
   // int _threadStoreCount = 0;
@@ -383,28 +383,55 @@ class _PostDetailPageState extends State<PostDetailPage> {
   void _syncThreadState() {
     if (_data?.hasThread() == true) {
       final t = _data!.thread;
-      _isThreadLiked = t.hasAgree() && t.agree.hasAgree == 1;
-      _threadAgreeNum = t.agreeNum;
       _isCollected = t.collectStatus != 0;
+      final isLiked = t.hasAgree() && t.agree.hasAgree == 1;
+      _likeManager.sync('thread:${widget.tid}', serverLiked: isLiked, serverAgreeNum: t.agreeNum);
     }
   }
 
   Future<void> _handleThreadLike() async {
     if (!UserManager.isLogin) return;
-    final tid = widget.tid;
-    final score = await TiebaApi.likePost(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      tbs: UserManager.tbs ?? '',
-      userId: UserManager.userId ?? '',
-      threadId: tid,
-    );
-    if (score != null && mounted) {
-      setState(() {
-        _isThreadLiked = true;
-        _threadAgreeNum = _threadAgreeNum + 1;
-      });
-    }
+    if (!mounted) return;
+    final scaffold = ScaffoldMessenger.of(context);
+    final threadKey = 'thread:${widget.tid}';
+    final serverLiked = _data?.hasThread() == true
+        ? _data!.thread.hasAgree() && _data!.thread.agree.hasAgree == 1
+        : false;
+    final serverAgree = _data?.hasThread() == true
+        ? _data!.thread.agreeNum
+        : 0;
+    setState(() {
+      _likeManager.toggle(
+        key: threadKey,
+        serverLiked: serverLiked,
+        serverAgreeNum: serverAgree,
+        request: (opType) async {
+          final score = await TiebaApi.likePost(
+            bduss: UserManager.bduss!,
+            stoken: UserManager.stoken!,
+            tbs: UserManager.tbs ?? '',
+            userId: UserManager.userId ?? '',
+            threadId: widget.tid,
+            opType: opType,
+            allowAlreadyLiked: true,
+          );
+          return score != null;
+        },
+        onUpdate: (isRollback) {
+          if (!mounted) return;
+          setState(() {});
+          if (isRollback) {
+            final nowLiked = _likeManager.isLiked(threadKey);
+            scaffold.showSnackBar(SnackBar(
+              content: Text(
+                nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+              ),
+              duration: const Duration(seconds: 2),
+            ));
+          }
+        },
+      );
+    });
   }
 
   Future<void> _handleCollect() async {
@@ -481,20 +508,20 @@ class _PostDetailPageState extends State<PostDetailPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _isThreadLiked
+                          _likeManager.isLiked('thread:${widget.tid}')
                               ? Icons.favorite
                               : Icons.favorite_border,
                           size: 22,
-                          color: _isThreadLiked
+                          color: _likeManager.isLiked('thread:${widget.tid}')
                               ? Colors.red
                               : theme.iconTheme.color,
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          '$_threadAgreeNum',
+                          '${_likeManager.agreeNum('thread:${widget.tid}')}',
                           style: TextStyle(
                             fontSize: 14,
-                            color: _isThreadLiked
+                            color: _likeManager.isLiked('thread:${widget.tid}')
                                 ? Colors.red
                                 : theme.textTheme.bodyMedium?.color,
                           ),
@@ -957,14 +984,18 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (_data == null) return;
     void syncPost(Post p) {
       final pid = p.id.toString();
+      final isLiked = p.hasAgree() && p.agree.hasAgree == 1;
+      final agreeNum = p.hasAgree() ? p.agree.agreeNum.toInt() : 0;
+      _likeManager.sync('reply:$pid', serverLiked: isLiked, serverAgreeNum: agreeNum);
+
       if (_likedReplySet.contains(pid)) {
         final saved = _likedAgreeMap[pid];
         if (saved != null && p.hasAgree()) {
           p.agree.agreeNum = Int64(saved);
         }
-      } else if (p.hasAgree() && p.agree.hasAgree == 1) {
+      } else if (isLiked) {
         _likedReplySet.add(pid);
-        _likedAgreeMap[pid] = p.agree.agreeNum.toInt();
+        _likedAgreeMap[pid] = agreeNum;
       }
     }
 
@@ -978,27 +1009,71 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   Future<void> _handleLikeReply(Post post) async {
     if (!UserManager.isLogin) return;
+    if (!mounted) return;
+    final scaffold = ScaffoldMessenger.of(context);
 
     final pidStr = post.id.toString();
-    final score = await TiebaApi.likeReply(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      tbs: UserManager.tbs ?? '',
-      userId: UserManager.userId ?? '',
-      threadId: widget.tid,
-      postId: pidStr,
+    final replyKey = 'reply:$pidStr';
+    final serverLiked = _likedReplySet.contains(pidStr);
+    final serverAgree = post.hasAgree() ? post.agree.agreeNum.toInt() : 0;
+
+    final (nowLiked, nowAgree) = _likeManager.toggle(
+      key: replyKey,
+      serverLiked: serverLiked,
+      serverAgreeNum: serverAgree,
+      request: (opType) async {
+        final score = await TiebaApi.likeReply(
+          bduss: UserManager.bduss!,
+          stoken: UserManager.stoken!,
+          tbs: UserManager.tbs ?? '',
+          userId: UserManager.userId ?? '',
+          threadId: widget.tid,
+          postId: pidStr,
+          opType: opType,
+        );
+        return score != null;
+      },
+      onUpdate: (isRollback) {
+        if (!mounted) return;
+        setState(() {
+          if (isRollback) {
+            // Rollback: sync _likedReplySet from LikeManager
+            if (_likeManager.isLiked(replyKey)) {
+              _likedReplySet.add(pidStr);
+            } else {
+              _likedReplySet.remove(pidStr);
+            }
+          }
+          final newAgreeLocal = _likeManager.agreeNum(replyKey);
+          if (post.hasAgree()) {
+            post.agree.agreeNum = Int64(newAgreeLocal);
+          }
+          _likedAgreeMap[pidStr] = newAgreeLocal;
+        });
+        _saveLikedData();
+        if (isRollback) {
+          final nowLikedLocal = _likeManager.isLiked(replyKey);
+          scaffold.showSnackBar(SnackBar(
+            content: Text(
+              nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+            ),
+            duration: const Duration(seconds: 2),
+          ));
+        }
+      },
     );
 
-    if (score != null && mounted) {
-      setState(() {
+    setState(() {
+      if (nowLiked) {
         _likedReplySet.add(pidStr);
-        if (post.hasAgree()) {
-          final newNum = post.agree.agreeNum.toInt() + 1;
-          post.agree.agreeNum = Int64(newNum);
-          _likedAgreeMap[pidStr] = newNum;
-        }
-      });
-      _saveLikedData();
-    }
+      } else {
+        _likedReplySet.remove(pidStr);
+      }
+      if (post.hasAgree()) {
+        post.agree.agreeNum = Int64(nowAgree);
+      }
+      _likedAgreeMap[pidStr] = nowAgree;
+    });
+    _saveLikedData();
   }
 }

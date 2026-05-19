@@ -10,6 +10,8 @@ class UserManager {
   static String? tbs;
   static String? userId;
 
+  static String? rawCookie;
+
   static const _keyBDUSS = 'bduss';
   static const _keySTOKEN = 'stoken';
   static const _keyUserName = 'user_name';
@@ -17,6 +19,7 @@ class UserManager {
   static const _keyPortrait = 'portrait';
   static const _keyTbs = 'tbs';
   static const _keyUserId = 'user_id';
+  static const _keyRawCookie = 'raw_cookie';
 
   // 头像 URL（aiotieba 用 HTTP + tieba.baidu.com Referer）
   static String get avatarUrl =>
@@ -34,6 +37,7 @@ class UserManager {
     portrait = sp.getString(_keyPortrait);
     tbs = sp.getString(_keyTbs);
     userId = sp.getString(_keyUserId);
+    rawCookie = sp.getString(_keyRawCookie);
   }
 
   // 登录保存
@@ -45,6 +49,7 @@ class UserManager {
     String? portrait,
     String? tbs,
     String? userId,
+    String? rawCookie,
   }) async {
     final sp = await SharedPreferences.getInstance();
     await sp.setString(_keyBDUSS, bduss);
@@ -54,6 +59,7 @@ class UserManager {
     if (portrait != null) await sp.setString(_keyPortrait, portrait);
     if (tbs != null) await sp.setString(_keyTbs, tbs);
     if (userId != null) await sp.setString(_keyUserId, userId);
+    if (rawCookie != null) await sp.setString(_keyRawCookie, rawCookie);
     UserManager.bduss = bduss;
     UserManager.stoken = stoken;
     UserManager.userName = userName;
@@ -61,6 +67,7 @@ class UserManager {
     UserManager.portrait = portrait;
     UserManager.tbs = tbs;
     UserManager.userId = userId;
+    UserManager.rawCookie = rawCookie;
     AuthNotifier().notify();
   }
 
@@ -77,6 +84,7 @@ class UserManager {
     portrait = null;
     tbs = null;
     userId = null;
+    rawCookie = null;
     AuthNotifier().notify();
   }
 }

@@ -5,6 +5,7 @@ import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/auth_notifier.dart';
 import '../utils/data_cache.dart';
+import '../utils/like_manager.dart';
 import '../utils/user_manager.dart';
 import '../utils/user_browse_history_manager.dart';
 import '../widgets/image_viewer.dart';
@@ -26,7 +27,7 @@ class _DongtaiPageState extends State<DongtaiPage>
   int _page = 1;
   final int _maxPage = 30;
 
-  final Set<String> _likedSet = {};
+  final LikeManager _likeManager = LikeManager();
 
   final ScrollController _scrollController = ScrollController();
   bool _showBackToTop = false;
@@ -138,6 +139,11 @@ class _DongtaiPageState extends State<DongtaiPage>
       );
       posts = posts.where((p) => !p.isAd).toList();
 
+      // Sync initial like state into manager
+      for (final p in posts) {
+        _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+      }
+
       if (mounted) {
         setState(() {
           if (refresh) {
@@ -243,7 +249,7 @@ class _DongtaiPageState extends State<DongtaiPage>
                   final tid = p.tid;
                   return PostCard(
                     post: p,
-                    isLiked: _likedSet.contains(tid),
+                    isLiked: _likeManager.isLiked(tid),
                     onForumTap: () {
                       context.push(
                         '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
@@ -259,24 +265,55 @@ class _DongtaiPageState extends State<DongtaiPage>
                     },
                     onLikeTap: (tid) async {
                       if (!UserManager.isLogin) return;
-                      final score = await TiebaApi.likePost(
-                        bduss: UserManager.bduss!,
-                        stoken: UserManager.stoken!,
-                        tbs: UserManager.tbs ?? '',
-                        userId: UserManager.userId ?? '',
-                        threadId: tid,
-                      );
-                      if (score != null && mounted) {
-                        setState(() {
-                          _likedSet.add(tid);
-                          // 点赞数 +1
-                          final i = _posts.indexWhere((x) => x.tid == tid);
-                          if (i >= 0) {
-                            final cur = int.tryParse(_posts[i].agreeNum) ?? 0;
-                            _posts[i].agreeNum = "${cur + 1}";
-                          }
-                        });
-                      }
+                      if (!mounted) return;
+                      final scaffold = ScaffoldMessenger.of(context);
+                      final pIdx = _posts.indexWhere((x) => x.tid == tid);
+                      if (pIdx < 0) return;
+                      final serverLiked = _posts[pIdx].isLiked;
+                      final serverAgree = int.tryParse(_posts[pIdx].agreeNum) ?? 0;
+                      setState(() {
+                        final (_, newAgree) = _likeManager.toggle(
+                          key: tid,
+                          serverLiked: serverLiked,
+                          serverAgreeNum: serverAgree,
+                          request: (opType) async {
+                            final score = await TiebaApi.likePost(
+                              bduss: UserManager.bduss!,
+                              stoken: UserManager.stoken!,
+                              tbs: UserManager.tbs ?? '',
+                              userId: UserManager.userId ?? '',
+                              threadId: tid,
+                              opType: opType,
+                              allowAlreadyLiked: true,
+                            );
+                            return score != null;
+                          },
+                          onUpdate: (isRollback) {
+                            if (!mounted) return;
+                            setState(() {
+                              final i = _posts.indexWhere((x) => x.tid == tid);
+                              if (i >= 0) {
+                                _posts[i].agreeNum =
+                                    _likeManager.agreeNum(tid).toString();
+                              }
+                            });
+                            if (isRollback) {
+                              final nowLiked = _likeManager.isLiked(tid);
+                              scaffold.showSnackBar(SnackBar(
+                                content: Text(
+                                  nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ));
+                            }
+                          },
+                        );
+                        final idx = _posts.indexWhere((x) => x.tid == tid);
+                        if (idx >= 0) {
+                          _posts[idx].agreeNum = newAgree.toString();
+                          _posts[idx].isLiked = _likeManager.isLiked(tid);
+                        }
+                      });
                     },
                     onShareTap: (tid) {
                       SharePlus.instance.share(

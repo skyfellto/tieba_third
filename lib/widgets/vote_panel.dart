@@ -241,7 +241,12 @@ class _VotePanelState extends State<VotePanel> {
             ),
           ),
           if (isSelected)
-            Icon(Icons.check, color: theme.primaryColor, size: 20),
+            Icon(
+              Icons.check,
+              // color: theme.primaryColor,
+              color: isDark ? Colors.cyanAccent : Colors.orangeAccent,
+              size: 20,
+            ),
         ],
       ),
     );
