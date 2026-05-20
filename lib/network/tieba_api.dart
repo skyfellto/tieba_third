@@ -4,6 +4,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:tieba_third/utils/device_info.dart';
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
 import '../models/user_profile_data.dart';
@@ -50,7 +51,6 @@ class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
   static const String _loginUrl = "$_baseHost/c/s/login";
   static const String _clientVersion = "12.64.1.1";
-  static const String _v12ClientVersion = "12.52.1.0";
 
   static String _s(dynamic v) => v?.toString() ?? '';
 
@@ -95,7 +95,7 @@ class TiebaApi {
         ..followRedirects = false
         ..headers.addAll({
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "bdtb for Android 12.34.5.0",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": customCookie ?? "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..body = bodyStr;
@@ -126,15 +126,14 @@ class TiebaApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      phoneImei:
-          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      phoneImei: DeviceInfo().phoneImei,
       timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
     );
 
     final reqData = PersonalizedRequestData(
@@ -147,9 +146,9 @@ class TiebaApi {
       qType: 1,
       needForumlist: 0,
       newNetType: 1,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
     );
 
     final request = PersonalizedRequest(data: reqData);
@@ -165,7 +164,7 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android 12.34.5.0",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..files.add(
@@ -224,7 +223,7 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android 12.34.5.0",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..files.add(
@@ -270,10 +269,9 @@ class TiebaApi {
     bool allowAlreadyLiked = false,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final phoneImei = DeviceInfo().phoneImei;
     // ignore: unnecessary_brace_in_string_interps
-    final cuid = "cuid_${phoneImei}";
+    final cuid = DeviceInfo().cuid;
     final stTime = "${Random().nextInt(730) + 121}";
     final stSize =
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
@@ -281,18 +279,18 @@ class TiebaApi {
 
     final params = [
       ["BDUSS", bduss],
-      ["_client_version", "7.2.0.0"],
+      ["_client_version", _clientVersion],
       ["agree_type", "2"],
       ["client_id", clientId],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "1021636m"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["obj_type", "3"],
       ["op_type", "$opType"],
-      ["os_version", "12"],
+      ["os_version", DeviceInfo().osVersion],
       ["phone_imei", phoneImei],
       ["post_id", postId],
       ["stErrorNums", "1"],
@@ -325,7 +323,7 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 7.2.0.0",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -381,16 +379,15 @@ class TiebaApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      phoneImei:
-          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      phoneImei: DeviceInfo().phoneImei,
       timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
       tbs: tbs,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
     );
 
     final reqData = PbPageRequestData(
@@ -403,9 +400,9 @@ class TiebaApi {
       withFloor: 1,
       floorRn: 4,
       rn: 15,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
       mark: 0,
       back: 0,
@@ -448,7 +445,7 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android 12.34.5.0",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..files.add(
@@ -538,15 +535,14 @@ class TiebaApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      phoneImei:
-          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      phoneImei: DeviceInfo().phoneImei,
       timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
     );
 
     final reqData = PbFloorRequestData(
@@ -555,9 +551,9 @@ class TiebaApi {
       pid: Int64.parseInt(postId),
       spid: subPostId != '0' ? Int64.parseInt(subPostId) : Int64.ZERO,
       pn: page,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       forumId: Int64.parseInt(forumId),
       isCommReverse: 0,
       oriUgcType: 0,
@@ -578,7 +574,7 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android 12.34.5.0",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..files.add(
@@ -626,24 +622,23 @@ class TiebaApi {
     int rn = 30,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     final params = [
       ["BDUSS", bduss],
       ["STOKEN", stoken],
-      ["_client_version", "8.0.8.0"],
+      ["_client_version", _clientVersion],
       ["client_id", clientId],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "1021636m"],
       ["kz", threadId],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
-      ["os_version", "12"],
+      ["os_version", DeviceInfo().osVersion],
       ["phone_imei", phoneImei],
       ["pid", postId],
       ["pn", "$page"],
@@ -670,7 +665,7 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 7.2.0.0",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -701,13 +696,12 @@ class TiebaApi {
     required String forumId,
     required String userId,
   }) async {
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final common = CommonRequest(
       clientType: 2,
-      clientVersion: _v12ClientVersion,
+      clientVersion: _clientVersion,
       clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
       phoneImei: phoneImei,
       cuid: cuid,
@@ -716,14 +710,14 @@ class TiebaApi {
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      model: "Android",
-      brand: "Android",
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
       osVersion: "12",
       from: "1020031h",
       phoneNewimei: phoneImei,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
     );
 
@@ -755,8 +749,8 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "tieba/$_v12ClientVersion",
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: Android",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
           "Charset": "UTF-8",
           "Client-Type": "2",
           "client_user_token": userId,
@@ -816,13 +810,12 @@ class TiebaApi {
     required String forumId,
     required String userId,
   }) async {
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final common = CommonRequest(
       clientType: 2,
-      clientVersion: _v12ClientVersion,
+      clientVersion: _clientVersion,
       clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
       phoneImei: phoneImei,
       cuid: cuid,
@@ -831,14 +824,14 @@ class TiebaApi {
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      model: "Android",
-      brand: "Android",
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
       osVersion: "12",
       from: "1020031h",
       phoneNewimei: phoneImei,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
     );
 
@@ -870,8 +863,8 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "tieba/$_v12ClientVersion",
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: Android",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
           "Charset": "UTF-8",
           "Client-Type": "2",
           "client_user_token": userId,
@@ -949,13 +942,12 @@ class TiebaApi {
     int sortType = 0,
     int isGood = 0,
   }) async {
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final common = CommonRequest(
       clientType: 2,
-      clientVersion: _v12ClientVersion,
+      clientVersion: _clientVersion,
       clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
       phoneImei: phoneImei,
       cuid: cuid,
@@ -964,14 +956,14 @@ class TiebaApi {
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      model: "Android",
-      brand: "Android",
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
       osVersion: "12",
       from: "1020031h",
       phoneNewimei: phoneImei,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
     );
 
@@ -984,9 +976,9 @@ class TiebaApi {
       isGood: isGood,
       common: common,
       stType: "tb_forumlist",
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
       callFrom: 0,
       isSelection: 0,
@@ -1012,8 +1004,8 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "tieba/$_v12ClientVersion",
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: Android",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
           "Charset": "UTF-8",
           "Client-Type": "2",
           "client_user_token": userId,
@@ -1076,9 +1068,8 @@ class TiebaApi {
     required String forumName,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     // tiebalite signFlow: Cookie=ka=open, _client_version=11.10.8.6
@@ -1087,15 +1078,15 @@ class TiebaApi {
       ["BDUSS", bduss],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "11.10.8.6"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["fid", forumId],
       ["from", "tieba"],
       ["kw", forumName],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["tbs", tbs],
@@ -1121,7 +1112,7 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 11.10.8.6",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -1170,9 +1161,8 @@ class TiebaApi {
     required String userId,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     // tiebalite mSignFlow: Cookie=CUID;ka=open;TBBRAND;BAIDUID, _client_version=11.10.8.6
@@ -1181,15 +1171,15 @@ class TiebaApi {
       ["STOKEN", stoken],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "11.10.8.6"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["authsid", "null"],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["forum_ids", forumIds],
       ["from", "tieba"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["stoken", stoken],
@@ -1217,8 +1207,9 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 11.10.8.6",
-              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
+              "Cookie":
+                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "cuid_gid": "",
@@ -1273,10 +1264,9 @@ class TiebaApi {
     int opType = 0,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
+    final phoneImei = DeviceInfo().phoneImei;
     // ignore: unnecessary_brace_in_string_interps
-    final cuid = "cuid_${phoneImei}";
+    final cuid = DeviceInfo().cuid;
     final stTime = "${Random().nextInt(730) + 121}";
     final stSize =
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
@@ -1284,18 +1274,18 @@ class TiebaApi {
 
     final params = [
       ["BDUSS", bduss],
-      ["_client_version", "7.2.0.0"],
+      ["_client_version", _clientVersion],
       ["agree_type", "2"],
       ["client_id", clientId],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "1021636m"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["obj_type", "$objType"],
       ["op_type", "$opType"],
-      ["os_version", "12"],
+      ["os_version", DeviceInfo().osVersion],
       ["phone_imei", phoneImei],
       ["post_id", postId],
       ["stErrorNums", "1"],
@@ -1328,7 +1318,7 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 7.2.0.0",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -1370,9 +1360,8 @@ class TiebaApi {
     required String uid,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     final params = [
@@ -1380,13 +1369,13 @@ class TiebaApi {
       ["STOKEN", stoken],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "11.10.8.6"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "tieba"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["uid", uid],
@@ -1411,7 +1400,7 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 11.10.8.6",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -1457,9 +1446,8 @@ class TiebaApi {
     int rn = 20,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     final params = [
@@ -1467,13 +1455,13 @@ class TiebaApi {
       ["STOKEN", stoken],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "11.10.8.6"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "tieba"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["uid", uid],
@@ -1501,7 +1489,7 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 11.10.8.6",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -1632,9 +1620,8 @@ class TiebaApi {
     required String stoken,
     required String uid,
   }) async {
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final common = CommonRequest(
       clientType: 2,
@@ -1647,14 +1634,14 @@ class TiebaApi {
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      model: "Android",
-      brand: "Android",
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
       osVersion: "12",
       from: "1020031h",
       phoneNewimei: phoneImei,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
     );
 
@@ -1678,8 +1665,9 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "tieba/$_v12ClientVersion",
-          "Cookie": "ka=open; CUID=${common.cuid}; TBBRAND=Android",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie":
+              "ka=open; CUID=${common.cuid}; TBBRAND=${DeviceInfo().model}",
           "Charset": "UTF-8",
           "Client-Type": "2",
           "client_user_token": uid,
@@ -1751,9 +1739,8 @@ class TiebaApi {
     int isThread = 1,
     Map<String, String>? forumAvatarMap,
   }) async {
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final common = CommonRequest(
       clientType: 2,
@@ -1766,14 +1753,14 @@ class TiebaApi {
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      model: "Android",
-      brand: "Android",
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
       osVersion: "12",
       from: "1020031h",
       phoneNewimei: phoneImei,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       qType: 2,
     );
 
@@ -1798,7 +1785,7 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android 12.64.1.0",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..files.add(
@@ -1919,9 +1906,8 @@ class TiebaApi {
     int pageSize = 50,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    final cuid = "cuid_$phoneImei";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     final params = [
@@ -1929,13 +1915,13 @@ class TiebaApi {
       ["STOKEN", stoken],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "11.10.8.6"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "tieba"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["uid", uid],
@@ -1955,21 +1941,21 @@ class TiebaApi {
 
     final client = http.Client();
     try {
-      final request =
-          http.Request('POST', Uri.parse("$_baseHost/c/f/forum/like"))
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 12.41.7.1",
-              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
-              "Cuid": cuid,
-              "Cuid-Galaxy2": cuid,
-              "Cuid-Gid": "",
-              "Client-Type": "2",
-              "Charset": "UTF-8",
-              "client_logid": timestamp,
-            })
-            ..body = bodyStr;
+      final request = http.Request('POST', Uri.parse("$_baseHost/c/f/forum/like"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie":
+              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
+          "Cuid": cuid,
+          "Cuid-Galaxy2": cuid,
+          "Cuid-Gid": "",
+          "Client-Type": "2",
+          "Charset": "UTF-8",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
@@ -2031,8 +2017,8 @@ class TiebaApi {
     required String postId,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = "000000000000000";
-    final cuid = "54DB841692F4284B7BF761C002103801|VY6ZEIVXY";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final today = DateTime.now();
     final eventDay = "${today.year}${today.month}${today.day}";
@@ -2051,12 +2037,12 @@ class TiebaApi {
       ["BDUSS", bduss],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "12.41.7.1"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
       ["baiduid", cuid],
-      ["brand", "Android"],
-      ["c3_aid", "${Random().nextInt(900000000) + 100000000}"],
+      ["brand", DeviceInfo().brand],
+      ["c3_aid", DeviceInfo().c3Aid],
       ["cmode", "1"],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
@@ -2070,7 +2056,7 @@ class TiebaApi {
       ["is_teenager", "0"],
       ["last_update_time", "1700000000000"],
       ["mac", "02:00:00:00:00:00"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["sample_id", ""],
@@ -2103,13 +2089,14 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 12.41.7.1",
-              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
+              "Cookie":
+                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
               "client_user_token": userId,
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "cuid_gid": "",
-              "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+              "c3_aid": DeviceInfo().c3Aid,
               "_client_type": "2",
               "Charset": "UTF-8",
               "client_logid": timestamp,
@@ -2145,8 +2132,8 @@ class TiebaApi {
     String forumId = 'null',
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = "000000000000000";
-    final cuid = "54DB841692F4284B7BF761C002103801|VY6ZEIVXY";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final today = DateTime.now();
     final eventDay = "${today.year}${today.month}${today.day}";
@@ -2161,12 +2148,12 @@ class TiebaApi {
       ["BDUSS", bduss],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "12.41.7.1"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
       ["baiduid", cuid],
-      ["brand", "Android"],
-      ["c3_aid", "${Random().nextInt(900000000) + 100000000}"],
+      ["brand", DeviceInfo().brand],
+      ["c3_aid", DeviceInfo().c3Aid],
       ["cmode", "1"],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
@@ -2180,7 +2167,7 @@ class TiebaApi {
       ["is_teenager", "0"],
       ["last_update_time", "1700000000000"],
       ["mac", "02:00:00:00:00:00"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["_phone_imei", phoneImei],
       ["sample_id", ""],
@@ -2209,23 +2196,23 @@ class TiebaApi {
 
     final client = http.Client();
     try {
-      final request =
-          http.Request('POST', Uri.parse("$_baseHost/c/c/post/rmstore"))
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 12.41.7.1",
-              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
-              "client_user_token": userId,
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "cuid_gid": "",
-              "c3_aid": "${Random().nextInt(900000000) + 100000000}",
-              "_client_type": "2",
-              "Charset": "UTF-8",
-              "client_logid": timestamp,
-            })
-            ..body = bodyStr;
+      final request = http.Request('POST', Uri.parse("$_baseHost/c/c/post/rmstore"))
+        ..followRedirects = false
+        ..headers.addAll({
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie":
+              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
+          "client_user_token": userId,
+          "cuid": cuid,
+          "cuid_galaxy2": cuid,
+          "cuid_gid": "",
+          "c3_aid": DeviceInfo().c3Aid,
+          "_client_type": "2",
+          "Charset": "UTF-8",
+          "client_logid": timestamp,
+        })
+        ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
@@ -2255,8 +2242,8 @@ class TiebaApi {
     String userId = '',
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = "000000000000000";
-    final cuid = "54DB841692F4284B7BF761C002103801|VY6ZEIVXY";
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final today = DateTime.now();
     final eventDay = "${today.year}${today.month}${today.day}";
@@ -2272,12 +2259,12 @@ class TiebaApi {
       ["STOKEN", stoken],
       ["_client_id", clientId],
       ["_client_type", "2"],
-      ["_client_version", "11.10.8.6"],
-      ["_os_version", "12"],
+      ["_client_version", _clientVersion],
+      ["_os_version", DeviceInfo().osVersion],
       ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
       ["baiduid", cuid],
-      ["brand", "Android"],
-      ["c3_aid", "${Random().nextInt(900000000) + 100000000}"],
+      ["brand", DeviceInfo().brand],
+      ["c3_aid", DeviceInfo().c3Aid],
       ["cmode", "1"],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
@@ -2290,7 +2277,7 @@ class TiebaApi {
       ["is_teenager", "0"],
       ["last_update_time", "1700000000000"],
       ["mac", "02:00:00:00:00:00"],
-      ["model", "Android"],
+      ["model", DeviceInfo().model],
       ["net_type", "1"],
       ["offset", "$offset"],
       ["_phone_imei", phoneImei],
@@ -2327,13 +2314,14 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 11.10.8.6",
-              "Cookie": "CUID=$cuid;ka=open;TBBRAND=Android;BAIDUID=$cuid;",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
+              "Cookie":
+                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
               "client_user_token": userId,
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "cuid_gid": "",
-              "c3_aid": "${Random().nextInt(900000000) + 100000000}",
+              "c3_aid": DeviceInfo().c3Aid,
               "_client_type": "2",
               "Charset": "UTF-8",
               "client_logid": timestamp,
@@ -2369,15 +2357,14 @@ class TiebaApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      phoneImei:
-          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      phoneImei: DeviceInfo().phoneImei,
       timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
       netType: 1,
       bDUSS: bduss,
       stoken: stoken,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 2.0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
     );
 
     final reqData = SearchSugRequestData(
@@ -2398,7 +2385,7 @@ class TiebaApi {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
-          "User-Agent": "bdtb for Android $_clientVersion",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
         })
         ..files.add(
@@ -2425,8 +2412,7 @@ class TiebaApi {
   /// 搜索贴吧 — GET https://tieba.baidu.com/mo/q/search/forum
   static Map<String, String> _searchHeaders(String? bduss) {
     return {
-      "User-Agent":
-          "Mozilla/5.0 (Linux; Android 12; SM-S9280) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/101.0.4951.61 Safari/537.36 tieba/12.35.1.0 skin/default",
+      "User-Agent": DeviceInfo().userAgent(_clientVersion),
       "X-Requested-With": "com.baidu.tieba",
       "Accept": "application/json, text/plain, */*",
       "Accept-Language": "zh-CN,zh;q=0.9",
@@ -2534,23 +2520,19 @@ class TiebaApi {
     String? userId = "7019922344",
     // String? zId,
   }) async {
-    // final cuid = "7F159832D2EC96BC29A0A787A48CB128|VLCOLKFYC";
-    final phoneImei =
-        "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}";
-    // ignore: unnecessary_brace_in_string_interps
-    final cuid = "cuid_${phoneImei}";
+    final cuid = DeviceInfo().cuid;
 
     final now = DateTime.now();
     final msTs = now.millisecondsSinceEpoch;
     final eventDay = "${now.year}${now.month}${now.day}";
     final clientId = "wappc_${msTs}_${Random().nextInt(1000)}";
-    final c3Aid = "A00-G5SVL5N6FGYPAYMWPKJBSLHMBMFDSAWN-6IQNVRQZ";
+    final c3Aid = DeviceInfo().c3Aid;
     final installTs = msTs - 3600000; // ~1 hour ago
     // final clientId = "wappc_1778822989595_244";
 
     final common = CommonReq(
       // userAgent: "bdtb for Android 22.5.3.0",
-      userAgent: "bdtb for Android ${_clientVersion}",
+      userAgent: DeviceInfo().userAgent(_clientVersion),
       bDUSS: bduss,
       stoken: stoken,
       cuid: cuid,
@@ -2561,9 +2543,9 @@ class TiebaApi {
       clientVersion: _clientVersion,
       timestamp: Int64(msTs),
       netType: 1,
-      scrW: 1080,
-      scrH: 1920,
-      scrDip: 1.75,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
       c3Aid: c3Aid,
       cmode: 1,
       sdkVer: "3.36.0",
@@ -2578,8 +2560,7 @@ class TiebaApi {
       // zId: zId,
       needDecrypt: 1,
       needCamDecrypt: 1,
-      phoneImei:
-          "${Random().nextInt(900000000) + 100000000}${Random().nextInt(900000) + 100000}",
+      phoneImei: DeviceInfo().phoneImei,
     );
 
     // 手动 setter 避免 from 命名冲突
@@ -2646,7 +2627,7 @@ class TiebaApi {
               "multipart/form-data; boundary=--------7da3d81520810*",
           "x_bd_data_type": "protobuf",
           // "User-Agent": "bdtb for Android 22.5.3.0",
-          "User-Agent": "bdtb for Android $_clientVersion",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "cuid": cuid,
           "cuid_galaxy2": cuid,
           "cuid_gid": "",

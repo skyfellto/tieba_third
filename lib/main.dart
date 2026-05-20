@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tieba_third/router/app_router.dart';
+import 'package:tieba_third/utils/device_info.dart';
 import 'package:tieba_third/utils/user_manager.dart';
 import 'package:tieba_third/utils/theme_notifier.dart';
 import 'package:tieba_third/utils/emoticon_helper.dart';
@@ -11,6 +12,8 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  DeviceInfo().initScreen();
+  await DeviceInfo().initDevice();
   await UserManager.init();
   await themeNotifier.init();
   await EmoticonHelper.init();
