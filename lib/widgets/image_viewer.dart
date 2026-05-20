@@ -27,6 +27,9 @@ class ImageViewer extends StatefulWidget {
 class _ImageViewerState extends State<ImageViewer> {
   late PageController _pageController;
   late int _currentIndex;
+  int _pointerCount = 0;
+
+  bool get _isScaling => _pointerCount >= 2;
 
   @override
   void initState() {
@@ -62,19 +65,30 @@ class _ImageViewerState extends State<ImageViewer> {
       ),
       body: PageView.builder(
         controller: _pageController,
+        physics: _isScaling
+            ? const NeverScrollableScrollPhysics()
+            : const PageScrollPhysics(),
         itemCount: widget.images.length,
-        itemBuilder: (context, index) => InteractiveViewer(
-          maxScale: 4,
-          child: Center(
-            child: Image.network(
-              widget.images[index],
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Icon(Icons.broken_image,
-                  color: Colors.white54, size: 64),
-              loadingBuilder: (_, child, progress) {
-                if (progress == null) return child;
-                return const Center(child: CircularProgressIndicator());
-              },
+        itemBuilder: (context, index) => Listener(
+          onPointerDown: (_) {
+            setState(() => _pointerCount++);
+          },
+          onPointerUp: (_) {
+            setState(() => _pointerCount--);
+          },
+          child: InteractiveViewer(
+            maxScale: 4,
+            child: Center(
+              child: Image.network(
+                widget.images[index],
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const Icon(Icons.broken_image,
+                    color: Colors.white54, size: 64),
+                loadingBuilder: (_, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
             ),
           ),
         ),
