@@ -52,6 +52,9 @@ class TiebaApi {
   static const String _loginUrl = "$_baseHost/c/s/login";
   static const String _clientVersion = "12.64.1.1";
 
+  /// Public accessor for client version used by external pages.
+  static String get clientVersion => _clientVersion;
+
   static String _s(dynamic v) => v?.toString() ?? '';
 
   static String _randomHex(int length) {
@@ -2700,6 +2703,45 @@ class TiebaApi {
     } catch (e) {
       debugPrint("【投票提交异常】$e");
       return false;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 吧内搜索 — GET https://tieba.baidu.com/mo/q/search/thread
+  /// [st]: 1=时间倒序, 2=相关性排序
+  /// [tt]: 2=全部, 1=只看主题贴
+  static Future<Map<String, dynamic>?> searchForumThreads({
+    required String keyword,
+    required String fname,
+    int page = 1,
+    int rn = 20,
+    int st = 1,
+    int tt = 2,
+    String? bduss,
+  }) async {
+    final uri = Uri.parse(
+      "https://tieba.baidu.com/mo/q/search/thread"
+      "?word=${Uri.encodeComponent(keyword)}"
+      "&pn=$page&rn=$rn&fname=${Uri.encodeComponent(fname)}"
+      "&st=$st&tt=$tt&ct=2&cv=$_clientVersion",
+    );
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', uri)
+        ..headers.addAll(_searchHeaders(bduss))
+        ..headers["Referer"] =
+            "https://tieba.baidu.com/mo/q/hybrid/search?keyword=${Uri.encodeComponent(keyword)}";
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      if (response.statusCode != 200) return null;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      if (json["no"] != 0) return null;
+      return json["data"] as Map<String, dynamic>?;
+    } catch (e) {
+      debugPrint("【吧内搜索异常】$e");
+      return null;
     } finally {
       client.close();
     }

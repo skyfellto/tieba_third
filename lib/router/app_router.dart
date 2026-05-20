@@ -11,6 +11,7 @@ import '../pages/browse_history_page.dart';
 import '../pages/favorites_page.dart';
 import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
+import '../pages/forum_search_result_page.dart';
 import '../utils/auth_notifier.dart';
 import '../widgets/moonlight_bottom_nav_bar.dart';
 
@@ -112,15 +113,27 @@ final GoRouter appRouter = GoRouter(
     // 搜索页（独立路由）
     GoRoute(
       path: '/search',
-      pageBuilder: (context, state) => const NoTransitionPage(
-        child: SearchPage(),
-      ),
+      pageBuilder: (context, state) {
+        final forumName = state.uri.queryParameters['forumName'];
+        final disableSug = forumName != null;
+        return NoTransitionPage(
+          child: SearchPage(disableSuggestion: disableSug, forumName: forumName),
+        );
+      },
     ),
     // 搜索结果页（独立路由）
     GoRoute(
       path: '/search-result',
       builder: (context, state) => SearchResultPage(
         keyword: state.uri.queryParameters['keyword'] ?? '',
+      ),
+    ),
+    // 吧内搜索结果页（独立路由）
+    GoRoute(
+      path: '/forum-search',
+      builder: (context, state) => ForumSearchResultPage(
+        keyword: state.uri.queryParameters['keyword'] ?? '',
+        forumName: state.uri.queryParameters['forumName'] ?? '',
       ),
     ),
   ],

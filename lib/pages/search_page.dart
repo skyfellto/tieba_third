@@ -8,7 +8,10 @@ import '../utils/user_manager.dart';
 import '../utils/search_history_manager.dart';
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key});
+  final bool disableSuggestion;
+  final String? forumName;
+
+  const SearchPage({super.key, this.disableSuggestion = false, this.forumName});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -53,6 +56,7 @@ class _SearchPageState extends State<SearchPage> {
 
   void _onSearchChanged(String text) {
     _debounce?.cancel();
+    if (widget.disableSuggestion) return;
     if (text.isEmpty) {
       setState(() => _sugData = null);
       return;
@@ -87,9 +91,15 @@ class _SearchPageState extends State<SearchPage> {
     SearchHistoryManager.save(keyword.trim());
     _loadHistory();
     _focusNode.unfocus();
-    context.push(
-      '/search-result?keyword=${Uri.encodeComponent(keyword.trim())}',
-    );
+    if (widget.disableSuggestion && widget.forumName != null) {
+      context.pushReplacement(
+        '/forum-search?keyword=${Uri.encodeComponent(keyword.trim())}&forumName=${Uri.encodeComponent(widget.forumName!)}',
+      );
+    } else {
+      context.push(
+        '/search-result?keyword=${Uri.encodeComponent(keyword.trim())}',
+      );
+    }
   }
 
   void _onSuggestionTap(String keyword) {

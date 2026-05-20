@@ -20,6 +20,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback? onTapEarliest;
   final VoidCallback? onTapFeatured;
   final VoidCallback? onPop;
+  final VoidCallback? onSearchTap;
   final GlobalKey? earliestTabKey;
 
   const ForumHeaderDelegate({
@@ -38,6 +39,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     this.onTapFeatured,
     this.earliestTabKey,
     this.onPop,
+    this.onSearchTap,
   });
 
   @override
@@ -143,7 +145,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
             children: [
               IconButton(
                 icon: Icon(Icons.search, color: fgColor, size: 22),
-                onPressed: () {},
+                onPressed: onSearchTap,
                 splashRadius: 20,
               ),
               PopupMenuButton<String>(

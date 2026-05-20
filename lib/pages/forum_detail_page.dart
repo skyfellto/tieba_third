@@ -171,6 +171,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       onTapEarliest: _onTapEarliest,
                       onTapFeatured: () => _tabController.animateTo(1),
                       onPop: () => context.pop(),
+                      onSearchTap: () {
+                        final name = _forumInfo?.forumName ?? widget.forumName ?? '';
+                        context.push('/search?forumName=${Uri.encodeComponent(name)}');
+                      },
                     ),
                   ),
                 ),
