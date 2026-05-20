@@ -380,10 +380,13 @@ class TiebaApi {
     String forumId = '0',
     String stType = 'pb',
   }) async {
+    final cuidPb = DeviceInfo().cuid;
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
       phoneImei: DeviceInfo().phoneImei,
+      cuid: cuidPb,
+      cuidGalaxy2: cuidPb,
       timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
       netType: 1,
       bDUSS: bduss,
@@ -394,63 +397,66 @@ class TiebaApi {
       scrDip: DeviceInfo().scrDip,
     );
 
+    // sortType=0(正序) → 不传r, sortType=1(倒序) → r=1
+    // debugPrint(
+    //   "【PbPage】sortType=$sortType → r=${sortType == 1 ? 1 : '(not set)'}",
+    // );
+
     final reqData = PbPageRequestData(
       common: common,
       kz: Int64.parseInt(threadId),
       pid: Int64.parseInt(postId),
       pn: page,
-      r: sortType,
       lz: seeLz ? 1 : 0,
       withFloor: 1,
-      floorRn: 4,
-      rn: 15,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-      mark: 0,
-      back: 0,
-      sourceType: 2,
-      floorSortType: 1,
-      isCommReverse: 0,
-      needRepostRecommendForum: 0,
-      requestTimes: 0,
-      sModel: 0,
-      similarFrom: 0,
-      fromSmartFrs: 0,
-      fromPush: 0,
-      immersionVideoCommentSource: 0,
-      isFoldCommentReq: 0,
-      isJumpfloor: 0,
-      jumpfloorNum: 0,
-      threadType: 0,
-      lastPid: Int64.parseInt(lastPid),
-      forumId: Int64.parseInt(forumId),
-      stType: stType,
-      banner: 0,
-      weipost: 0,
-      broadcastId: Int64.ZERO,
-      adParam: AdParam(loadCount: 0, refreshCount: 1, isReqAd: 1),
-      appPos: AppPosInfo(),
     );
+    // 倒序设 r=1，正序不传 r
+    if (sortType == 1) reqData.r = 1;
+    reqData
+      ..floorRn = 4
+      ..rn = 15
+      ..scrW = DeviceInfo().scrW
+      ..scrH = DeviceInfo().scrH
+      ..scrDip = DeviceInfo().scrDip
+      ..qType = 2
+      ..mark = 0
+      ..back = 0
+      ..sourceType = 2
+      ..floorSortType = 1
+      ..isCommReverse = 0
+      ..needRepostRecommendForum = 0
+      ..requestTimes = 0
+      ..sModel = 0
+      ..similarFrom = 0
+      ..fromSmartFrs = 0
+      ..fromPush = 0
+      ..immersionVideoCommentSource = 0
+      ..isFoldCommentReq = 0
+      ..isJumpfloor = 0
+      ..jumpfloorNum = 0
+      ..threadType = 0
+      ..lastPid = Int64.parseInt(lastPid)
+      ..forumId = Int64.parseInt(forumId)
+      ..stType = stType
+      ..banner = 0
+      ..weipost = 0
+      ..broadcastId = Int64.ZERO
+      ..adParam = AdParam(loadCount: 0, refreshCount: 1, isReqAd: 1)
+      ..appPos = AppPosInfo();
 
     final request = PbPageRequest(data: reqData);
     final bodyBytes = request.writeToBuffer();
 
     final uri = Uri.parse("$_baseHost/c/f/pb/page?cmd=302001&format=protobuf");
-    // debugPrint("\n================================================");
-    // debugPrint(
-    //   "【调试】PbPage 请求：$uri tid=$threadId page=$page lz=$seeLz r=$sortType",
-    // );
-    // debugPrint("================================================\n");
 
+    final modelPb = DeviceInfo().model;
     final client = http.Client();
     try {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
           "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+          "Cookie": "CUID=$cuidPb; ka=open; TBBRAND=$modelPb",
         })
         ..files.add(
           http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),

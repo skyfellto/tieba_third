@@ -51,15 +51,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
   int _currentPage = 1;
   bool _loadingMore = false;
   bool _hasMore = true;
-  int _totalPages = 0;
-  int _descRequestCount = 0;
-  bool _descAutoLoading = false;
 
   // 已点赞的回复 pid 集合
   final Set<String> _likedReplySet = {};
   // ignore: prefer_final_fields
   Map<String, int> _likedAgreeMap = {};
-  int _descRetryCount = 0;
   static const String _likedStorageKey = 'post_detail_liked_cnt';
 
   Future<void> _initLikedData() async {
@@ -159,186 +155,41 @@ class _PostDetailPageState extends State<PostDetailPage> {
       return;
     }
     if (refresh) {
-      _descRetryCount = 0;
       setState(() {
         _isLoading = true;
         _error = null;
         _currentPage = 1;
         _hasMore = true;
-        _totalPages = 0;
-        _descRequestCount = 0;
       });
     } else {
       if (_isLoading || _loadingMore || !_hasMore) return;
       setState(() => _loadingMore = true);
     }
 
-    final page = _resolveDescPage(refresh);
-    if (page == 0) {
-      if (!refresh) setState(() => _loadingMore = false);
-      return;
-    }
-    // debugPrint("【详情页加载】page=$page refresh=$refresh");
-    final data = await TiebaApi.fetchPostDetail(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      tbs: UserManager.tbs ?? '',
-      threadId: widget.tid,
-      page: page,
-      seeLz: _seeLz,
-      sortType: 0,
-      lastPid: '0',
-    );
-
-    if (mounted) {
-      if (_sortType == 1 && refresh && data != null && data.hasThread()) {
-        _totalPages = (data.thread.replyNum / 15).ceil();
-        // 保留第1页数据作为基础（含楼主帖 floor<=1），清除第1页回复
-        _data = data;
-        _syncThreadState();
-        _data!.postList.removeWhere((p) => p.floor > 1);
-      }
-      if (_sortType == 1 &&
-          refresh &&
-          _totalPages > 1 &&
-          _descRequestCount == 0) {
-        _descRequestCount = 1;
-        _isLoading = false;
-        _loadingMore = true;
-        _loadDescLastPage();
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-        _loadingMore = false;
-        if (data != null) {
-          if (_sortType == 1) {
-            if (_data != null) {
-              final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
-              for (final p in data.postList) {
-                if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
-              }
-              for (final u in data.userList) {
-                if (!_data!.userList
-                    .map((e) => e.id.toInt())
-                    .contains(u.id.toInt())) {
-                  _data!.userList.add(u);
-                }
-              }
-            } else {
-              _data = data;
-              _syncThreadState();
-            }
-            _hasMore = _descRequestCount < _totalPages;
-          } else {
-            _currentPage = page;
-            if (refresh) {
-              _data = data;
-              _syncThreadState();
-            } else if (_data != null) {
-              final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
-              for (final p in data.postList) {
-                if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
-              }
-              for (final u in data.userList) {
-                if (!_data!.userList
-                    .map((e) => e.id.toInt())
-                    .contains(u.id.toInt())) {
-                  _data!.userList.add(u);
-                }
-              }
-            }
-            _hasMore = data.hasPage() && data.page.hasMore == 1;
-          }
-        } else {
-          if (refresh) _error = "加载失败";
-        }
-      });
-      if (_data != null) {
-        _syncLikedFromData();
-        _saveBrowseRecord();
-        _saveForumBrowseRecord();
-      }
-      _descAutoLoading = false;
-      // 倒序且数据太少时自动触底加载
-      if (_sortType == 1 &&
-          _hasMore &&
-          !_descAutoLoading &&
-          _data != null &&
-          _data!.postList.length < 10 &&
-          mounted) {
-        _descAutoLoading = true;
-        _loadData(refresh: false);
-      }
-    }
-  }
-
-  /// 倒序：pn = totalPages - _descRequestCount + 1（totalPages, -1, -2...）
-  int _resolveDescPage(bool refresh) {
-    if (_sortType == 1 && _totalPages > 0) {
-      if (refresh) return 1;
-      _descRequestCount++;
-      final pn = _totalPages - _descRequestCount + 1;
-      if (pn < 1) {
-        _hasMore = false;
-        return 0;
-      }
-      return pn;
-    }
-    return refresh ? 1 : _currentPage + 1;
-  }
-
-  /// 倒序：加载最后一页（page=totalPages，最新回复）
-  Future<void> _loadDescLastPage() async {
-    setState(() => _loadingMore = true);
-
-    PbPageResponseData? data = await TiebaApi.fetchPostDetail(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      tbs: UserManager.tbs ?? '',
-      threadId: widget.tid,
-      page: _totalPages,
-      seeLz: _seeLz,
-      sortType: 0,
-      lastPid: '0',
-    );
-
-    // 最后一页加载失败时自动重试一次
-    if (data == null && mounted) {
-      // debugPrint("【倒序】最后一页(${_totalPages})加载失败，自动重试...");
-      data = await TiebaApi.fetchPostDetail(
+    if (_sortType == 1) {
+      // 倒序：pn=0 获取最后一页（最新帖子），然后往前翻页
+      final int pageNum = refresh ? 0 : (_currentPage - 1).clamp(1, 999999);
+      final data = await TiebaApi.fetchPostDetail(
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
         tbs: UserManager.tbs ?? '',
         threadId: widget.tid,
-        page: _totalPages,
+        page: pageNum,
         seeLz: _seeLz,
-        sortType: 0,
+        sortType: _sortType,
         lastPid: '0',
       );
-    }
-
-    // 重试仍然失败时，回退到第1页数据防止内容消失
-    if (data == null && mounted) {
-      // debugPrint("【倒序】重试仍然失败，回退到第1页");
-      data = await TiebaApi.fetchPostDetail(
-        bduss: UserManager.bduss!,
-        stoken: UserManager.stoken!,
-        tbs: UserManager.tbs ?? '',
-        threadId: widget.tid,
-        page: 1,
-        seeLz: _seeLz,
-        sortType: 0,
-        lastPid: '0',
-      );
-    }
-
-    if (mounted) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _loadingMore = false;
         if (data != null) {
-          if (_data != null) {
+          if (refresh) {
+            _data = data;
+            _syncThreadState();
+            _currentPage = data.hasPage() ? data.page.totalPage : 1;
+            _hasMore = _currentPage > 1;
+          } else if (_data != null) {
             final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
             for (final p in data.postList) {
               if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
@@ -350,32 +201,66 @@ class _PostDetailPageState extends State<PostDetailPage> {
                 _data!.userList.add(u);
               }
             }
+            _currentPage = pageNum;
+            _hasMore = _currentPage > 1;
           } else {
             _data = data;
             _syncThreadState();
+            _currentPage = data.hasPage() ? data.page.totalPage : 1;
+            _hasMore = _currentPage > 1;
           }
-          _hasMore = _descRequestCount < _totalPages;
-          _descRetryCount = 0;
         } else {
-          // 加载失败时，用户仍可看到第1页数据
           _hasMore = false;
-          // 自动重试（最多2次）
-          if (_descRetryCount < 2) {
-            _descRetryCount++;
-            _loadData(refresh: true);
-            return;
-          }
-          _descRetryCount = 0;
         }
       });
-      // 最后一页数据太少时自动触发触底加载
-      if (data != null &&
-          _hasMore &&
-          !_descAutoLoading &&
-          _data != null &&
-          _data!.postList.length < 10 &&
-          mounted) {
-        _loadData(refresh: false);
+      return;
+    }
+
+    // 正序：正常分页加载
+    final page = refresh ? 1 : _currentPage + 1;
+    final data = await TiebaApi.fetchPostDetail(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      tbs: UserManager.tbs ?? '',
+      threadId: widget.tid,
+      page: page,
+      seeLz: _seeLz,
+      sortType: _sortType,
+      lastPid: '0',
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _loadingMore = false;
+        if (data != null) {
+          _currentPage = page;
+          if (refresh) {
+            _data = data;
+            _syncThreadState();
+          } else if (_data != null) {
+            final existIds = _data!.postList.map((e) => e.id.toInt()).toSet();
+            for (final p in data.postList) {
+              if (!existIds.contains(p.id.toInt())) _data!.postList.add(p);
+            }
+            for (final u in data.userList) {
+              if (!_data!.userList
+                  .map((e) => e.id.toInt())
+                  .contains(u.id.toInt())) {
+                _data!.userList.add(u);
+              }
+            }
+          }
+          _hasMore = (data.hasPage() && data.page.hasMore == 1) ||
+              data.postList.length >= 15;
+        } else {
+          if (refresh) _error = "加载失败";
+        }
+      });
+      if (_data != null) {
+        _syncLikedFromData();
+        _saveBrowseRecord();
+        _saveForumBrowseRecord();
       }
     }
   }
@@ -727,10 +612,8 @@ class _PostDetailPageState extends State<PostDetailPage> {
         replyPosts.add(p);
       }
     }
-    // 按排序模式排列
-    if (_sortType == 1) {
-      replyPosts.sort((a, b) => b.floor.compareTo(a.floor));
-    } else {
+    // 倒序服务器已返回降序无需重排，正序升序排列
+    if (_sortType == 0) {
       replyPosts.sort((a, b) => a.floor.compareTo(b.floor));
     }
 
