@@ -196,6 +196,7 @@ class TiebaApi {
       }
 
       final posts = threadList
+          .where((t) => !t.hasAlaInfo()) // 屏蔽直播帖
           .map((t) => PostItem.fromThreadInfo(t))
           .where((p) => p.title.isNotEmpty && p.tid.isNotEmpty)
           .toList();
@@ -1045,6 +1046,8 @@ class TiebaApi {
       }
 
       final d = pb.data;
+      // 屏蔽直播帖
+      d.threadList.removeWhere((t) => t.hasAlaInfo());
       // final fi = d.hasForum() ? d.forum : null;
       // debugPrint(
       //   "【FrsPage】解析成功 forumId=${fi?.id.toInt()} name='${fi?.name}' "

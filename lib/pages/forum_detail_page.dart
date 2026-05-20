@@ -89,15 +89,20 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     final raw = prefs.getString(_likedStorageKey);
     if (raw != null && raw.isNotEmpty) {
       try {
-        _likedAgreeMap = (jsonDecode(raw) as Map<String, dynamic>)
-            .map((k, v) => MapEntry(k, (v as num).toInt()));
+        _likedAgreeMap = (jsonDecode(raw) as Map<String, dynamic>).map(
+          (k, v) => MapEntry(k, (v as num).toInt()),
+        );
       } catch (_) {}
     }
   }
 
   void _syncLikedFromPosts(List<PostItem> posts) {
     for (final p in posts) {
-      _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+      _likeManager.sync(
+        p.tid,
+        serverLiked: p.isLiked,
+        serverAgreeNum: int.tryParse(p.agreeNum) ?? 0,
+      );
       final saved = _likedAgreeMap[p.tid];
       if (saved != null) {
         final apiNum = int.tryParse(p.agreeNum) ?? 0;
@@ -172,8 +177,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       onTapFeatured: () => _tabController.animateTo(1),
                       onPop: () => context.pop(),
                       onSearchTap: () {
-                        final name = _forumInfo?.forumName ?? widget.forumName ?? '';
-                        context.push('/search?forumName=${Uri.encodeComponent(name)}');
+                        final name =
+                            _forumInfo?.forumName ?? widget.forumName ?? '';
+                        context.push(
+                          '/search?forumName=${Uri.encodeComponent(name)}',
+                        );
                       },
                     ),
                   ),
@@ -814,7 +822,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                         final (_, newAgree) = _likeManager.toggle(
                           key: tid,
                           serverLiked: _threads[pIdx].isLiked,
-                          serverAgreeNum: int.tryParse(_threads[pIdx].agreeNum) ?? 0,
+                          serverAgreeNum:
+                              int.tryParse(_threads[pIdx].agreeNum) ?? 0,
                           request: (opType) async {
                             final score = await TiebaApi.likePost(
                               bduss: UserManager.bduss!,
@@ -830,10 +839,13 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                           onUpdate: (isRollback) {
                             if (!mounted) return;
                             setState(() {
-                              final i = _threads.indexWhere((x) => x.tid == tid);
+                              final i = _threads.indexWhere(
+                                (x) => x.tid == tid,
+                              );
                               if (i >= 0) {
-                                _threads[i].agreeNum =
-                                    _likeManager.agreeNum(tid).toString();
+                                _threads[i].agreeNum = _likeManager
+                                    .agreeNum(tid)
+                                    .toString();
                                 _likedAgreeMap[tid] =
                                     int.tryParse(_threads[i].agreeNum) ?? 0;
                               }
@@ -841,12 +853,14 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                             _saveLikedSet();
                             if (isRollback) {
                               final nowLiked = _likeManager.isLiked(tid);
-                              scaffold.showSnackBar(SnackBar(
-                                content: Text(
-                                  nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                              scaffold.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                  ),
+                                  duration: const Duration(seconds: 2),
                                 ),
-                                duration: const Duration(seconds: 2),
-                              ));
+                              );
                             }
                           },
                         );
@@ -952,13 +966,16 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                         if (!UserManager.isLogin) return;
                         if (!mounted) return;
                         final scaffold = ScaffoldMessenger.of(context);
-                        final pIdx = _goodThreads.indexWhere((x) => x.tid == tid);
+                        final pIdx = _goodThreads.indexWhere(
+                          (x) => x.tid == tid,
+                        );
                         if (pIdx < 0) return;
                         setState(() {
                           final (_, newAgree) = _likeManager.toggle(
                             key: tid,
                             serverLiked: _goodThreads[pIdx].isLiked,
-                            serverAgreeNum: int.tryParse(_goodThreads[pIdx].agreeNum) ?? 0,
+                            serverAgreeNum:
+                                int.tryParse(_goodThreads[pIdx].agreeNum) ?? 0,
                             request: (opType) async {
                               final score = await TiebaApi.likePost(
                                 bduss: UserManager.bduss!,
@@ -973,30 +990,40 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                             onUpdate: (isRollback) {
                               if (!mounted) return;
                               setState(() {
-                                final i = _goodThreads.indexWhere((x) => x.tid == tid);
+                                final i = _goodThreads.indexWhere(
+                                  (x) => x.tid == tid,
+                                );
                                 if (i >= 0) {
-                                  _goodThreads[i].agreeNum =
-                                      _likeManager.agreeNum(tid).toString();
+                                  _goodThreads[i].agreeNum = _likeManager
+                                      .agreeNum(tid)
+                                      .toString();
                                   _likedAgreeMap[tid] =
-                                      int.tryParse(_goodThreads[i].agreeNum) ?? 0;
+                                      int.tryParse(_goodThreads[i].agreeNum) ??
+                                      0;
                                 }
                               });
                               _saveLikedSet();
                               if (isRollback) {
                                 final nowLiked = _likeManager.isLiked(tid);
-                                scaffold.showSnackBar(SnackBar(
-                                  content: Text(
-                                    nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                scaffold.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                    ),
+                                    duration: const Duration(seconds: 2),
                                   ),
-                                  duration: const Duration(seconds: 2),
-                                ));
+                                );
                               }
                             },
                           );
-                          final idx = _goodThreads.indexWhere((x) => x.tid == tid);
+                          final idx = _goodThreads.indexWhere(
+                            (x) => x.tid == tid,
+                          );
                           if (idx >= 0) {
                             _goodThreads[idx].agreeNum = newAgree.toString();
-                            _goodThreads[idx].isLiked = _likeManager.isLiked(tid);
+                            _goodThreads[idx].isLiked = _likeManager.isLiked(
+                              tid,
+                            );
                             _likedAgreeMap[tid] = newAgree;
                           }
                         });
