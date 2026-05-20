@@ -251,10 +251,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
               }
             }
           }
-          _hasMore = (data.hasPage() && data.page.hasMore == 1) ||
-              data.postList.length >= 15;
+          _hasMore = data.hasPage() && data.page.totalPage > 1 && _currentPage < data.page.totalPage;
         } else {
-          if (refresh) _error = "加载失败";
+          if (refresh) {
+            _error = "加载失败";
+          } else {
+            _hasMore = false;
+          }
         }
       });
       if (_data != null) {
@@ -709,7 +712,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
               ),
             ),
           )
-        else if (!_hasMore && replyPosts.isNotEmpty)
+        else if (!_hasMore && _data != null)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Center(
