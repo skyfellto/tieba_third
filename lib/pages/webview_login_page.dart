@@ -224,7 +224,7 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
     }
 
     // 2. 先存 BDUSS/STOKEN，立即关 WebView 返回主页
-    await UserManager.login(bduss: bduss, stoken: stoken);
+    await UserManager.login(bduss: bduss, stoken: stoken, baiduId: allCookies['BAIDUID'], tiebaUid: allCookies['TIEBAUID']);
 
     if (!mounted) return;
     // ignore: use_build_context_synchronously
@@ -261,6 +261,8 @@ class _WebViewLoginPageState extends State<WebViewLoginPage> {
         portrait: portrait,
         tbs: tbs,
         userId: userId,
+        baiduId: allCookies['BAIDUID'],
+        tiebaUid: allCookies['TIEBAUID'],
         rawCookie: allCookies.entries
             .map((e) => '${e.key}=${e.value}')
             .join('; '),

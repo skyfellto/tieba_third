@@ -251,7 +251,10 @@ class _PostDetailPageState extends State<PostDetailPage> {
               }
             }
           }
-          _hasMore = data.hasPage() && data.page.totalPage > 1 && _currentPage < data.page.totalPage;
+          _hasMore =
+              data.hasPage() &&
+              data.page.totalPage > 1 &&
+              _currentPage < data.page.totalPage;
         } else {
           if (refresh) {
             _error = "加载失败";
@@ -273,7 +276,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
       final t = _data!.thread;
       _isCollected = t.collectStatus != 0;
       final isLiked = t.hasAgree() && t.agree.hasAgree == 1;
-      _likeManager.sync('thread:${widget.tid}', serverLiked: isLiked, serverAgreeNum: t.agreeNum);
+      _likeManager.sync(
+        'thread:${widget.tid}',
+        serverLiked: isLiked,
+        serverAgreeNum: t.agreeNum,
+      );
     }
   }
 
@@ -285,9 +292,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     final serverLiked = _data?.hasThread() == true
         ? _data!.thread.hasAgree() && _data!.thread.agree.hasAgree == 1
         : false;
-    final serverAgree = _data?.hasThread() == true
-        ? _data!.thread.agreeNum
-        : 0;
+    final serverAgree = _data?.hasThread() == true ? _data!.thread.agreeNum : 0;
     setState(() {
       _likeManager.toggle(
         key: threadKey,
@@ -310,12 +315,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
           setState(() {});
           if (isRollback) {
             final nowLiked = _likeManager.isLiked(threadKey);
-            scaffold.showSnackBar(SnackBar(
-              content: Text(
-                nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+            scaffold.showSnackBar(
+              SnackBar(
+                content: Text(nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试'),
+                duration: const Duration(seconds: 2),
               ),
-              duration: const Duration(seconds: 2),
-            ));
+            );
           }
         },
       );
@@ -602,9 +607,9 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (data.hasFirstFloorPost()) {
       firstPost = data.firstFloorPost;
     }
-    debugPrint(
-      "【投票】voteCrypt=${firstPost?.voteCrypt} isVote=${firstPost?.isVote}",
-    );
+    // debugPrint(
+    //   "【投票】voteCrypt=${firstPost?.voteCrypt} isVote=${firstPost?.isVote}",
+    // );
 
     // 回复列表（排除 floor=1 的楼主帖，楼主帖已在详情区展示）
     final replyPosts = <Post>[];
@@ -872,7 +877,11 @@ class _PostDetailPageState extends State<PostDetailPage> {
       final pid = p.id.toString();
       final isLiked = p.hasAgree() && p.agree.hasAgree == 1;
       final agreeNum = p.hasAgree() ? p.agree.agreeNum.toInt() : 0;
-      _likeManager.sync('reply:$pid', serverLiked: isLiked, serverAgreeNum: agreeNum);
+      _likeManager.sync(
+        'reply:$pid',
+        serverLiked: isLiked,
+        serverAgreeNum: agreeNum,
+      );
 
       if (_likedReplySet.contains(pid)) {
         final saved = _likedAgreeMap[pid];
@@ -939,12 +948,12 @@ class _PostDetailPageState extends State<PostDetailPage> {
         _saveLikedData();
         if (isRollback) {
           final nowLikedLocal = _likeManager.isLiked(replyKey);
-          scaffold.showSnackBar(SnackBar(
-            content: Text(
-              nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+          scaffold.showSnackBar(
+            SnackBar(
+              content: Text(nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试'),
+              duration: const Duration(seconds: 2),
             ),
-            duration: const Duration(seconds: 2),
-          ));
+          );
         }
       },
     );

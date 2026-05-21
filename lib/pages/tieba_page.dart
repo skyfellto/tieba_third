@@ -138,12 +138,12 @@ class _TiebaPageState extends State<TiebaPage>
     }
   }
 
-  /// 一键签到（逐个单独签到，每次间隔随机延迟）
+  /// 一键签到（优先批量，失败的吧逐个补签）
   Future<void> _handleSignAll() async {
     if (_isSigningAll) return;
     setState(() => _isSigningAll = true);
     try {
-      final unsigned = _forums.where((f) => !f.isSign).toList();
+      var unsigned = _forums.where((f) => !f.isSign).toList();
       if (unsigned.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(
@@ -154,48 +154,84 @@ class _TiebaPageState extends State<TiebaPage>
       }
 
       int success = 0;
-      for (int i = 0; i < unsigned.length; i++) {
-        final forum = unsigned[i];
-        try {
-          final r = await TiebaApi.signForum(
-            bduss: UserManager.bduss!,
-            stoken: UserManager.stoken!,
-            tbs: UserManager.tbs ?? '',
-            forumId: forum.forumId,
-            forumName: forum.forumName,
-          );
-          if (r != null) {
-            success++;
-            if (mounted) {
-              final idx = _forums.indexWhere((f) => f.forumId == forum.forumId);
-              if (idx != -1) _forums[idx] = _forums[idx].copyWith(isSign: true);
-            }
-            // debugPrint(
-            //   "【一键签到】${forum.forumName} 成功 ($success/${unsigned.length})",
-            // );
-          } else {
-            // debugPrint("【一键签到】${forum.forumName} 失败");
-          }
-        } catch (e) {
-          // debugPrint("【一键签到异常】${forum.forumName}: $e");
-        }
 
-        // 非最后一个时，间隔随机延迟 0.7~2 秒
-        if (i < unsigned.length - 1) {
-          final delay = 700 + Random().nextInt(1300);
-          // debugPrint("【一键签到】等待 ${delay}ms 后签下一个");
-          await Future.delayed(Duration(milliseconds: delay));
+      // 第一步：批量签到
+      {
+        final forumIds = unsigned.map((f) => f.forumId).join(',');
+        final result = await TiebaApi.mSign(
+          bduss: UserManager.bduss!,
+          stoken: UserManager.stoken!,
+          tbs: UserManager.tbs ?? '',
+          forumIds: forumIds,
+          userId: UserManager.userId ?? '',
+          baiduId: UserManager.baiduId!,
+        );
+
+        if (result != null) {
+          final info = result['info'];
+          if (info is List) {
+            for (final item in info) {
+              if (item is Map) {
+                final fid = item['forum_id']?.toString();
+                if (fid != null && item['error_code'] == '0') {
+                  success++;
+                  final idx = _forums.indexWhere((f) => f.forumId == fid);
+                  if (idx != -1) {
+                    _forums[idx] = _forums[idx].copyWith(isSign: true);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 第二步：剩余的补签
+      unsigned = _forums.where((f) => !f.isSign).toList();
+      if (unsigned.isNotEmpty) {
+        for (int i = 0; i < unsigned.length; i++) {
+          final forum = unsigned[i];
+          try {
+            final r = await TiebaApi.signForum(
+              bduss: UserManager.bduss!,
+              stoken: UserManager.stoken!,
+              tbs: UserManager.tbs ?? '',
+              forumId: forum.forumId,
+              forumName: forum.forumName,
+            );
+            if (r != null) {
+              success++;
+              if (mounted) {
+                final idx = _forums.indexWhere(
+                  (f) => f.forumId == forum.forumId,
+                );
+                if (idx != -1) {
+                  _forums[idx] = _forums[idx].copyWith(isSign: true);
+                }
+              }
+            }
+          } catch (_) {}
+
+          if (i < unsigned.length - 1) {
+            await Future.delayed(
+              Duration(milliseconds: 700 + Random().nextInt(1300)),
+            );
+          }
         }
       }
 
       if (mounted) {
         setState(() {});
-        final failed = unsigned.length - success;
-        if (failed > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('共成功签到 $success 个吧，失败 $failed 个吧')),
-          );
-        }
+        final failed = _forums.where((f) => !f.isSign).length;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success > 0
+                  ? '共成功签到 $success 个吧，剩余 $failed 个未签到'
+                  : '一键签到失败，剩余 $failed 个未签到',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isSigningAll = false);
@@ -244,10 +280,7 @@ class _TiebaPageState extends State<TiebaPage>
       ),
       body: _forums.isEmpty
           ? ListView()
-          : RefreshIndicator(
-              onRefresh: _refreshAll,
-              child: _buildForumList(),
-            ),
+          : RefreshIndicator(onRefresh: _refreshAll, child: _buildForumList()),
     );
   }
 

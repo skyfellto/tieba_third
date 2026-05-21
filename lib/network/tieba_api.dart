@@ -4,6 +4,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/device_info.dart';
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
@@ -1164,37 +1165,84 @@ class TiebaApi {
   }
 
   /// 一键签到（POST /c/c/forum/msign）
-  /// 参考 tiebalite OfficialTiebaApi.mSignFlow
+  /// 参考官方抓包参数
   static Future<Map<String, dynamic>?> mSign({
     required String bduss,
     required String stoken,
     required String tbs,
     required String forumIds,
     required String userId,
+    required String baiduId,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final di = DeviceInfo();
+    final now = DateTime.now();
+    final eventDay = "${now.year}${now.month}${now.day}";
 
-    // tiebalite mSignFlow: Cookie=CUID;ka=open;TBBRAND;BAIDUID, _client_version=11.10.8.6
+    // 持久化 firstInstallTime / lastUpdateTime
+    final prefs = await SharedPreferences.getInstance();
+    final firstInstallTime =
+        prefs.getInt('_first_install_time') ??
+        DateTime.now().millisecondsSinceEpoch;
+    if (!prefs.containsKey('_first_install_time')) {
+      await prefs.setInt('_first_install_time', firstInstallTime);
+    }
+    final lastUpdateTime =
+        prefs.getInt('_last_update_time') ?? firstInstallTime;
+    // 每 7 天更新一次
+    if (DateTime.now().millisecondsSinceEpoch - lastUpdateTime > 7 * 86400000) {
+      await prefs.setInt(
+        '_last_update_time',
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    }
+
+    // oaid: 模拟 OAID 对象
+    final oaid = jsonEncode({
+      "v": "",
+      "isTrackLimited": 0,
+      "sc": -200,
+      "sup": 0,
+    });
+
     final params = [
       ["BDUSS", bduss],
       ["STOKEN", stoken],
       ["_client_id", clientId],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
+      ["_os_version", "${di.sdkInt}"],
+      ["_phone_imei", phoneImei],
+      ["active_timestamp", timestamp],
+      ["android_id", di.androidId],
       ["authsid", "null"],
+      ["baidu_id", baiduId],
+      ["brand", di.brand],
+      ["c3_aid", di.c3Aid],
+      ["cmode", "1"],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
+      ["event_day", eventDay],
+      ["extra", ""],
+      ["first_install_time", "$firstInstallTime"],
       ["forum_ids", forumIds],
+      ["framework_ver", "3340042"],
       ["from", "tieba"],
-      ["model", DeviceInfo().model],
+      ["is_teenager", "0"],
+      ["last_update_time", "$lastUpdateTime"],
+      ["mac", "02:00:00:00:00:00"],
+      ["model", di.model],
       ["net_type", "1"],
-      ["_phone_imei", phoneImei],
-      ["stoken", stoken],
+      ["oaid", oaid],
+      ["sdk_ver", "2.34.0"],
+      ["stErrorNums", "0"],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["swan_game_ver", "1038000"],
       ["tbs", tbs],
       ["timestamp", timestamp],
       ["user_id", userId],
@@ -1205,9 +1253,22 @@ class TiebaApi {
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
 
+    final cookie = "CUID=$cuid;ka=open;TBBRAND=${di.model};BAIDUID=$baiduId;";
+    // final ua = "bdtb for Android $_clientVersion";
+    final ua = di.userAgent(_clientVersion);
+
     // debugPrint("\n【一键签到请求】POST /c/c/forum/msign");
-    // debugPrint("【一键签到参数】forum_ids=$forumIds tbs=$tbs");
+    // debugPrint("【一键签到forum_ids】$forumIds");
+    // debugPrint("【一键签到tbs】$tbs");
+    // debugPrint("【一键签到userId】$userId");
+    // debugPrint("【一键签到clientVersion】$_clientVersion");
+    // debugPrint("【一键签到cuid】$cuid");
+    // debugPrint("【一键签到phoneImei】$phoneImei");
+    // debugPrint("【一键签到timestamp】$timestamp");
+    // debugPrint("【一键签到sign】$sign");
     // debugPrint("【一键签到body】$bodyStr");
+    // debugPrint("【一键签到Cookie】$cookie");
+    // debugPrint("【一键签到User-Agent】$ua");
 
     final client = http.Client();
     try {
@@ -1219,38 +1280,46 @@ class TiebaApi {
             ..followRedirects = false
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie":
-                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "cuid_gid": "",
-              "client_type": "2",
+              "User-Agent": ua,
+              "Cookie": cookie,
               "client_logid": timestamp,
+              "Accept-Encoding": "gzip",
+              "Host": "c.tieba.baidu.com",
+              "Connection": "Keep-Alive",
+              "Charset": "UTF-8",
             })
             ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
       );
+
       // debugPrint("【一键签到响应】状态码=${response.statusCode}");
+      // debugPrint("【一键签到响应】headers=${response.headers}");
       // debugPrint("【一键签到响应】body=${response.body}");
 
       if (response.statusCode != 200) {
-        debugPrint("【一键签到失败】非200状态码");
+        debugPrint("【一键签到失败】非200状态码 statusCode=${response.statusCode}");
+        debugPrint("【一键签到失败】响应body=${response.body}");
         return null;
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
+      debugPrint("【一键签到JSON】$json");
+
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint("【一键签到失败】error_code=$err msg=${json["error_msg"]}");
+        debugPrint(
+          "【一键签到失败】error_code=$err msg=${json["error_msg"]} error_info=${json["error_info"]}",
+        );
         return null;
       }
-      // tiebalite: info 为字符串时表示失败，为数组时才是签到结果
+      // info 为字符串时表示失败（含空字符串），为数组时才是签到结果
       final info = json["info"];
+      debugPrint("【一键签到info】type=${info.runtimeType} value=$info");
       if (info is String) {
         debugPrint("【一键签到失败】info 为字符串: $info");
+        debugPrint("【一键签到失败】完整响应: ${response.body}");
         return null;
       }
       return json;
