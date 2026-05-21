@@ -35,6 +35,8 @@ import '../generated/GetLevelInfo/GetLevelInfoResponse.pb.dart';
 import '../generated/GetLevelInfo/GetLevelInfoResponseData.pb.dart';
 import '../generated/FrsPage/FrsPage.pb.dart';
 import '../generated/FrsPage/AdParam.pb.dart' as frs_ad_param;
+import '../generated/ThreadList/ThreadList.pb.dart';
+import '../generated/ThreadList/AdParam.pb.dart' as tl_ad_param;
 import '../generated/Profile/ProfileRequest.pb.dart';
 import '../generated/Profile/ProfileRequestData.pb.dart';
 import '../generated/Profile/ProfileResponse.pb.dart';
@@ -981,7 +983,8 @@ class TiebaApi {
     final reqData = FrsPageRequestData(
       kw: forumName,
       pn: page,
-      rn: 30,
+      rn: 90,
+      rnNeed: 30,
       loadType: loadType,
       sortType: sortType,
       isGood: isGood,
@@ -1055,16 +1058,123 @@ class TiebaApi {
       final d = pb.data;
       // 屏蔽直播帖
       d.threadList.removeWhere((t) => t.hasAlaInfo());
-      // final fi = d.hasForum() ? d.forum : null;
-      // debugPrint(
-      //   "【FrsPage】解析成功 forumId=${fi?.id.toInt()} name='${fi?.name}' "
-      //   "isLike=${fi?.isLike} userLevel=${fi?.userLevel} levelName='${fi?.levelName}' "
-      //   "curScore=${fi?.curScore} levelupScore=${fi?.levelupScore} "
-      //   "threadCount=${d.threadList.length}",
-      // );
+      debugPrint("【FrsPage响应】threadList=${d.threadList.length}条 "
+          "threadIdList=${d.threadIdList.length}条 "
+          "pn=$page loadType=$loadType sortType=$sortType "
+          "hasPage=${d.hasPage()} hasMore=${d.hasPage() ? d.page.hasMore : -1}");
+      if (d.threadIdList.isNotEmpty) {
+        debugPrint("【FrsPage响应】前10个threadId=${d.threadIdList.take(10).map((e) => e.toInt()).join(',')}");
+      }
       return d;
     } catch (e) {
       debugPrint("【FrsPage】请求异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 增量加载帖子列表（POST /c/f/frs/threadlist?cmd=301002）
+  /// 参考 tiebalite ForumNetworkDataSource.loadThread
+  static Future<ThreadListResponseData?> fetchThreadList({
+    required String bduss,
+    required String stoken,
+    required String forumName,
+    required String forumId,
+    required String userId,
+    required String threadIds,
+    int sortType = 0,
+    int page = 1,
+  }) async {
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
+      qType: 2,
+    );
+
+    final reqData = ThreadListRequestData(
+      threadIds: threadIds,
+      forumId: Int64.parseInt(forumId),
+      forumName: forumName,
+      pn: page,
+      sortType: sortType,
+      needAbstract: 0,
+      stType: 0,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
+      qType: 2,
+      common: common,
+      appPos: AppPosInfo(),
+      adParam: tl_ad_param.AdParam(loadCount: 0, refreshCount: 1),
+    );
+
+    final request = ThreadListRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse("$_baseHost/c/f/frs/threadlist?cmd=301002");
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
+          "Charset": "UTF-8",
+          "Client-Type": "2",
+          "client_user_token": userId,
+          "Cuid": cuid,
+          "Cuid-Galaxy2": cuid,
+          "Cuid-Gid": "",
+          "Cuid-Galaxy3": cuid,
+        })
+        ..fields['STOKEN'] = stoken
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        debugPrint("【ThreadList】非200响应：${response.statusCode}");
+        return null;
+      }
+
+      final pb = ThreadListResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        debugPrint("【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return null;
+      }
+
+      if (!pb.hasData()) {
+        debugPrint("【ThreadList】data为空");
+        return null;
+      }
+
+      return pb.data;
+    } catch (e) {
+      debugPrint("【ThreadList】请求异常：$e");
       return null;
     } finally {
       client.close();

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../generated/RecommendForumInfo.pb.dart';
 import '../generated/GetForumDetail/GetForumDetailResponseData.pb.dart';
 import '../generated/FrsPage/FrsPage.pb.dart';
+import '../generated/ThreadList/ThreadList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
@@ -51,10 +52,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   int _currentTab = 0;
 
   // 排序菜单
-  final _sortOptions = ["按发帖时间查询", "按回复时间查询"];
-  int _selectedSort = 1; // 默认按回复时间排序
+  final _sortOptions = ["按回复时间查询", "按发帖时间查询"];
+  int _selectedSort = 0; // 0=按回复时间查询(默认), 1=按发帖时间查询
+  final ValueNotifier<int> _sortListenable = ValueNotifier<int>(0);
 
-  final GlobalKey _earliestTabKey = GlobalKey();
   // NestedScrollView overlap handle，在 headerSliverBuilder 中捕获
   SliverOverlapAbsorberHandle? _overlapHandle;
 
@@ -64,6 +65,9 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   bool _hasMoreThreads = true;
   int _threadPage = 1;
   final LikeManager _likeManager = LikeManager();
+  // 双接口触底加载相关
+  List<int> _threadIdList = []; // 待加载的 threadId 列表
+  final int _batchSize = 30; // 每次从 threadIdList 中批量加载的数量
   List<PostItem> _goodThreads = [];
   bool _loadingGoodThreads = false;
   bool _loadingMoreGoodThreads = false;
@@ -172,8 +176,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       levelupScore: _levelupScore,
                       currentTab: _currentTab,
                       tabController: _tabController,
-                      earliestTabKey: _earliestTabKey,
-                      onTapEarliest: _onTapEarliest,
+                      selectedSort: _selectedSort,
+                      sortOptions: _sortOptions,
+                      sortListenable: _sortListenable,
+                      onSortChanged: _onSortChanged,
                       onTapFeatured: () => _tabController.animateTo(1),
                       onPop: () => context.pop(),
                       onSearchTap: () {
@@ -291,6 +297,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         userId: UserManager.userId ?? '',
         page: 1,
         loadType: 1,
+        sortType: _selectedSort,
       );
     }
 
@@ -318,6 +325,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _syncLikedFromPosts(_threads);
           _threadPage = 1;
           _hasMoreThreads = frsData.hasPage() && frsData.page.hasMore == 1;
+          _threadIdList = frsData.threadIdList.map((e) => e.toInt()).toList();
+          debugPrint("【初始加载】threadIdList=${_threadIdList.length}条");
         }
         if (_forumInfo == null && frsData == null) {
           _error = "加载失败";
@@ -409,6 +418,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
       userId: UserManager.userId ?? '',
       page: 1,
       loadType: 1,
+      sortType: _selectedSort,
     );
     if (mounted) {
       setState(() {
@@ -417,6 +427,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _threads = _processThreadData(data);
           _threadPage = 1;
           _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
+          _threadIdList = data.threadIdList.map((e) => e.toInt()).toList();
+          debugPrint("【刷新】threadIdList=${_threadIdList.length}条");
         }
       });
     }
@@ -426,7 +438,6 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     if (_loadingMoreThreads || !_hasMoreThreads || !UserManager.isLogin) return;
     setState(() => _loadingMoreThreads = true);
 
-    // 获取论坛名称
     final info = _forumInfo;
     final forumName = info?.forumName ?? widget.forumName;
     if (forumName == null || forumName.isEmpty) {
@@ -434,28 +445,107 @@ class _ForumDetailPageState extends State<ForumDetailPage>
       return;
     }
 
-    final nextPage = _threadPage + 1;
-    final data = await TiebaApi.fetchFrsPage(
-      bduss: UserManager.bduss!,
-      stoken: UserManager.stoken!,
-      forumName: forumName,
-      userId: UserManager.userId ?? '',
-      page: nextPage,
-      loadType: 2,
-    );
+    if (_threadIdList.isNotEmpty) {
+      // 双接口模式：从 threadIdList 中取一批 ID 走 threadlist 接口
+      final batch = _threadIdList.take(_batchSize).toList();
+      final threadIdStr = batch.join(',');
+      final forumId = info?.forumId.toInt().toString() ?? widget.fid;
 
-    if (mounted) {
-      setState(() {
-        _loadingMoreThreads = false;
-        if (data != null) {
-          final newPosts = _processThreadData(data);
-          _syncLikedFromPosts(newPosts);
-          _threads.addAll(newPosts);
-          _threadPage = nextPage;
-          _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
-        }
-      });
+      debugPrint("【触底加载→threadlist】forumName=$forumName forumId=$forumId "
+          "threadIdCount=${batch.length} threadIds=$threadIdStr "
+          "sortType=$_selectedSort page=$_threadPage "
+          "剩余threadId=${_threadIdList.length}");
+
+      final data = await TiebaApi.fetchThreadList(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        forumName: forumName,
+        forumId: forumId,
+        userId: UserManager.userId ?? '',
+        threadIds: threadIdStr,
+        sortType: _selectedSort,
+        page: _threadPage,
+      );
+
+      if (mounted) {
+        setState(() {
+          _loadingMoreThreads = false;
+          if (data != null) {
+            final newPosts = _processThreadListData(data);
+            _syncLikedFromPosts(newPosts);
+            _threads.addAll(newPosts);
+            _threadIdList.removeWhere((id) => batch.contains(id));
+            _hasMoreThreads = newPosts.isNotEmpty || _threadIdList.isNotEmpty;
+            debugPrint("【触底加载→threadlist】返回新帖${newPosts.length}条，"
+                "剩余threadId=${_threadIdList.length} hasMore=$_hasMoreThreads");
+          } else {
+            debugPrint("【触底加载→threadlist】返回null，接口异常");
+          }
+        });
+      }
+    } else {
+      // threadIdList 用完，回退到 frs/page
+      final nextPage = _threadPage + 1;
+      debugPrint("【触底加载→frs/page】forumName=$forumName "
+          "sortType=$_selectedSort page=$nextPage "
+          "_threadIdList为空，走frs/page翻页");
+
+      final data = await TiebaApi.fetchFrsPage(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        forumName: forumName,
+        userId: UserManager.userId ?? '',
+        page: nextPage,
+        loadType: 2,
+        sortType: _selectedSort,
+      );
+
+      if (mounted) {
+        setState(() {
+          _loadingMoreThreads = false;
+          if (data != null) {
+            final newPosts = _processThreadData(data);
+            _syncLikedFromPosts(newPosts);
+            _threads.addAll(newPosts);
+            _threadPage = nextPage;
+            _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
+            _threadIdList = data.threadIdList.map((e) => e.toInt()).toList();
+            debugPrint("【触底加载→frs/page】返回新帖${newPosts.length}条，"
+                "新threadId=${_threadIdList.length}条 hasMore=$_hasMoreThreads "
+                "currentPage=$_threadPage");
+          } else {
+            debugPrint("【触底加载→frs/page】返回null，接口异常");
+          }
+        });
+      }
     }
+  }
+
+  List<PostItem> _processThreadListData(ThreadListResponseData data) {
+    final userMap = <int, usermodel.User>{};
+    for (final u in data.userList) {
+      userMap[u.id.toInt()] = u;
+    }
+    return data.threadList
+        .map((t) {
+          final p = PostItem.fromThreadInfo(t);
+          if ((p.authorName.isEmpty || p.authorPortrait == null) &&
+              t.authorId.toInt() > 0) {
+            final author = userMap[t.authorId.toInt()];
+            if (author != null) {
+              p.authorName = author.nameShow.isNotEmpty
+                  ? author.nameShow
+                  : author.name;
+              p.authorPortrait = author.portrait.isNotEmpty
+                  ? author.portrait
+                  : null;
+            }
+          }
+          p.forumName = '';
+          return p;
+        })
+        .where((p) => p.tid.isNotEmpty)
+        .toList();
   }
 
   // ===================== Good Threads Pagination =====================
@@ -540,7 +630,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         children: [
           // "最新" Tab
           GestureDetector(
-            onTap: _onTapEarliest,
+            onTap: () => _tabController.animateTo(0),
             child: _tabLabel(
               "最新",
               isActive: _currentTab == 0,
@@ -594,97 +684,18 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     );
   }
 
-  void _onTapEarliest() {
-    if (_currentTab == 1) {
-      // 在精选页点击最新 -> 切换到最新
-      _tabController.animateTo(0);
-    } else {
-      // 已在最新页 -> 显示排序菜单
-      _showSortMenu();
-    }
-  }
-
-  void _showSortMenu() {
-    // final RenderBox? button = context.findRenderObject() as RenderBox?;
-    // if (button == null) return;
-    // final overlay =
-    //     Overlay.of(context).context.findRenderObject() as RenderBox?;
-    // if (overlay == null) return;
-    final RenderBox? button =
-        _earliestTabKey.currentContext?.findRenderObject() as RenderBox?;
-    if (button == null || !button.attached) return;
-    final overlayBox =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
-    if (overlayBox == null) return;
-    final Offset buttonTopLeft = button.localToGlobal(
-      Offset.zero,
-      ancestor: overlayBox,
-    );
-    final Size buttonSize = button.size;
-
-    final position = RelativeRect.fromLTRB(
-      buttonTopLeft.dx, // 左对齐
-      buttonTopLeft.dy + buttonSize.height, // 紧贴按钮下方
-      buttonTopLeft.dx + buttonSize.width, // 与按钮等宽
-      overlayBox.size.height, // 下边界为屏幕底部
-    );
-
-    showMenu<int>(
-      context: context,
-      initialValue: _selectedSort,
-      position: position,
-      // position: RelativeRect.fromRect(
-      //   Rect.fromPoints(
-      //     button.localToGlobal(const Offset(16, 0), ancestor: overlay),
-      //     button.localToGlobal(const Offset(140, 48), ancestor: overlay),
-      //   ),
-      //   Offset.zero & overlay.size,
-      // ),
-      items: [
-        for (int i = 0; i < _sortOptions.length; i++)
-          PopupMenuItem(
-            value: i,
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey[200]!, width: 0.5),
-                ),
-              ),
-              child: Row(
-                children: [
-                  if (_selectedSort == i)
-                    // const Icon(Icons.check, size: 18, color: Colors.blue),
-                    Icon(
-                      Icons.check,
-                      size: 18,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  if (_selectedSort == i) const SizedBox(width: 8),
-                  Text(
-                    _sortOptions[i],
-                    style: TextStyle(
-                      color: _selectedSort == i
-                          ? Theme.of(context).primaryColor
-                          : Colors.black87,
-                      fontWeight: _selectedSort == i
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-      ],
-    ).then((value) {
-      if (value != null) {
-        setState(() => _selectedSort = value);
-        // 预留排序接口回调
-      }
+  void _onSortChanged(int value) {
+    if (value == _selectedSort) return;
+    setState(() {
+      _selectedSort = value;
+      _threadPage = 1;
+      _hasMoreThreads = true;
     });
+    _sortListenable.value = value;
+    _loadData();
   }
 
+  // ===================== Content =====================
   // ===================== Content =====================
 
   Widget _buildPostList() {

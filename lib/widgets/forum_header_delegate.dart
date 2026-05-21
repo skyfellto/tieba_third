@@ -1,4 +1,5 @@
 import 'dart:ui' show lerpDouble;
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import '../generated/RecommendForumInfo.pb.dart';
 import '../utils/user_manager.dart';
@@ -17,11 +18,13 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
   final int levelupScore;
   final int currentTab;
   final TabController tabController;
-  final VoidCallback? onTapEarliest;
   final VoidCallback? onTapFeatured;
   final VoidCallback? onPop;
   final VoidCallback? onSearchTap;
-  final GlobalKey? earliestTabKey;
+  final int selectedSort;
+  final List<String> sortOptions;
+  final ValueNotifier<int> sortListenable;
+  final ValueChanged<int> onSortChanged;
 
   const ForumHeaderDelegate({
     this.topPadding = 0,
@@ -35,11 +38,13 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     this.levelupScore = 0,
     required this.currentTab,
     required this.tabController,
-    this.onTapEarliest,
     this.onTapFeatured,
-    this.earliestTabKey,
     this.onPop,
     this.onSearchTap,
+    required this.selectedSort,
+    required this.sortOptions,
+    required this.sortListenable,
+    required this.onSortChanged,
   });
 
   @override
@@ -189,29 +194,85 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       levelName != oldDelegate.levelName ||
       curScore != oldDelegate.curScore ||
       levelupScore != oldDelegate.levelupScore ||
-      currentTab != oldDelegate.currentTab;
+      currentTab != oldDelegate.currentTab ||
+      selectedSort != oldDelegate.selectedSort;
 
   Widget _buildTabBar(BuildContext context, Color fgColor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isActive = currentTab == 0;
+
     return SizedBox(
       height: 48,
       child: Material(
         color: Colors.transparent,
         child: Row(
           children: [
+            // "最早" 排序下拉框
             Expanded(
-              child: InkWell(
-                key: earliestTabKey,
-                onTap: onTapEarliest,
-                child: Center(
-                  child: _tabLabel(
-                    "最早",
-                    fgColor,
-                    isActive: currentTab == 0,
-                    showDropdown: currentTab == 0,
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton2<int>(
+                  valueListenable: sortListenable,
+                  isDense: true,
+                  dropdownStyleData: DropdownStyleData(
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[800] : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    offset: const Offset(-16, 4),
+                    useRootNavigator: true,
+                    width: 120,
                   ),
+                  buttonStyleData: const ButtonStyleData(
+                    height: 36,
+                    width: null,
+                    padding: EdgeInsets.zero,
+                  ),
+                  customButton: Padding(
+                    padding: EdgeInsets.zero,
+                    child: Container(
+                      height: 48,
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "最早",
+                            style: TextStyle(
+                              fontSize: isActive ? 17 : 15,
+                              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                              color: isActive ? fgColor : fgColor.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            size: 18,
+                            color: fgColor.withValues(alpha: 0.7),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  items: List.generate(sortOptions.length, (i) {
+                    return DropdownItem<int>(
+                      value: i,
+                      child: Text(
+                        sortOptions[i],
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    );
+                  }),
+                  onChanged: (v) {
+                    if (v == null || v == selectedSort) return;
+                    onSortChanged(v);
+                  },
                 ),
               ),
             ),
+            // "精选" tab
             Expanded(
               child: InkWell(
                 onTap: onTapFeatured,
@@ -230,7 +291,6 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     String text,
     Color fgColor, {
     required bool isActive,
-    bool showDropdown = false,
   }) {
     return Container(
       height: 48,
@@ -247,14 +307,6 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
               color: isActive ? fgColor : fgColor.withValues(alpha: 0.6),
             ),
           ),
-          if (showDropdown) ...[
-            const SizedBox(width: 2),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 18,
-              color: fgColor.withValues(alpha: 0.7),
-            ),
-          ],
         ],
       ),
     );
