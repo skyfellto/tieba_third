@@ -13,6 +13,8 @@ class UserProfileData {
   final int fansNum;
   final int totalAgreeNum;
   final String? ipAddress;
+  final String? godFieldName;
+  final String? baZhuDesc;
 
   const UserProfileData({
     required this.uid,
@@ -29,30 +31,13 @@ class UserProfileData {
     this.fansNum = 0,
     this.totalAgreeNum = 0,
     this.ipAddress,
+    this.godFieldName,
+    this.baZhuDesc,
   });
-
-  factory UserProfileData.fromJson(Map<String, dynamic> json) {
-    final user = json['user'] as Map<String, dynamic>? ?? {};
-    return UserProfileData(
-      uid: _s(user['id']),
-      name: _s(user['name']),
-      nameShow: _s(user['name_show']),
-      portrait: user['portrait']?.toString(),
-      intro: user['intro']?.toString(),
-      sex: int.tryParse(_s(user['sex'])) ?? 0,
-      postNum: int.tryParse(_s(user['post_num'])) ?? 0,
-      threadNum: int.tryParse(_s(user['thread_num'])) ?? 0,
-      tbAge: _s(user['tb_age']),
-      myLikeNum: int.tryParse(_s(user['my_like_num'])) ?? 0,
-      concernNum: int.tryParse(_s(user['concern_num'])) ?? 0,
-      fansNum: int.tryParse(_s(user['fans_num'])) ?? 0,
-      totalAgreeNum: int.tryParse(_s(user['total_agree_num'])) ?? 0,
-      ipAddress: user['ip_address']?.toString(),
-    );
-  }
 
   factory UserProfileData.fromUserProto(dynamic user) {
     return UserProfileData(
+      godFieldName: user.newGodData.fieldName ?? '',
       uid: user.id.toInt().toString(),
       name: user.name ?? '',
       nameShow: user.nameShow ?? '',
@@ -67,10 +52,9 @@ class UserProfileData {
       fansNum: user.fansNum ?? 0,
       totalAgreeNum: user.totalAgreeNum ?? 0,
       ipAddress: (user.ipAddress?.isNotEmpty == true) ? user.ipAddress : null,
+      baZhuDesc: user.bazhuGrade.desc ?? "",
     );
   }
-
-  static String _s(dynamic v) => v?.toString() ?? '';
 
   String get sexLabel {
     switch (sex) {

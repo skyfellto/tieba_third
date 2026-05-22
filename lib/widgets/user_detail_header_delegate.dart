@@ -176,6 +176,50 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
       ],
     );
 
+    // 大神信息
+    Widget? godFieldWidget;
+    if (!isSkeleton && p?.godFieldName?.isNotEmpty == true) {
+      godFieldWidget = Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Row(
+          children: [
+            Icon(Icons.verified, size: 16, color: Colors.blue[700]),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                "${p!.godFieldName!}领域大神",
+                style: const TextStyle(fontSize: 15),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 吧主信息
+    Widget? baZhuWidget;
+    if (!isSkeleton && p?.baZhuDesc?.isNotEmpty == true) {
+      baZhuWidget = Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Row(
+          children: [
+            Icon(Icons.verified, size: 16, color: Colors.blue[700]),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                p!.baZhuDesc!,
+                style: const TextStyle(fontSize: 15),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     // 签名和标签
     Widget signatureWidget = isSkeleton
         ? Padding(
@@ -254,7 +298,12 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
-                      children: [signatureWidget, tagsWidget],
+                      children: [
+                        signatureWidget,
+                        ?baZhuWidget,
+                        ?godFieldWidget,
+                        tagsWidget,
+                      ],
                     ),
                   ),
                 ),
@@ -325,7 +374,12 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => topPadding + kToolbarHeight + 270;
+  double get maxExtent {
+    double extra = 0;
+    if (profile?.baZhuDesc?.isNotEmpty == true) extra += 36;
+    if (profile?.godFieldName?.isNotEmpty == true) extra += 36;
+    return topPadding + kToolbarHeight + 270 + extra;
+  }
 
   @override
   double get minExtent => topPadding + kToolbarHeight + 48;
