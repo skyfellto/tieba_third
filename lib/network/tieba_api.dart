@@ -1058,12 +1058,16 @@ class TiebaApi {
       final d = pb.data;
       // 屏蔽直播帖
       d.threadList.removeWhere((t) => t.hasAlaInfo());
-      debugPrint("【FrsPage响应】threadList=${d.threadList.length}条 "
-          "threadIdList=${d.threadIdList.length}条 "
-          "pn=$page loadType=$loadType sortType=$sortType "
-          "hasPage=${d.hasPage()} hasMore=${d.hasPage() ? d.page.hasMore : -1}");
+      debugPrint(
+        "【FrsPage响应】threadList=${d.threadList.length}条 "
+        "threadIdList=${d.threadIdList.length}条 "
+        "pn=$page loadType=$loadType sortType=$sortType "
+        "hasPage=${d.hasPage()} hasMore=${d.hasPage() ? d.page.hasMore : -1}",
+      );
       if (d.threadIdList.isNotEmpty) {
-        debugPrint("【FrsPage响应】前10个threadId=${d.threadIdList.take(10).map((e) => e.toInt()).join(',')}");
+        debugPrint(
+          "【FrsPage响应】前10个threadId=${d.threadIdList.take(10).map((e) => e.toInt()).join(',')}",
+        );
       }
       return d;
     } catch (e) {
@@ -1163,7 +1167,9 @@ class TiebaApi {
 
       final pb = ThreadListResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint("【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        debugPrint(
+          "【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
+        );
         return null;
       }
 
@@ -1269,6 +1275,150 @@ class TiebaApi {
     } catch (e) {
       debugPrint("【签到异常】$e");
       return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 关注贴吧（POST /c/c/forum/like）
+  static Future<Map<String, dynamic>?> likeForum({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String forumId,
+    required String forumName,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final cuid = DeviceInfo().cuid;
+
+    final params = [
+      ["BDUSS", bduss],
+      ["_client_type", "2"],
+      ["_client_version", _clientVersion],
+      ["cuid", cuid],
+      ["fid", forumId],
+      ["kw", forumName],
+      ["stoken", stoken],
+      ["tbs", tbs],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    final client = http.Client();
+    try {
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("http://c.tieba.baidu.com/c/c/forum/like"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
+              "Cookie": "ka=open",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint("【关注贴吧】非200状态码");
+        return null;
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【关注贴吧】error_code=$err msg=${json["error_msg"]}");
+        return null;
+      }
+      return json;
+    } catch (e) {
+      debugPrint("【关注贴吧】异常：$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 取消关注贴吧（POST /c/c/forum/unfavolike）
+  static Future<bool> unlikeForum({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String forumId,
+    required String forumName,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final cuid = DeviceInfo().cuid;
+    final c3Aid = DeviceInfo().c3Aid;
+
+    final params = [
+      ["BDUSS", bduss],
+      ["_client_type", "2"],
+      ["_client_version", _clientVersion],
+      ["c3_aid", c3Aid],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["fid", forumId],
+      ["kw", forumName],
+      ["stoken", stoken],
+      ["tbs", tbs],
+      ["timestamp", timestamp],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    final client = http.Client();
+    try {
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("http://c.tieba.baidu.com/c/c/forum/unfavolike"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": DeviceInfo().userAgent(_clientVersion),
+              "Cookie": "ka=open",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "c3_aid": c3Aid,
+              "client_logid": timestamp,
+            })
+            ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+
+      if (response.statusCode != 200) {
+        debugPrint("【取消关注】非200状态码");
+        return false;
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) {
+        debugPrint("【取消关注】error_code=$err msg=${json["error_msg"]}");
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint("【取消关注】异常：$e");
+      return false;
     } finally {
       client.close();
     }

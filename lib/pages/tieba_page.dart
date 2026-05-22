@@ -170,10 +170,16 @@ class _TiebaPageState extends State<TiebaPage>
         if (result != null) {
           final info = result['info'];
           if (info is List) {
+            // 一键签到接口调用成功，立即提示
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('一键签到成功')),
+              );
+            }
             for (final item in info) {
               if (item is Map) {
                 final fid = item['forum_id']?.toString();
-                if (fid != null && item['error_code'] == '0') {
+                if (fid != null && item['error']?['err_no'] == 0) {
                   success++;
                   final idx = _forums.indexWhere((f) => f.forumId == fid);
                   if (idx != -1) {
@@ -223,14 +229,16 @@ class _TiebaPageState extends State<TiebaPage>
       if (mounted) {
         setState(() {});
         final failed = _forums.where((f) => !f.isSign).length;
+        String msg;
+        if (success == 0 && failed > 0) {
+          msg = '一键签到失败，剩余 $failed 个未签到';
+        } else if (failed == 0) {
+          msg = '一键签到成功，共 $success 个吧';
+        } else {
+          msg = '共成功签到 $success 个吧，剩余 $failed 个未签到';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success > 0
-                  ? '共成功签到 $success 个吧，剩余 $failed 个未签到'
-                  : '一键签到失败，剩余 $failed 个未签到',
-            ),
-          ),
+          SnackBar(content: Text(msg)),
         );
       }
     } finally {

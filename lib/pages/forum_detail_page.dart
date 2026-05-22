@@ -47,6 +47,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   int _curScore = 0;
   int _levelupScore = 0;
   bool _isLike = false;
+  bool _isLiking = false;
 
   late TabController _tabController;
   int _currentTab = 0;
@@ -180,6 +181,9 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       sortOptions: _sortOptions,
                       sortListenable: _sortListenable,
                       onSortChanged: _onSortChanged,
+                      onLikeForum: _handleLikeForum,
+                      onUnlikeForum: _handleUnlikeForum,
+                      isLiking: _isLiking,
                       onTapFeatured: () => _tabController.animateTo(1),
                       onPop: () => context.pop(),
                       onSearchTap: () {
@@ -693,6 +697,85 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     });
     _sortListenable.value = value;
     _loadData();
+  }
+
+  Future<void> _handleLikeForum() async {
+    if (_isLiking || !UserManager.isLogin) return;
+    setState(() => _isLiking = true);
+    try {
+      final info = _forumInfo;
+      final forumId = info?.forumId.toInt().toString() ?? widget.fid;
+      final forumName = info?.forumName ?? widget.forumName ?? '';
+      final result = await TiebaApi.likeForum(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        forumId: forumId,
+        forumName: forumName,
+      );
+      if (mounted && result != null) {
+        final infoData = result['info'];
+        if (infoData is Map) {
+          setState(() {
+            _isLike = true;
+            _isLiking = false;
+            _userLevel = int.tryParse('${infoData['level_id'] ?? 0}') ?? 0;
+            _levelName = '${infoData['level_name'] ?? ''}';
+            _curScore = int.tryParse('${infoData['cur_score'] ?? 0}') ?? 0;
+            _levelupScore = int.tryParse('${infoData['levelup_score'] ?? 0}') ?? 0;
+          });
+        }
+      } else if (mounted) {
+        setState(() => _isLiking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('关注失败，请稍后重试')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLiking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('关注失败，请稍后重试')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleUnlikeForum() async {
+    if (_isLiking || !UserManager.isLogin) return;
+    setState(() => _isLiking = true);
+    try {
+      final info = _forumInfo;
+      final forumId = info?.forumId.toInt().toString() ?? widget.fid;
+      final forumName = info?.forumName ?? widget.forumName ?? '';
+      final ok = await TiebaApi.unlikeForum(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        forumId: forumId,
+        forumName: forumName,
+      );
+      if (mounted) {
+        if (ok) {
+          setState(() {
+            _isLike = false;
+            _isLiking = false;
+          });
+        } else {
+          setState(() => _isLiking = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('取消关注失败，请稍后重试')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLiking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('取消关注失败，请稍后重试')),
+        );
+      }
+    }
   }
 
   // ===================== Content =====================

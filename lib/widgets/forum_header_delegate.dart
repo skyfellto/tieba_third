@@ -25,6 +25,9 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
   final List<String> sortOptions;
   final ValueNotifier<int> sortListenable;
   final ValueChanged<int> onSortChanged;
+  final VoidCallback? onLikeForum;
+  final VoidCallback? onUnlikeForum;
+  final bool isLiking;
 
   const ForumHeaderDelegate({
     this.topPadding = 0,
@@ -45,6 +48,9 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.sortOptions,
     required this.sortListenable,
     required this.onSortChanged,
+    this.onLikeForum,
+    this.onUnlikeForum,
+    this.isLiking = false,
   });
 
   @override
@@ -153,14 +159,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                 onPressed: onSearchTap,
                 splashRadius: 20,
               ),
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: fgColor, size: 22),
-                onSelected: (v) {},
-                itemBuilder: (_) => const [
-                  PopupMenuItem(value: 'share', child: Text('分享')),
-                  PopupMenuItem(value: 'report', child: Text('举报')),
-                ],
-              ),
+              _buildMoreDropdown(context, fgColor),
             ],
           ),
         ),
@@ -195,7 +194,8 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       curScore != oldDelegate.curScore ||
       levelupScore != oldDelegate.levelupScore ||
       currentTab != oldDelegate.currentTab ||
-      selectedSort != oldDelegate.selectedSort;
+      selectedSort != oldDelegate.selectedSort ||
+      isLiking != oldDelegate.isLiking;
 
   Widget _buildTabBar(BuildContext context, Color fgColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -287,6 +287,66 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
+  Widget _buildMoreDropdown(BuildContext context, Color fgColor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DropdownButtonHideUnderline(
+      child: DropdownButton2<String>(
+        isDense: true,
+        dropdownStyleData: DropdownStyleData(
+          decoration: BoxDecoration(
+            color: isDark ? Colors.grey[800] : Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          offset: const Offset(-16, 4),
+          useRootNavigator: true,
+          width: 120,
+        ),
+        buttonStyleData: const ButtonStyleData(
+          height: 36,
+          width: null,
+          padding: EdgeInsets.zero,
+        ),
+        customButton: IconButton(
+          icon: Icon(Icons.more_vert, color: fgColor, size: 22),
+          onPressed: null, // DropdownButton2 handles this
+          splashRadius: 20,
+        ),
+        items: [
+          if (isLike)
+            DropdownItem<String>(
+              value: 'unfollow',
+              child: Text(
+                '取消关注',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+            ),
+          const DropdownItem<String>(
+            value: 'share',
+            child: Text('分享', style: TextStyle(fontSize: 14)),
+          ),
+          const DropdownItem<String>(
+            value: 'report',
+            child: Text('举报', style: TextStyle(fontSize: 14)),
+          ),
+        ],
+        onChanged: (v) {
+          if (v == null) return;
+          if (v == 'unfollow') {
+            onUnlikeForum?.call();
+          } else if (v == 'share') {
+            // 预留分享
+          } else if (v == 'report') {
+            // 预留举报
+          }
+        },
+      ),
+    );
+  }
+
   Widget _tabLabel(
     String text,
     Color fgColor, {
@@ -370,7 +430,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () {},
+              onTap: isLiking ? null : onLikeForum,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -380,8 +440,8 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Text(
-                  "+ 关注",
+                child: Text(
+                  isLiking ? "关注中..." : "+ 关注",
                   style: TextStyle(
                     color: Color(0xFF222436),
                     fontSize: 14,
