@@ -2064,6 +2064,7 @@ class TiebaApi {
       if (!pb.hasData()) return [];
 
       final posts = pb.data.postList.map((info) {
+        debugPrint("hasAgree :: ${info.agree.hasAgree}");
         // debugPrint("【用户帖子Pb】帖子 tid=${info.threadId} agreeNum=${info.agreeNum}");
         // 提取正文文本
         String? absText;
@@ -2117,6 +2118,8 @@ class TiebaApi {
           }
         }
 
+        bool isLiked = info.agree.hasAgree == 1 ? true : false;
+
         return PostItem(
           tid: info.threadId.toInt().toString(),
           title: info.title,
@@ -2137,7 +2140,7 @@ class TiebaApi {
           imageUrls: images,
           isAd: false,
           isTop: false,
-          isLiked: false,
+          isLiked: isLiked,
           firstPostId: info.postId.toInt().toString(),
         );
       }).toList();
