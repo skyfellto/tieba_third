@@ -9,6 +9,7 @@ import '../pages/forum_detail_page.dart';
 import '../pages/floor_reply_page.dart';
 import '../pages/browse_history_page.dart';
 import '../pages/favorites_page.dart';
+import '../pages/my_likes_page.dart';
 import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
 import '../pages/forum_search_result_page.dart';
@@ -109,6 +110,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/wode/favorites',
       builder: (context, state) => const FavoritesPage(),
+    ),
+    // 我的点赞页（独立路由）
+    GoRoute(
+      path: '/wode/my-likes',
+      builder: (context, state) => const MyLikesPage(),
     ),
     // 搜索页（独立路由）
     GoRoute(

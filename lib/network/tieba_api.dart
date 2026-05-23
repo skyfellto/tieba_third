@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/device_info.dart';
+import 'package:tieba_third/utils/sofire_utils.dart';
+import 'package:tieba_third/utils/user_manager.dart';
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
 import '../models/user_profile_data.dart';
@@ -283,6 +285,7 @@ class TiebaApi {
     final stSize =
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final zId = await getCachedZid();
 
     final params = [
       ["BDUSS", bduss],
@@ -312,6 +315,7 @@ class TiebaApi {
       ["thread_id", threadId],
       ["timestamp", timestamp],
     ];
+    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
     final sign = _computeSign(params);
     params.add(["sign", sign]);
     final bodyStr = params
@@ -1612,6 +1616,7 @@ class TiebaApi {
     final stSize =
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
     final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final zId = await getCachedZid();
 
     final params = [
       ["BDUSS", bduss],
@@ -1641,13 +1646,16 @@ class TiebaApi {
       ["thread_id", threadId],
       ["timestamp", timestamp],
     ];
+    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
     final sign = _computeSign(params);
     params.add(["sign", sign]);
     final bodyStr = params
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
 
-    debugPrint("【点赞回复请求】obj_type=$objType postId=$postId");
+    debugPrint(
+      "【点赞回复请求】obj_type=$objType postId=$postId${zId != null && zId.isNotEmpty ? ' z_id=✓' : ''}",
+    );
 
     final client = http.Client();
     try {
@@ -2064,7 +2072,6 @@ class TiebaApi {
       if (!pb.hasData()) return [];
 
       final posts = pb.data.postList.map((info) {
-        debugPrint("hasAgree :: ${info.agree.hasAgree}");
         // debugPrint("【用户帖子Pb】帖子 tid=${info.threadId} agreeNum=${info.agreeNum}");
         // 提取正文文本
         String? absText;
@@ -2289,6 +2296,7 @@ class TiebaApi {
         .round()
         .toString();
     final hasStParams = stNum > 120;
+    final zId = await getCachedZid();
     // data: [{"pid":"真实postId","status":1,"tid":"threadId"}] — 匹配抓包
     final data = jsonEncode([
       {"pid": postId, "status": 1, "tid": threadId},
@@ -2336,6 +2344,7 @@ class TiebaApi {
       ["timestamp", timestamp],
       ["user_id", userId],
     ];
+    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
     final sign = _computeSign(params);
     params.add(["sign", sign]);
     final bodyStr = params
@@ -2404,6 +2413,7 @@ class TiebaApi {
         .round()
         .toString();
     final hasStParams = stNum > 120;
+    final zId = await getCachedZid();
 
     final params = [
       ["BDUSS", bduss],
@@ -2448,6 +2458,7 @@ class TiebaApi {
       ["timestamp", timestamp],
       ["user_id", userId],
     ];
+    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
     final sign = _computeSign(params);
     params.add(["sign", sign]);
     final bodyStr = params
@@ -2514,6 +2525,7 @@ class TiebaApi {
         .round()
         .toString();
     final hasStParams = stNum > 120;
+    final zId = await getCachedZid();
 
     final params = [
       ["BDUSS", bduss],
@@ -2558,6 +2570,7 @@ class TiebaApi {
       ["timestamp", timestamp],
       ["user_id", userId],
     ];
+    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
     final sign = _computeSign(params);
     params.add(["sign", sign]);
     final bodyStr = params
@@ -2570,7 +2583,7 @@ class TiebaApi {
       final request =
           http.Request(
               'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/f/post/threadstore"),
+              Uri.parse("https://tieba.baidu.com/c/u/feed/userAgree"),
             )
             ..followRedirects = false
             ..headers.addAll({
@@ -2782,6 +2795,7 @@ class TiebaApi {
     // String? zId,
   }) async {
     final cuid = DeviceInfo().cuid;
+    final zId = await getCachedZid();
 
     final now = DateTime.now();
     final msTs = now.millisecondsSinceEpoch;
@@ -2818,7 +2832,7 @@ class TiebaApi {
       firstInstallTime: Int64(installTs),
       lastUpdateTime: Int64(installTs),
       personalizedRecSwitch: 1,
-      // zId: zId,
+      zId: zId,
       needDecrypt: 1,
       needCamDecrypt: 1,
       phoneImei: DeviceInfo().phoneImei,
@@ -2999,6 +3013,141 @@ class TiebaApi {
       return json["data"] as Map<String, dynamic>?;
     } catch (e) {
       debugPrint("【吧内搜索异常】$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取我的点赞列表（POST /c/f/post/threadstore）
+  static Future<Map<String, dynamic>?> fetchLikedPosts({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required int tabId,
+    required int page,
+    int rn = 20,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final cuid = DeviceInfo().cuid;
+    final zId = await getCachedZid();
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    final eventDay = "${now.year}${now.month}${now.day}";
+    final firstInstallTime =
+        prefs.getInt('_first_install_time') ??
+        DateTime.now().millisecondsSinceEpoch;
+    if (!prefs.containsKey('_first_install_time')) {
+      await prefs.setInt('_first_install_time', firstInstallTime);
+    }
+    final lastUpdateTime =
+        prefs.getInt('_last_update_time') ?? firstInstallTime;
+    if (DateTime.now().millisecondsSinceEpoch - lastUpdateTime > 7 * 86400000) {
+      await prefs.setInt(
+        '_last_update_time',
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    }
+    // active_timestamp 是首次活跃时间（非当前时间），持久化存一份
+    final activeTimestamp =
+        prefs.getInt('_active_timestamp') ??
+        DateTime.now().millisecondsSinceEpoch;
+    if (!prefs.containsKey('_active_timestamp')) {
+      await prefs.setInt('_active_timestamp', activeTimestamp);
+    }
+
+    final params = [
+      ["BDUSS", bduss],
+      ["_client_type", "2"],
+      ["_client_version", _clientVersion],
+      ["_client_id", "wappc_${timestamp}_${Random().nextInt(1000)}"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["c3_aid", DeviceInfo().c3Aid],
+      ["stoken", stoken],
+      ["tbs", tbs],
+      ["tab_id", "$tabId"],
+      ["pn", "$page"],
+      ["rn", "$rn"],
+      ["_timestamp", timestamp],
+      ["from", "1015363f"],
+      ["subapp_type", "hybrid"],
+      ["net_type", "1"],
+      ["q_type", "0"],
+      ["sdk_ver", "2.34.0"],
+      ["cmode", "1"],
+      ["start_type", "1"],
+      ["extra", ""],
+      ["device_score", "0.5"],
+      ["is_teenager", "0"],
+      ["need_decrypt", "1"],
+      ["user_agent", DeviceInfo().userAgent(_clientVersion)],
+      ["scr_h", DeviceInfo().scrH.toString()],
+      ["scr_w", DeviceInfo().scrW.toString()],
+      ["scr_dip", DeviceInfo().scrDip.toString()],
+      ["active_timestamp", "$activeTimestamp"],
+      ["first_install_time", "$firstInstallTime"],
+      ["last_update_time", "$lastUpdateTime"],
+      ["event_day", eventDay],
+    ];
+    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    final ua = DeviceInfo().userAgent(_clientVersion);
+
+    final client = http.Client();
+    try {
+      final request =
+          http.Request(
+              'POST',
+              Uri.parse("https://tieba.baidu.com/c/u/feed/userAgree"),
+            )
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+              "User-Agent": ua,
+              "Cookie":
+                  "BDUSS_BFESS=$bduss;BDUSS=$bduss;STOKEN=$stoken;BAIDUID=${UserManager.baiduId};cuid_galaxy2=$cuid;CUID=$cuid;cuid_gid=;BAIDUID_BFESS=${UserManager.baiduId};TBBRAND=;ka=open",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "c3_aid": DeviceInfo().c3Aid,
+              "Origin": "https://tieba.baidu.com",
+              "Referer":
+                  "https://tieba.baidu.com/mo/q/hybrid-main-usercenter/myLike/hybrid?nonavigationbar=1",
+              "x-requested-with": "XMLHttpRequest",
+              "Subapp-Type": "hybrid",
+              "Sec-Fetch-Dest": "empty",
+              "Sec-Fetch-Site": "same-origin",
+              "Sec-Fetch-Mode": "cors",
+              "Accept": "application/json, text/plain, */*",
+              "Connection": "keep-alive",
+              "Accept-Encoding": "gzip, deflate",
+              "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+            })
+            ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+      // 兼容两种响应格式：hybrid API (error_code) / 旧 API (error.errno)
+      final errCode = json['error_code'];
+      if (errCode != null && errCode != 0 && errCode != "0") return null;
+      final errno = json['error']?['errno'];
+      if (errno != null && errno != 0 && errno != "0") return null;
+      return json;
+    } catch (e) {
       return null;
     } finally {
       client.close();

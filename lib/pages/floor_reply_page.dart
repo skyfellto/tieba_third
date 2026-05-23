@@ -71,8 +71,9 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     final raw = prefs.getString(_likedStorageKey);
     if (raw != null && raw.isNotEmpty) {
       try {
-        _likedAgreeMap = (jsonDecode(raw) as Map<String, dynamic>)
-            .map((k, v) => MapEntry(k, (v as num).toInt()));
+        _likedAgreeMap = (jsonDecode(raw) as Map<String, dynamic>).map(
+          (k, v) => MapEntry(k, (v as num).toInt()),
+        );
       } catch (_) {}
     }
   }
@@ -322,7 +323,11 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       final pid = s.id.toString();
       final isLiked = s.hasAgree() && s.agree.hasAgree == 1;
       final agreeNum = s.hasAgree() ? s.agree.agreeNum.toInt() : 0;
-      _likeManager.sync('floor:$pid', serverLiked: isLiked, serverAgreeNum: agreeNum);
+      _likeManager.sync(
+        'floor:$pid',
+        serverLiked: isLiked,
+        serverAgreeNum: agreeNum,
+      );
 
       final saved = _likedAgreeMap[pid];
       if (saved != null && s.hasAgree()) {
@@ -340,13 +345,21 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     final pidStr = subReply.id.toString();
     final replyKey = 'floor:$pidStr';
     final serverLiked = subReply.hasAgree() && subReply.agree.hasAgree == 1;
-    final serverAgree = subReply.hasAgree() ? subReply.agree.agreeNum.toInt() : 0;
+    final serverAgree = subReply.hasAgree()
+        ? subReply.agree.agreeNum.toInt()
+        : 0;
+
+    debugPrint("\n【楼中楼点赞】开始 tid=${widget.tid} pid=$pidStr "
+        "serverLiked=$serverLiked serverAgree=$serverAgree "
+        "opType=${serverLiked ? 1 : 0}");
 
     final (nowLiked, nowAgree) = _likeManager.toggle(
       key: replyKey,
       serverLiked: serverLiked,
       serverAgreeNum: serverAgree,
       request: (opType) async {
+        debugPrint("【楼中楼点赞】发起请求 opType=$opType "
+            "tid=${widget.tid} pid=$pidStr objType=2");
         final score = await TiebaApi.likeReply(
           bduss: UserManager.bduss!,
           stoken: UserManager.stoken!,
@@ -357,10 +370,15 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           objType: 2,
           opType: opType,
         );
+        debugPrint("【楼中楼点赞】请求结果 score=$score "
+            "${score != null ? '成功' : '失败'}");
         return score != null;
       },
       onUpdate: (isRollback) {
         if (!mounted) return;
+        debugPrint("【楼中楼点赞】onUpdate isRollback=$isRollback "
+            "nowIsLiked=${_likeManager.isLiked(replyKey)} "
+            "nowAgree=${_likeManager.agreeNum(replyKey)}");
         setState(() {
           final newAgreeLocal = _likeManager.agreeNum(replyKey);
           if (subReply.hasAgree()) {
@@ -371,15 +389,18 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         _saveLikedData();
         if (isRollback) {
           final nowLikedLocal = _likeManager.isLiked(replyKey);
-          scaffold.showSnackBar(SnackBar(
-            content: Text(
-              nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+          debugPrint("【楼中楼点赞】回滚！当前状态 isLiked=$nowLikedLocal");
+          scaffold.showSnackBar(
+            SnackBar(
+              content: Text(nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试'),
+              duration: const Duration(seconds: 2),
             ),
-            duration: const Duration(seconds: 2),
-          ));
+          );
         }
       },
     );
+
+    debugPrint("【楼中楼点赞】乐观更新结果 nowLiked=$nowLiked nowAgree=$nowAgree");
 
     setState(() {
       if (subReply.hasAgree()) {

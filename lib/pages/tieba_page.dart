@@ -184,6 +184,7 @@ class _TiebaPageState extends State<TiebaPage>
                   final idx = _forums.indexWhere((f) => f.forumId == fid);
                   if (idx != -1) {
                     _forums[idx] = _forums[idx].copyWith(isSign: true);
+                    if (mounted) setState(() {});
                   }
                 }
               }

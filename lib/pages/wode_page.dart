@@ -32,6 +32,7 @@ class _WodePageState extends State<WodePage> {
   }
 
   void _handleFavoritesTap() => context.push('/wode/favorites');
+  void _handleMyLikesTap() => context.push('/wode/my-likes');
   void _handleBrowseHistoryTap() => context.push('/wode/browse-history');
   void _handleThemeTap() => themeNotifier.toggle();
   void _handleServiceTap() {}
@@ -108,6 +109,11 @@ class _WodePageState extends State<WodePage> {
                   ),
                 ),
                 _buildTile(Icons.bookmark_outline, '我的收藏', _handleFavoritesTap),
+                _buildTile(
+                  Icons.thumb_up_outlined,
+                  '我的点赞',
+                  _handleMyLikesTap,
+                ),
                 _buildTile(
                   Icons.history_outlined,
                   '浏览记录',

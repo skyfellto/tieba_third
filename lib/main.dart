@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tieba_third/router/app_router.dart';
 import 'package:tieba_third/utils/device_info.dart';
+import 'package:tieba_third/utils/sofire_utils.dart';
 import 'package:tieba_third/utils/user_manager.dart';
 import 'package:tieba_third/utils/theme_notifier.dart';
 import 'package:tieba_third/utils/emoticon_helper.dart';
@@ -14,6 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   DeviceInfo().initScreen();
   await DeviceInfo().initDevice();
+  getZid(); // 后台获取 z_id（缓存后供 CommonReq 使用）
   await UserManager.init();
   await themeNotifier.init();
   await EmoticonHelper.init();
