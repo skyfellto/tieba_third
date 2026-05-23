@@ -354,6 +354,8 @@ class TiebaApi {
     if (!prefs.containsKey('_active_timestamp')) {
       await prefs.setInt('_active_timestamp', activeTimestamp);
     }
+    debugPrint("cuid :: $cuid");
+    debugPrint("c3AId :: $c3Aid");
 
     final params = [
       ["BDUSS", bduss],
@@ -456,7 +458,7 @@ class TiebaApi {
               "Content-Type": "application/x-www-form-urlencoded",
               "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie":
-                  "BAIDUID=$baiDuId;need_cookie_decrypt=1;ka=open;CUID=$cuid;BAIDUZID=$zId",
+                  "BAIDUID=$baiDuId;need_cookie_decrypt=1;ka=open;CUID=$cuid;BAIDUZID=$zId;DNARBBT=${base64Url.encode(utf8.encode(model.split('').reversed.join())).replaceAll('=', '')}",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "client_logid": clientLogid,

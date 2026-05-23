@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'helios/uid_util.dart';
+import 'helios/cuid_utils.dart';
 
 class DeviceInfo {
   static final DeviceInfo _instance = DeviceInfo._internal();
@@ -55,7 +55,10 @@ class DeviceInfo {
 
     final prefs = await SharedPreferences.getInstance();
 
-    // 持久化 IMEI / CUID
+    // 初始化 UIDUtil（供 tiebalite 算法使用）
+    UIDUtil.init(androidId);
+
+    // 持久化 phoneImei（仍用于 _phone_imei 参数）
     final savedImei = prefs.getString('phone_imei');
     if (savedImei != null) {
       phoneImei = savedImei;
@@ -65,17 +68,10 @@ class DeviceInfo {
           "${Random().nextInt(900000) + 100000}";
       await prefs.setString('phone_imei', phoneImei);
     }
-    cuid = "cuid_$phoneImei";
 
-    // 持久化 c3Aid — 用已有 phoneImei 代替 uuid
-    final savedC3Aid = prefs.getString('c3_aid');
-    if (savedC3Aid != null) {
-      c3Aid = savedC3Aid;
-    } else {
-      final raw = _sha1Hex("com.helios$androidId$phoneImei");
-      c3Aid = "A00-${raw.substring(0, 28)}-${raw.substring(28, 40)}";
-      await prefs.setString('c3_aid', c3Aid);
-    }
+    // --- 与 tiebalite 一致的 cuid / c3Aid ---
+    cuid = CuidUtils.getNewCuid();
+    c3Aid = await UIDUtil.getAid();
 
     // 初始化时间相关持久化值（与 tiebalite 对齐）
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -107,8 +103,4 @@ class DeviceInfo {
     }
   }
 
-  static String _sha1Hex(String input) {
-    final bytes = sha1.convert(utf8.encode(input)).bytes;
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  }
 }
