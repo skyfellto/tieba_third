@@ -225,7 +225,7 @@ class _SearchThreadResultState extends State<SearchThreadResult>
                     serverLiked: _posts[pIdx].isLiked,
                     serverAgreeNum: int.tryParse(_posts[pIdx].agreeNum) ?? 0,
                     request: (opType) async {
-                      final score = await TiebaApi.likePost(
+                      final score = await TiebaApi.likeAgree(
                         bduss: UserManager.bduss!,
                         stoken: UserManager.stoken!,
                         tbs: UserManager.tbs ?? '',

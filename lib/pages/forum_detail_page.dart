@@ -919,7 +919,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                           serverAgreeNum:
                               int.tryParse(_threads[pIdx].agreeNum) ?? 0,
                           request: (opType) async {
-                            final score = await TiebaApi.likePost(
+                            final score = await TiebaApi.likeAgree(
                               bduss: UserManager.bduss!,
                               stoken: UserManager.stoken!,
                               tbs: UserManager.tbs ?? '',
@@ -1071,7 +1071,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                             serverAgreeNum:
                                 int.tryParse(_goodThreads[pIdx].agreeNum) ?? 0,
                             request: (opType) async {
-                              final score = await TiebaApi.likePost(
+                              final score = await TiebaApi.likeAgree(
                                 bduss: UserManager.bduss!,
                                 stoken: UserManager.stoken!,
                                 tbs: UserManager.tbs ?? '',

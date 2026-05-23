@@ -139,7 +139,7 @@ class LikedItemCard extends StatelessWidget {
     ReplyInfo reply,
   ) {
     final isDark = theme.brightness == Brightness.dark;
-    final bgColor = isDark ? Colors.grey[900]! : Colors.grey[100]!;
+    final bgColor = isDark ? Color(0xFF3A3E5C) : Colors.grey[100]!;
     return GestureDetector(
       onTap: onBodyTap,
       behavior: HitTestBehavior.opaque,
@@ -246,9 +246,17 @@ class LikedItemCard extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          _actionBtn(Icons.share_outlined, item.shareNum, subColor),
+          _actionBtn(
+            Icons.share_outlined,
+            item.shareNum == "0" ? "分享" : item.shareNum,
+            subColor,
+          ),
           const SizedBox(width: 12),
-          _actionBtn(Icons.chat_bubble_outline, item.replyNum, subColor),
+          _actionBtn(
+            Icons.chat_bubble_outline,
+            item.replyNum == "0" ? "回复" : item.replyNum,
+            subColor,
+          ),
           const SizedBox(width: 12),
           GestureDetector(
             onTap: onLikeTap,
@@ -312,15 +320,17 @@ class LikedItemCard extends StatelessWidget {
       } else if (type == 0 || type == 1 || type == 4 || type == 9) {
         final text = '${a['text'] ?? ''}';
         if (text.isNotEmpty) {
-          spans.add(TextSpan(
-            text: text,
-            style: type == 4
-                ? TextStyle(
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w600,
-                  )
-                : null,
-          ));
+          spans.add(
+            TextSpan(
+              text: text,
+              style: type == 4
+                  ? TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
+                    )
+                  : null,
+            ),
+          );
         }
       }
     }

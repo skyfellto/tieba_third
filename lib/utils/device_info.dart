@@ -24,6 +24,14 @@ class DeviceInfo {
   late String cuid;
   late String c3Aid;
 
+  /// 应用启动时间（固定值，用于 client_logid）
+  static final int initTime = DateTime.now().millisecondsSinceEpoch;
+
+  /// 首次安装时间 / 上次更新时间 / 首次活跃时间（持久化）
+  late int firstInstallTime;
+  late int lastUpdateTime;
+  late int activeTimestamp;
+
   /// 仿 tiebalite getUserAgent，拼接 App 版本
   String userAgent(String appVersion) =>
       "Mozilla/5.0 (Linux; Android $osVersion; $model Build/$androidId) "
@@ -64,9 +72,38 @@ class DeviceInfo {
     if (savedC3Aid != null) {
       c3Aid = savedC3Aid;
     } else {
-      final raw = _sha1Hex("com.helios${androidId}$phoneImei");
+      final raw = _sha1Hex("com.helios$androidId$phoneImei");
       c3Aid = "A00-${raw.substring(0, 28)}-${raw.substring(28, 40)}";
       await prefs.setString('c3_aid', c3Aid);
+    }
+
+    // 初始化时间相关持久化值（与 tiebalite 对齐）
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final savedFirst = prefs.getInt('_first_install_time');
+    if (savedFirst != null) {
+      firstInstallTime = savedFirst;
+    } else {
+      firstInstallTime = now;
+      await prefs.setInt('_first_install_time', firstInstallTime);
+    }
+    final savedLast = prefs.getInt('_last_update_time');
+    if (savedLast != null) {
+      lastUpdateTime = savedLast;
+    } else {
+      lastUpdateTime = firstInstallTime;
+      await prefs.setInt('_last_update_time', lastUpdateTime);
+    }
+    // 每 7 天更新一次
+    if (now - lastUpdateTime > 7 * 86400000) {
+      lastUpdateTime = now;
+      await prefs.setInt('_last_update_time', lastUpdateTime);
+    }
+    final savedActive = prefs.getInt('_active_timestamp');
+    if (savedActive != null) {
+      activeTimestamp = savedActive;
+    } else {
+      activeTimestamp = now;
+      await prefs.setInt('_active_timestamp', activeTimestamp);
     }
   }
 

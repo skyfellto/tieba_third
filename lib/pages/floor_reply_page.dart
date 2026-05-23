@@ -360,7 +360,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       request: (opType) async {
         debugPrint("【楼中楼点赞】发起请求 opType=$opType "
             "tid=${widget.tid} pid=$pidStr objType=2");
-        final score = await TiebaApi.likeReply(
+        final score = await TiebaApi.likeAgree(
           bduss: UserManager.bduss!,
           stoken: UserManager.stoken!,
           tbs: UserManager.tbs ?? '',
@@ -368,6 +368,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           threadId: widget.tid,
           postId: pidStr,
           objType: 2,
+          forumId: _forumId ?? '',
           opType: opType,
         );
         debugPrint("【楼中楼点赞】请求结果 score=$score "

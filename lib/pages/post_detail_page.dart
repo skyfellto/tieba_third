@@ -299,7 +299,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         serverLiked: serverLiked,
         serverAgreeNum: serverAgree,
         request: (opType) async {
-          final score = await TiebaApi.likePost(
+          final score = await TiebaApi.likeAgree(
             bduss: UserManager.bduss!,
             stoken: UserManager.stoken!,
             tbs: UserManager.tbs ?? '',
@@ -917,13 +917,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
       serverLiked: serverLiked,
       serverAgreeNum: serverAgree,
       request: (opType) async {
-        final score = await TiebaApi.likeReply(
+        final score = await TiebaApi.likeAgree(
           bduss: UserManager.bduss!,
           stoken: UserManager.stoken!,
           tbs: UserManager.tbs ?? '',
           userId: UserManager.userId ?? '',
           threadId: widget.tid,
           postId: pidStr,
+          objType: 1,
           opType: opType,
         );
         return score != null;

@@ -273,7 +273,7 @@ class _MyLikesPageState extends State<MyLikesPage>
         request: (opType) async {
           late final bool ok;
           if (isReply) {
-            final score = await TiebaApi.likeReply(
+            final score = await TiebaApi.likeAgree(
               bduss: UserManager.bduss!,
               stoken: UserManager.stoken!,
               tbs: UserManager.tbs ?? '',
@@ -285,7 +285,7 @@ class _MyLikesPageState extends State<MyLikesPage>
             );
             ok = score != null;
           } else {
-            final score = await TiebaApi.likePost(
+            final score = await TiebaApi.likeAgree(
               bduss: UserManager.bduss!,
               stoken: UserManager.stoken!,
               tbs: UserManager.tbs ?? '',

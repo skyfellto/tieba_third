@@ -60,6 +60,36 @@ class TiebaApi {
   /// Public accessor for client version used by external pages.
   static String get clientVersion => _clientVersion;
 
+  /// sync 接口返回的 client_id / sample_id
+  static String? _syncClientId;
+  static String? _syncSampleId;
+
+  static const String _syncClientIdKey = 'sync_client_id';
+  static const String _syncSampleIdKey = 'sync_sample_id';
+
+  /// 从 SharedPreferences 加载已持久化的 sync 数据
+  static Future<void> loadSyncData() async {
+    final prefs = await SharedPreferences.getInstance();
+    _syncClientId = prefs.getString(_syncClientIdKey);
+    _syncSampleId = prefs.getString(_syncSampleIdKey);
+    if (_syncSampleId != null && _syncSampleId!.isNotEmpty) {
+      debugPrint("【sync加载】clientId=$_syncClientId sampleId=$_syncSampleId");
+    }
+  }
+
+  /// 持久化 sync 数据
+  static Future<void> saveSyncData(String clientId, String sampleId) async {
+    _syncClientId = clientId;
+    _syncSampleId = sampleId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_syncClientIdKey, clientId);
+    await prefs.setString(_syncSampleIdKey, sampleId);
+    debugPrint("【sync保存】clientId=$clientId sampleId=$sampleId");
+  }
+
+  /// 获取已缓存的 sample_id（可能为空）
+  static String? get syncSampleId => _syncSampleId;
+
   static String _s(dynamic v) => v?.toString() ?? '';
 
   static String _randomHex(int length) {
@@ -267,26 +297,37 @@ class TiebaApi {
 
   /// 点赞帖子（基于 MiniTiebaApi 实现）
   /// 点赞帖子，返回新点赞数，失败返回 null
-  static Future<int?> likePost({
+  /// 统一点赞/取消点赞
+  /// [objType]: 3=帖子, 1=回复, 2=楼中楼回复
+  /// [postId]: 回复/楼中楼时传入
+  /// [forumId]: 楼中楼时传入
+  /// 统一点赞/取消点赞
+  /// [objType]: 3=帖子, 1=回复, 2=楼中楼回复
+  static Future<int?> likeAgree({
     required String bduss,
     required String stoken,
     required String tbs,
     required String userId,
     required String threadId,
-    String postId = "0",
+    String postId = '',
+    String forumId = '',
+    int objType = 3,
     int opType = 0,
     bool allowAlreadyLiked = false,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final clientLogid = timestamp + Random().nextInt(9999).toString();
     // ignore: unnecessary_brace_in_string_interps
     final cuid = DeviceInfo().cuid;
     final phoneImei = DeviceInfo().phoneImei;
     final c3Aid = DeviceInfo().c3Aid;
     final brand = DeviceInfo().brand;
+    final model = DeviceInfo().model;
+    final androidId = DeviceInfo().androidId;
     final stTime = "${Random().nextInt(730) + 121}";
     final stSize =
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final zId = await getCachedZid();
     final baiDuId = UserManager.baiduId;
     final prefs = await SharedPreferences.getInstance();
@@ -316,15 +357,16 @@ class TiebaApi {
 
     final params = [
       ["BDUSS", bduss],
+      ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["agree_type", "2"],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
       ["from", "1015363f"],
       ["net_type", "1"],
-      ["obj_type", "3"],
+      ["obj_type", "$objType"],
       ["op_type", "$opType"],
       ["os_version", DeviceInfo().osVersion],
       ["stErrorNums", "1"],
@@ -347,14 +389,53 @@ class TiebaApi {
       ["sdk_ver", "2.34.0"],
       ["diao", ""],
       ["extra", ""],
-      ["forum_id", ""],
       ["is_teenager", "0"],
       ["is_long_press_agree", "0"],
       ["personalized_rec_switch", "1"],
-      ["iemi", base64.encode(utf8.encode(phoneImei))],
-      ["dnarb", base64.encode(utf8.encode(brand))],
+      ["sample_id", _syncSampleId ?? ''],
+      [
+        "iemi",
+        base64Url
+            .encode(utf8.encode(phoneImei.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      [
+        "ledom",
+        base64Url
+            .encode(utf8.encode(model.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      [
+        "dnarb",
+        base64Url
+            .encode(utf8.encode(brand.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      [
+        "di_diordna",
+        base64Url
+            .encode(utf8.encode(androidId.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
       ["framework_ver", "3340042"],
+      ["naws_game_ver", "2035000"],
+      ["c3_aid", c3Aid],
+      ["cam", ""],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["device_score", "0.5"],
     ];
+    if (objType == 1) {
+      params.add(["obj_source", "a005"]);
+    } else if (objType == 2) {
+      params.add(["obj_source", "a007"]);
+    } else {
+      params.add(["obj_source", "a002"]);
+    }
+    // post_id: 回复/楼中楼时传入
+    if (postId.isNotEmpty) params.add(["post_id", postId]);
+    // forum_id: 始终传入，空字符串表示不适用
+    params.add(["forum_id", forumId.isNotEmpty ? forumId : ""]);
     if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
     if (baiDuId != null && baiDuId.isNotEmpty) params.add(["baiduid", baiDuId]);
     final sign = _computeSign(params);
@@ -362,8 +443,6 @@ class TiebaApi {
     final bodyStr = params
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
-
-    // debugPrint("【点赞帖子请求】threadId=$threadId");
 
     final client = http.Client();
     try {
@@ -377,11 +456,10 @@ class TiebaApi {
               "Content-Type": "application/x-www-form-urlencoded",
               "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie":
-                  "BAIDUZID=$baiDuId;need_cookie_decrypt=1;ka=open;CUID=$cuid;BAIDUZID=$zId",
+                  "BAIDUID=$baiDuId;need_cookie_decrypt=1;ka=open;CUID=$cuid;BAIDUZID=$zId",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
-              // ignore: unnecessary_string_interpolations
-              "client_logid": "$timestamp",
+              "client_logid": clientLogid,
               "client_user_token": userId,
               "c3_aid": c3Aid,
               "Connection": "Keep-Alive",
@@ -390,34 +468,29 @@ class TiebaApi {
               "X-Bd-Traceid":
                   "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
               "Accept-Encoding": "gzip",
+              "Host": "tiebac.baidu.com",
             })
             ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint("【点赞帖子响应】状态码=${response.statusCode} body=${response.body}");
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
         if (err == "3280001" && allowAlreadyLiked) {
-          debugPrint("【点赞帖子】已经点过赞了");
           return -1;
         }
-        debugPrint("【点赞帖子失败】error_code=$err msg=${json["error_msg"]}");
         return null;
       }
-      if (json["data"] == null) {
-        debugPrint("【点赞帖子失败】data=null");
-        return null;
-      }
+      if (json["data"] == null) return null;
+      debugPrint("errmsg :: ${json["error"]["errmsg"]}");
       debugPrint(
-        "【点赞/取消点赞帖子成功】返回1 opType=$opType   errmsg :: ${json["error"]["errmsg"]}",
+        "【likeAgree成功】threadId=$threadId objType=$objType opType=$opType",
       );
       return 1;
     } catch (e) {
-      debugPrint("【点赞帖子异常】$e");
       return null;
     } finally {
       client.close();
@@ -737,7 +810,7 @@ class TiebaApi {
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
@@ -1254,13 +1327,13 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     // tiebalite signFlow: Cookie=ka=open, _client_version=11.10.8.6
     // 使用 defaultCommonParamInterceptor 风格参数 + 签到专有字段
     final params = [
       ["BDUSS", bduss],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
@@ -1300,7 +1373,7 @@ class TiebaApi {
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
@@ -1377,7 +1450,7 @@ class TiebaApi {
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
@@ -1451,7 +1524,7 @@ class TiebaApi {
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "c3_aid": c3Aid,
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
@@ -1492,28 +1565,10 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final di = DeviceInfo();
     final now = DateTime.now();
     final eventDay = "${now.year}${now.month}${now.day}";
-
-    // 持久化 firstInstallTime / lastUpdateTime
-    final prefs = await SharedPreferences.getInstance();
-    final firstInstallTime =
-        prefs.getInt('_first_install_time') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_first_install_time')) {
-      await prefs.setInt('_first_install_time', firstInstallTime);
-    }
-    final lastUpdateTime =
-        prefs.getInt('_last_update_time') ?? firstInstallTime;
-    // 每 7 天更新一次
-    if (DateTime.now().millisecondsSinceEpoch - lastUpdateTime > 7 * 86400000) {
-      await prefs.setInt(
-        '_last_update_time',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-    }
 
     // oaid: 模拟 OAID 对象
     final oaid = jsonEncode({
@@ -1526,12 +1581,12 @@ class TiebaApi {
     final params = [
       ["BDUSS", bduss],
       ["STOKEN", stoken],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", "${di.sdkInt}"],
       ["_phone_imei", phoneImei],
-      ["active_timestamp", timestamp],
+      ["active_timestamp", "${di.activeTimestamp}"],
       ["android_id", di.androidId],
       ["authsid", "null"],
       ["baidu_id", baiduId],
@@ -1543,12 +1598,12 @@ class TiebaApi {
       ["cuid_gid", ""],
       ["event_day", eventDay],
       ["extra", ""],
-      ["first_install_time", "$firstInstallTime"],
+      ["first_install_time", "${di.firstInstallTime}"],
       ["forum_ids", forumIds],
       ["framework_ver", "3340042"],
       ["from", "tieba"],
       ["is_teenager", "0"],
-      ["last_update_time", "$lastUpdateTime"],
+      ["last_update_time", "${di.lastUpdateTime}"],
       ["mac", "02:00:00:00:00:00"],
       ["model", di.model],
       ["net_type", "1"],
@@ -1597,7 +1652,7 @@ class TiebaApi {
               "Content-Type": "application/x-www-form-urlencoded",
               "User-Agent": ua,
               "Cookie": cookie,
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
               "Accept-Encoding": "gzip",
               "Host": "c.tieba.baidu.com",
               "Connection": "Keep-Alive",
@@ -1646,163 +1701,6 @@ class TiebaApi {
     }
   }
 
-  /// 点赞回复
-  /// [objType]: 1=post/reply, 2=subpost(楼中楼), 3=thread
-  /// 返回新点赞数，失败返回 null
-  static Future<int?> likeReply({
-    required String bduss,
-    required String stoken,
-    required String tbs,
-    required String userId,
-    required String threadId,
-    required String postId,
-    int objType = 1,
-    int opType = 0,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final brand = DeviceInfo().brand;
-    final c3Aid = DeviceInfo().c3Aid;
-    // ignore: unnecessary_brace_in_string_interps
-    final cuid = DeviceInfo().cuid;
-    final stTime = "${Random().nextInt(730) + 121}";
-    final stSize =
-        "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final zId = await getCachedZid();
-    final baiDuId = UserManager.baiduId;
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final eventDay = "${now.year}${now.month}${now.day}";
-    final firstInstallTime =
-        prefs.getInt('_first_install_time') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_first_install_time')) {
-      await prefs.setInt('_first_install_time', firstInstallTime);
-    }
-    final lastUpdateTime =
-        prefs.getInt('_last_update_time') ?? firstInstallTime;
-    if (DateTime.now().millisecondsSinceEpoch - lastUpdateTime > 7 * 86400000) {
-      await prefs.setInt(
-        '_last_update_time',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-    }
-    // active_timestamp 是首次活跃时间（非当前时间），持久化存一份
-    final activeTimestamp =
-        prefs.getInt('_active_timestamp') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_active_timestamp')) {
-      await prefs.setInt('_active_timestamp', activeTimestamp);
-    }
-
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_version", _clientVersion],
-      ["agree_type", "2"],
-      ["_client_id", clientId],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["from", "1015363f"],
-      ["net_type", "1"],
-      ["obj_type", "$objType"],
-      ["op_type", "$opType"],
-      ["os_version", DeviceInfo().osVersion],
-      ["post_id", postId],
-      ["stErrorNums", "1"],
-      ["stMethod", "1"],
-      ["stMode", "1"],
-      ["stSize", stSize],
-      ["stTime", stTime],
-      ["stTimesNum", "1"],
-      ["stoken", stoken],
-      ["tbs", tbs],
-      ["thread_id", threadId],
-      ["timestamp", timestamp],
-      ["last_update_time", "$lastUpdateTime"],
-      ["first_install_time", "$firstInstallTime"],
-      ["active_timestamp", "$activeTimestamp"],
-      ["event_day", eventDay],
-      ["need_cam_decrypt", "1"],
-      ["need_decrypt", "1"],
-      ["cmode", "1"],
-      ["sdk_ver", "2.34.0"],
-      ["diao", ""],
-      ["extra", ""],
-      ["forum_id", ""],
-      ["is_teenager", "0"],
-      ["is_long_press_agree", "0"],
-      ["personalized_rec_switch", "1"],
-      ["iemi", base64.encode(utf8.encode(phoneImei))],
-      ["dnarb", base64.encode(utf8.encode(brand))],
-      ["framework_ver", "3340042"],
-    ];
-    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
-    if (baiDuId != null && baiDuId.isNotEmpty) params.add(["baiduid", baiDuId]);
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    debugPrint(
-      "【点赞回复请求】obj_type=$objType postId=$postId${zId != null && zId.isNotEmpty ? ' z_id=✓' : ''}",
-    );
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("https://tiebac.baidu.com/c/c/agree/opAgree"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie":
-                  "BAIDUZID=$baiDuId;need_cookie_decrypt=1;ka=open;CUID=$cuid;BAIDUZID=$zId",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              // ignore: unnecessary_string_interpolations
-              "client_logid": "$timestamp",
-              "client_user_token": userId,
-              "c3_aid": c3Aid,
-              "Connection": "Keep-Alive",
-              "cuid_gid": "",
-              "Charset": "UTF-8",
-              "X-Bd-Traceid":
-                  "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
-              "Accept-Encoding": "gzip",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      // debugPrint("【点赞回复响应】${response.statusCode} body=${response.body}");
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        debugPrint("【点赞回复失败】error_code=$err msg=${json["error_msg"]}");
-        return null;
-      }
-      if (json["data"] == null) {
-        debugPrint("【点赞回复失败】data=null");
-        return null;
-      }
-      debugPrint("errmsg :: ${json["error"]["errmsg"]}");
-      return 1;
-    } catch (e) {
-      debugPrint("【点赞回复异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
   /// 获取用户帖子列表（JSON API）
   /// 参考 tiebalite MiniTiebaApi.userPost
   static Future<List<PostItem>> fetchUserPosts({
@@ -1816,12 +1714,12 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     final params = [
       ["BDUSS", bduss],
       ["STOKEN", stoken],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
@@ -1861,7 +1759,7 @@ class TiebaApi {
               "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
@@ -2278,12 +2176,12 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
 
     final params = [
       ["BDUSS", bduss],
       ["STOKEN", stoken],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
@@ -2323,7 +2221,7 @@ class TiebaApi {
           "Cuid-Gid": "",
           "Client-Type": "2",
           "Charset": "UTF-8",
-          "client_logid": timestamp,
+          "client_logid": "${DeviceInfo.initTime}",
         })
         ..body = bodyStr;
 
@@ -2389,7 +2287,7 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final today = DateTime.now();
     final eventDay = "${today.year}${today.month}${today.day}";
     final stNum = Random().nextInt(750) + 100;
@@ -2406,7 +2304,7 @@ class TiebaApi {
 
     final params = [
       ["BDUSS", bduss],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
@@ -2421,11 +2319,11 @@ class TiebaApi {
       ["data", data],
       ["event_day", eventDay],
       ["extra", ""],
-      ["first_install_time", "1700000000000"],
+      ["first_install_time", "${DeviceInfo().firstInstallTime}"],
       ["framework_ver", "3340042"],
       ["from", "tieba"],
       ["is_teenager", "0"],
-      ["last_update_time", "1700000000000"],
+      ["last_update_time", "${DeviceInfo().lastUpdateTime}"],
       ["mac", "02:00:00:00:00:00"],
       ["model", DeviceInfo().model],
       ["net_type", "1"],
@@ -2471,7 +2369,7 @@ class TiebaApi {
               "c3_aid": DeviceInfo().c3Aid,
               "_client_type": "2",
               "Charset": "UTF-8",
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
@@ -2506,7 +2404,7 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final today = DateTime.now();
     final eventDay = "${today.year}${today.month}${today.day}";
     final stNum = Random().nextInt(750) + 100;
@@ -2519,7 +2417,7 @@ class TiebaApi {
 
     final params = [
       ["BDUSS", bduss],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
@@ -2584,7 +2482,7 @@ class TiebaApi {
           "c3_aid": DeviceInfo().c3Aid,
           "_client_type": "2",
           "Charset": "UTF-8",
-          "client_logid": timestamp,
+          "client_logid": "${DeviceInfo.initTime}",
         })
         ..body = bodyStr;
 
@@ -2618,7 +2516,7 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
     final today = DateTime.now();
     final eventDay = "${today.year}${today.month}${today.day}";
     final stNum = Random().nextInt(750) + 100;
@@ -2632,7 +2530,7 @@ class TiebaApi {
     final params = [
       ["BDUSS", bduss],
       ["STOKEN", stoken],
-      ["_client_id", clientId],
+      ["_client_id", _syncClientId ?? ""],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
@@ -2646,11 +2544,11 @@ class TiebaApi {
       ["cuid_gid", ""],
       ["event_day", eventDay],
       ["extra", ""],
-      ["first_install_time", "1700000000000"],
+      ["first_install_time", "${DeviceInfo().firstInstallTime}"],
       ["framework_ver", "3340042"],
       ["from", "tieba"],
       ["is_teenager", "0"],
-      ["last_update_time", "1700000000000"],
+      ["last_update_time", "${DeviceInfo().lastUpdateTime}"],
       ["mac", "02:00:00:00:00:00"],
       ["model", DeviceInfo().model],
       ["net_type", "1"],
@@ -2685,7 +2583,7 @@ class TiebaApi {
       final request =
           http.Request(
               'POST',
-              Uri.parse("https://tieba.baidu.com/c/u/feed/userAgree"),
+              Uri.parse("https://tiebac.baidu.com/c/f/post/threadstore"),
             )
             ..followRedirects = false
             ..headers.addAll({
@@ -2700,14 +2598,16 @@ class TiebaApi {
               "c3_aid": DeviceInfo().c3Aid,
               "_client_type": "2",
               "Charset": "UTF-8",
-              "client_logid": timestamp,
+              "client_logid": "${DeviceInfo.initTime}",
             })
             ..body = bodyStr;
 
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint("【收藏threadStore】状态码=${response.statusCode}");
+      debugPrint(
+        "【收藏threadStore】status=${response.statusCode} body=${response.body}",
+      );
       if (response.statusCode != 200) return [];
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
@@ -2904,7 +2804,7 @@ class TiebaApi {
     final eventDay = "${now.year}${now.month}${now.day}";
     final clientId = "wappc_${msTs}_${Random().nextInt(1000)}";
     final c3Aid = DeviceInfo().c3Aid;
-    final installTs = msTs - 3600000; // ~1 hour ago
+    final di = DeviceInfo();
     // final clientId = "wappc_1778822989595_244";
 
     final common = CommonReq(
@@ -2930,9 +2830,9 @@ class TiebaApi {
       pversion: "1.0.3",
       startType: 1,
       eventDay: eventDay,
-      activeTimestamp: Int64(installTs + 60000),
-      firstInstallTime: Int64(installTs),
-      lastUpdateTime: Int64(installTs),
+      activeTimestamp: Int64(di.activeTimestamp),
+      firstInstallTime: Int64(di.firstInstallTime),
+      lastUpdateTime: Int64(di.lastUpdateTime),
       personalizedRecSwitch: 1,
       zId: zId,
       needDecrypt: 1,
@@ -2993,9 +2893,6 @@ class TiebaApi {
       "https://tiebac.baidu.com/c/c/post/addPollPost?cmd=309006&format=protobuf",
     );
 
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final logid = timestamp;
-
     final client = http.Client();
     try {
       final multipart = http.MultipartRequest('POST', uri)
@@ -3011,7 +2908,7 @@ class TiebaApi {
           "c3_aid": c3Aid,
           // "c3_aid": "A00-${Random().nextInt(900000000) + 100000000}",
           "Charset": "UTF-8",
-          "client_logid": logid,
+          "client_logid": "${DeviceInfo.initTime}",
           "client_user_token": userId ?? '',
           "Connection": "Keep-Alive",
           "Accept-Encoding": "gzip",
@@ -3133,36 +3030,15 @@ class TiebaApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final cuid = DeviceInfo().cuid;
     final zId = await getCachedZid();
-    final prefs = await SharedPreferences.getInstance();
+    final di = DeviceInfo();
     final now = DateTime.now();
     final eventDay = "${now.year}${now.month}${now.day}";
-    final firstInstallTime =
-        prefs.getInt('_first_install_time') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_first_install_time')) {
-      await prefs.setInt('_first_install_time', firstInstallTime);
-    }
-    final lastUpdateTime =
-        prefs.getInt('_last_update_time') ?? firstInstallTime;
-    if (DateTime.now().millisecondsSinceEpoch - lastUpdateTime > 7 * 86400000) {
-      await prefs.setInt(
-        '_last_update_time',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-    }
-    // active_timestamp 是首次活跃时间（非当前时间），持久化存一份
-    final activeTimestamp =
-        prefs.getInt('_active_timestamp') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_active_timestamp')) {
-      await prefs.setInt('_active_timestamp', activeTimestamp);
-    }
 
     final params = [
       ["BDUSS", bduss],
       ["_client_type", "2"],
       ["_client_version", _clientVersion],
-      ["_client_id", "wappc_${timestamp}_${Random().nextInt(1000)}"],
+      ["_client_id", _syncClientId ?? ""],
       ["cuid", cuid],
       ["cuid_galaxy2", cuid],
       ["cuid_gid", ""],
@@ -3188,9 +3064,9 @@ class TiebaApi {
       ["scr_h", DeviceInfo().scrH.toString()],
       ["scr_w", DeviceInfo().scrW.toString()],
       ["scr_dip", DeviceInfo().scrDip.toString()],
-      ["active_timestamp", "$activeTimestamp"],
-      ["first_install_time", "$firstInstallTime"],
-      ["last_update_time", "$lastUpdateTime"],
+      ["active_timestamp", "${di.activeTimestamp}"],
+      ["first_install_time", "${di.firstInstallTime}"],
+      ["last_update_time", "${di.lastUpdateTime}"],
       ["event_day", eventDay],
     ];
     if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
@@ -3214,7 +3090,7 @@ class TiebaApi {
               "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
               "User-Agent": ua,
               "Cookie":
-                  "BDUSS_BFESS=$bduss;BDUSS=$bduss;STOKEN=$stoken;BAIDUID=${UserManager.baiduId};cuid_galaxy2=$cuid;CUID=$cuid;cuid_gid=;BAIDUID_BFESS=${UserManager.baiduId};TBBRAND=;ka=open",
+                  "BDUSS_BFESS=$bduss;BDUSS=$bduss;STOKEN=$stoken;BAIDUID=${UserManager.baiduId};cuid_galaxy2=$cuid;CUID=$cuid;cuid_gid=;BAIDUID_BFESS=${UserManager.baiduId};TBBRAND=;ka=open;RT=${UserManager.cookie("RT")}",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "c3_aid": DeviceInfo().c3Aid,
@@ -3250,6 +3126,145 @@ class TiebaApi {
       if (errno != null && errno != 0 && errno != "0") return null;
       return json;
     } catch (e) {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 调用 /c/s/sync 获取 sample_id 和 client_id
+  /// 返回 (clientId, sampleId)，失败返回 null
+  static Future<Map<String, String>?> fetchSync({
+    required String bduss,
+    required String stoken,
+  }) async {
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final cuid = DeviceInfo().cuid;
+    final phoneImei = DeviceInfo().phoneImei;
+    final brand = DeviceInfo().brand;
+    final model = DeviceInfo().model;
+    final androidId = DeviceInfo().androidId;
+    final baiDuId = UserManager.baiduId;
+
+    final params = [
+      ["BDUSS", bduss],
+      [
+        "_client_id",
+        "wappc_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}",
+      ],
+      ["_client_type", "2"],
+      ["_client_version", "12.41.7.1"],
+      ["_msg_status", "1"],
+      ["_phone_screen", "0,0"],
+      ["_pic_quality", "0"],
+      ["active_timestamp", "${DeviceInfo().activeTimestamp}"],
+      ["baiduid", baiDuId ?? ''],
+      ["board", model],
+      ["brand", brand],
+      ["c3_aid", DeviceInfo().c3Aid],
+      [
+        "cam",
+        base64Url.encode(utf8.encode("02:00:00:00:00:00")).replaceAll('=', ''),
+      ],
+      ["cmode", "1"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      [
+        "di_diordna",
+        base64Url
+            .encode(utf8.encode(androidId.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      [
+        "event_day",
+        "${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}",
+      ],
+      ["extra", ""],
+      ["first_install_time", "${DeviceInfo().firstInstallTime}"],
+      ["framework_ver", "3340042"],
+      ["from", "tieba"],
+      [
+        "iemi",
+        base64Url
+            .encode(utf8.encode(phoneImei.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      ["incremental", "1024"],
+      ["is_teenager", "0"],
+      ["last_update_time", "${DeviceInfo().lastUpdateTime}"],
+      ["md5", "F86F4C238491AB3BEBFA33AC42C1582B"],
+      ["model", model],
+      ["net_type", "1"],
+      ["package", "com.baidu.tieba"],
+      ["running_abi", "64"],
+      ["scr_dip", "0.0"],
+      ["scr_h", "0"],
+      ["scr_w", "0"],
+      ["signmd5", "225172691"],
+      ["stErrorNums", "1"],
+      ["stMethod", "1"],
+      ["stMode", "1"],
+      [
+        "stSize",
+        "${((Random().nextDouble() * 8 + 0.4) * int.parse("${Random().nextInt(730) + 121}")).round()}",
+      ],
+      ["stTime", "${Random().nextInt(730) + 121}"],
+      ["stTimesNum", "1"],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["stoken", stoken],
+      ["support_abi", "64"],
+      ["timestamp", timestamp],
+      ["versioncode", "202965248"],
+    ];
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+    final bodyStr = params
+        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
+        .join("&");
+
+    final client = http.Client();
+    try {
+      final request =
+          http.Request('POST', Uri.parse("https://c.tieba.baidu.com/c/s/sync"))
+            ..followRedirects = false
+            ..headers.addAll({
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "bdtb for Android 12.41.7.1",
+              "Cookie": "ka=open;BAIDUID=$baiDuId",
+              "cuid": cuid,
+              "cuid_galaxy2": cuid,
+              "cuid_gid": "",
+              "c3_aid": DeviceInfo().c3Aid,
+              "client_logid": "${DeviceInfo.initTime}",
+              "Connection": "Keep-Alive",
+              "Accept-Encoding": "gzip",
+            })
+            ..body = bodyStr;
+
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      debugPrint("【sync响应】status=${response.statusCode} body=${response.body}");
+
+      if (response.statusCode != 200) return null;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = json["error_code"];
+      if (err != null && err != "0" && err != 0) return null;
+
+      final clientData = json["client"];
+      final wlConfig = json["wl_config"];
+      if (clientData is Map && wlConfig is Map) {
+        final clientId = "${clientData["client_id"] ?? ''}";
+        final sampleId = "${wlConfig["sample_id"] ?? ''}";
+        debugPrint("【sync结果】clientId=$clientId sampleId=$sampleId");
+        await saveSyncData(clientId, sampleId);
+        return {"clientId": clientId, "sampleId": sampleId};
+      }
+      return null;
+    } catch (e) {
+      debugPrint("【sync异常】$e");
       return null;
     } finally {
       client.close();

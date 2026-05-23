@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Optimistic like/unlike manager with request queue and rollback.
 ///
 /// Each page creates its own instance. Toggle returns new state immediately
@@ -21,6 +23,7 @@ class LikeManager {
     // 注：不在此覆盖 serverLiked，初始状态由 sync() 负责
 
     final opType = item.isLiked ? 1 : 0;
+    debugPrint("【LikeManager.toggle】key=$key opType=$opType queue=${item._queue} serverLiked=${item.serverLiked}");
     item._queue.add(opType);
     _processQueue(key, request, onUpdate);
     return (item.isLiked, item.agreeNum);

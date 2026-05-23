@@ -277,7 +277,7 @@ class _DongtaiPageState extends State<DongtaiPage>
                           serverLiked: serverLiked,
                           serverAgreeNum: serverAgree,
                           request: (opType) async {
-                            final score = await TiebaApi.likePost(
+                            final score = await TiebaApi.likeAgree(
                               bduss: UserManager.bduss!,
                               stoken: UserManager.stoken!,
                               tbs: UserManager.tbs ?? '',
