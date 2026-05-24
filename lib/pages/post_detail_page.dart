@@ -287,6 +287,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Future<void> _handleThreadLike() async {
     if (!UserManager.isLogin) return;
     if (!mounted) return;
+    if (await TiebaApi.isLikeOnCooldown()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
+        );
+      }
+      return;
+    }
     final scaffold = ScaffoldMessenger.of(context);
     final threadKey = 'thread:${widget.tid}';
     final serverLiked = _data?.hasThread() == true
@@ -905,6 +913,14 @@ class _PostDetailPageState extends State<PostDetailPage> {
   Future<void> _handleLikeReply(Post post) async {
     if (!UserManager.isLogin) return;
     if (!mounted) return;
+    if (await TiebaApi.isLikeOnCooldown()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
+        );
+      }
+      return;
+    }
     final scaffold = ScaffoldMessenger.of(context);
 
     final pidStr = post.id.toString();

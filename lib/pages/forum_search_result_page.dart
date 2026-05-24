@@ -512,9 +512,19 @@ class _ForumSearchResultPageState extends State<ForumSearchResultPage> {
                       ImageViewer.show(context, images, index: i),
                   onBodyTap: (_) => context.push('/post/$tid'),
                   onReplyTap: (_) {},
-                  onLikeTap: (tid) {
+                  onLikeTap: (tid) async {
                     if (!UserManager.isLogin) return;
                     if (!mounted) return;
+                    if (await TiebaApi.isLikeOnCooldown()) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧试'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
                     final scaffold = ScaffoldMessenger.of(context);
                     final pIdx = _posts.indexWhere((x) => x.tid == tid);
                     if (pIdx < 0) return;

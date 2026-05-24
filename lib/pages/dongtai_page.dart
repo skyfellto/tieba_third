@@ -141,7 +141,11 @@ class _DongtaiPageState extends State<DongtaiPage>
 
       // Sync initial like state into manager
       for (final p in posts) {
-        _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+        _likeManager.sync(
+          p.tid,
+          serverLiked: p.isLiked,
+          serverAgreeNum: int.tryParse(p.agreeNum) ?? 0,
+        );
       }
 
       if (mounted) {
@@ -206,155 +210,197 @@ class _DongtaiPageState extends State<DongtaiPage>
       children: [
         _buildHeader(context),
         Expanded(
-          child: _posts.isEmpty && !_isLoading ? ListView() : Stack(
-      children: [
-        Positioned.fill(
-          child: RefreshIndicator(
-            onRefresh: () => _loadData(refresh: true),
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _onScrollNotification,
-              child: ListView.builder(
-                addAutomaticKeepAlives: false, // 不需要保持状态时设为 false
-                addRepaintBoundaries: true, // 给每个 item 添加重绘边界
-                controller: _scrollController,
-                padding: const EdgeInsets.all(12),
-                itemCount: _posts.length + (_loadingMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == _posts.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              "正在加载...",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+          child: _posts.isEmpty && !_isLoading
+              ? ListView()
+              : Stack(
+                  children: [
+                    Positioned.fill(
+                      child: RefreshIndicator(
+                        onRefresh: () => _loadData(refresh: true),
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: _onScrollNotification,
+                          child: ListView.builder(
+                            addAutomaticKeepAlives: false, // 不需要保持状态时设为 false
+                            addRepaintBoundaries: true, // 给每个 item 添加重绘边界
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(12),
+                            itemCount: _posts.length + (_loadingMore ? 1 : 0),
+                            itemBuilder: (context, index) {
+                              if (index == _posts.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "正在加载...",
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                              final p = _posts[index];
+                              final tid = p.tid;
+                              return PostCard(
+                                post: p,
+                                isLiked: _likeManager.isLiked(tid),
+                                onForumTap: () {
+                                  context.push(
+                                    '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
+                                  );
+                                },
+                                onImageTap: (images, i) =>
+                                    ImageViewer.show(context, images, index: i),
+                                onReplyTap: (tid) {
+                                  // TODO: 回复帖子
+                                },
+                                onBodyTap: (tid) {
+                                  context.push('/post/$tid');
+                                },
+                                onLikeTap: (tid) async {
+                                  if (!UserManager.isLogin) return;
+                                  if (!mounted) return;
+                                  if (await TiebaApi.isLikeOnCooldown()) {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            '由于点赞风控，请勿点赞太频繁，10分钟后再试吧',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return;
+                                  }
+                                  final scaffold = ScaffoldMessenger.of(
+                                    context,
+                                  );
+                                  final pIdx = _posts.indexWhere(
+                                    (x) => x.tid == tid,
+                                  );
+                                  if (pIdx < 0) return;
+                                  final serverLiked = _posts[pIdx].isLiked;
+                                  final serverAgree =
+                                      int.tryParse(_posts[pIdx].agreeNum) ?? 0;
+                                  setState(() {
+                                    final (_, newAgree) = _likeManager.toggle(
+                                      key: tid,
+                                      serverLiked: serverLiked,
+                                      serverAgreeNum: serverAgree,
+                                      request: (opType) async {
+                                        final score = await TiebaApi.likeAgree(
+                                          bduss: UserManager.bduss!,
+                                          stoken: UserManager.stoken!,
+                                          tbs: UserManager.tbs ?? '',
+                                          userId: UserManager.userId ?? '',
+                                          threadId: tid,
+                                          opType: opType,
+                                          allowAlreadyLiked: true,
+                                        );
+                                        return score != null;
+                                      },
+                                      onUpdate: (isRollback) {
+                                        if (!mounted) return;
+                                        setState(() {
+                                          final i = _posts.indexWhere(
+                                            (x) => x.tid == tid,
+                                          );
+                                          if (i >= 0) {
+                                            _posts[i].agreeNum = _likeManager
+                                                .agreeNum(tid)
+                                                .toString();
+                                          }
+                                        });
+                                        if (isRollback) {
+                                          final nowLiked = _likeManager.isLiked(
+                                            tid,
+                                          );
+                                          scaffold.showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                nowLiked
+                                                    ? '取消点赞失败，请稍后重试'
+                                                    : '点赞失败，请稍后重试',
+                                              ),
+                                              duration: const Duration(
+                                                seconds: 2,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                    );
+                                    final idx = _posts.indexWhere(
+                                      (x) => x.tid == tid,
+                                    );
+                                    if (idx >= 0) {
+                                      _posts[idx].agreeNum = newAgree
+                                          .toString();
+                                      _posts[idx].isLiked = _likeManager
+                                          .isLiked(tid);
+                                    }
+                                  });
+                                },
+                                onShareTap: (tid) {
+                                  SharePlus.instance.share(
+                                    ShareParams(
+                                      text: "https://tieba.baidu.com/p/$tid",
+                                      title: "来自百度贴吧的帖子",
+                                    ),
+                                  );
+                                },
+                                onUserTap: (uid) {
+                                  UserBrowseHistoryManager.saveRecord(
+                                    uid: uid,
+                                    userName: p.authorName,
+                                    portrait: p.authorPortrait,
+                                  );
+                                  context.push('/user/$uid');
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    );
-                  }
-                  final p = _posts[index];
-                  final tid = p.tid;
-                  return PostCard(
-                    post: p,
-                    isLiked: _likeManager.isLiked(tid),
-                    onForumTap: () {
-                      context.push(
-                        '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
-                      );
-                    },
-                    onImageTap: (images, i) =>
-                        ImageViewer.show(context, images, index: i),
-                    onReplyTap: (tid) {
-                      // TODO: 回复帖子
-                    },
-                    onBodyTap: (tid) {
-                      context.push('/post/$tid');
-                    },
-                    onLikeTap: (tid) async {
-                      if (!UserManager.isLogin) return;
-                      if (!mounted) return;
-                      final scaffold = ScaffoldMessenger.of(context);
-                      final pIdx = _posts.indexWhere((x) => x.tid == tid);
-                      if (pIdx < 0) return;
-                      final serverLiked = _posts[pIdx].isLiked;
-                      final serverAgree = int.tryParse(_posts[pIdx].agreeNum) ?? 0;
-                      setState(() {
-                        final (_, newAgree) = _likeManager.toggle(
-                          key: tid,
-                          serverLiked: serverLiked,
-                          serverAgreeNum: serverAgree,
-                          request: (opType) async {
-                            final score = await TiebaApi.likeAgree(
-                              bduss: UserManager.bduss!,
-                              stoken: UserManager.stoken!,
-                              tbs: UserManager.tbs ?? '',
-                              userId: UserManager.userId ?? '',
-                              threadId: tid,
-                              opType: opType,
-                              allowAlreadyLiked: true,
-                            );
-                            return score != null;
-                          },
-                          onUpdate: (isRollback) {
-                            if (!mounted) return;
-                            setState(() {
-                              final i = _posts.indexWhere((x) => x.tid == tid);
-                              if (i >= 0) {
-                                _posts[i].agreeNum =
-                                    _likeManager.agreeNum(tid).toString();
-                              }
-                            });
-                            if (isRollback) {
-                              final nowLiked = _likeManager.isLiked(tid);
-                              scaffold.showSnackBar(SnackBar(
-                                content: Text(
-                                  nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
-                                ),
-                                duration: const Duration(seconds: 2),
-                              ));
-                            }
-                          },
-                        );
-                        final idx = _posts.indexWhere((x) => x.tid == tid);
-                        if (idx >= 0) {
-                          _posts[idx].agreeNum = newAgree.toString();
-                          _posts[idx].isLiked = _likeManager.isLiked(tid);
-                        }
-                      });
-                    },
-                    onShareTap: (tid) {
-                      SharePlus.instance.share(
-                        ShareParams(
-                          text: "https://tieba.baidu.com/p/$tid",
-                          title: "来自百度贴吧的帖子",
+                    ),
+                    Positioned(
+                      bottom: 20,
+                      right: 20,
+                      child: AnimatedOpacity(
+                        opacity: _showBackToTop ? 1.0 : 0.0,
+                        duration: const Duration(milliseconds: 200),
+                        child: IgnorePointer(
+                          ignoring: !_showBackToTop,
+                          child: FloatingActionButton(
+                            mini: true,
+                            // backgroundColor: Theme.of(context).primaryColor,
+                            // foregroundColor: Colors.white,
+                            onPressed: _scrollToTop,
+                            child: const Icon(Icons.arrow_upward),
+                          ),
                         ),
-                      );
-                    },
-                    onUserTap: (uid) {
-                      UserBrowseHistoryManager.saveRecord(uid: uid, userName: p.authorName, portrait: p.authorPortrait);
-                      context.push('/user/$uid');
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: AnimatedOpacity(
-            opacity: _showBackToTop ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 200),
-            child: IgnorePointer(
-              ignoring: !_showBackToTop,
-              child: FloatingActionButton(
-                mini: true,
-                // backgroundColor: Theme.of(context).primaryColor,
-                // foregroundColor: Colors.white,
-                onPressed: _scrollToTop,
-                child: const Icon(Icons.arrow_upward),
-              ),
-            ),
-          ),
-        ),
-      ],    // Stack children
-    ),      // Stack
-    ),      // Expanded
-  ],        // Column children
-);          // return Column
+                      ),
+                    ),
+                  ], // Stack children
+                ), // Stack
+        ), // Expanded
+      ], // Column children
+    ); // return Column
   }
 }

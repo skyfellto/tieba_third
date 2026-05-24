@@ -455,10 +455,12 @@ class _ForumDetailPageState extends State<ForumDetailPage>
       final threadIdStr = batch.join(',');
       final forumId = info?.forumId.toInt().toString() ?? widget.fid;
 
-      debugPrint("【触底加载→threadlist】forumName=$forumName forumId=$forumId "
-          "threadIdCount=${batch.length} threadIds=$threadIdStr "
-          "sortType=$_selectedSort page=$_threadPage "
-          "剩余threadId=${_threadIdList.length}");
+      debugPrint(
+        "【触底加载→threadlist】forumName=$forumName forumId=$forumId "
+        "threadIdCount=${batch.length} threadIds=$threadIdStr "
+        "sortType=$_selectedSort page=$_threadPage "
+        "剩余threadId=${_threadIdList.length}",
+      );
 
       final data = await TiebaApi.fetchThreadList(
         bduss: UserManager.bduss!,
@@ -480,8 +482,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
             _threads.addAll(newPosts);
             _threadIdList.removeWhere((id) => batch.contains(id));
             _hasMoreThreads = newPosts.isNotEmpty || _threadIdList.isNotEmpty;
-            debugPrint("【触底加载→threadlist】返回新帖${newPosts.length}条，"
-                "剩余threadId=${_threadIdList.length} hasMore=$_hasMoreThreads");
+            debugPrint(
+              "【触底加载→threadlist】返回新帖${newPosts.length}条，"
+              "剩余threadId=${_threadIdList.length} hasMore=$_hasMoreThreads",
+            );
           } else {
             debugPrint("【触底加载→threadlist】返回null，接口异常");
           }
@@ -490,9 +494,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     } else {
       // threadIdList 用完，回退到 frs/page
       final nextPage = _threadPage + 1;
-      debugPrint("【触底加载→frs/page】forumName=$forumName "
-          "sortType=$_selectedSort page=$nextPage "
-          "_threadIdList为空，走frs/page翻页");
+      debugPrint(
+        "【触底加载→frs/page】forumName=$forumName "
+        "sortType=$_selectedSort page=$nextPage "
+        "_threadIdList为空，走frs/page翻页",
+      );
 
       final data = await TiebaApi.fetchFrsPage(
         bduss: UserManager.bduss!,
@@ -514,9 +520,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
             _threadPage = nextPage;
             _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
             _threadIdList = data.threadIdList.map((e) => e.toInt()).toList();
-            debugPrint("【触底加载→frs/page】返回新帖${newPosts.length}条，"
-                "新threadId=${_threadIdList.length}条 hasMore=$_hasMoreThreads "
-                "currentPage=$_threadPage");
+            debugPrint(
+              "【触底加载→frs/page】返回新帖${newPosts.length}条，"
+              "新threadId=${_threadIdList.length}条 hasMore=$_hasMoreThreads "
+              "currentPage=$_threadPage",
+            );
           } else {
             debugPrint("【触底加载→frs/page】返回null，接口异常");
           }
@@ -722,21 +730,22 @@ class _ForumDetailPageState extends State<ForumDetailPage>
             _userLevel = int.tryParse('${infoData['level_id'] ?? 0}') ?? 0;
             _levelName = '${infoData['level_name'] ?? ''}';
             _curScore = int.tryParse('${infoData['cur_score'] ?? 0}') ?? 0;
-            _levelupScore = int.tryParse('${infoData['levelup_score'] ?? 0}') ?? 0;
+            _levelupScore =
+                int.tryParse('${infoData['levelup_score'] ?? 0}') ?? 0;
           });
         }
       } else if (mounted) {
         setState(() => _isLiking = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('关注失败，请稍后重试')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('关注失败，请稍后重试')));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLiking = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('关注失败，请稍后重试')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('关注失败，请稍后重试')));
       }
     }
   }
@@ -763,17 +772,17 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           });
         } else {
           setState(() => _isLiking = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('取消关注失败，请稍后重试')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('取消关注失败，请稍后重试')));
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLiking = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('取消关注失败，请稍后重试')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('取消关注失败，请稍后重试')));
       }
     }
   }
@@ -906,9 +915,19 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),
                     onBodyTap: (_) => context.push('/post/$tid'),
-                    onLikeTap: (_) {
+                    onLikeTap: (_) async {
                       if (!UserManager.isLogin) return;
                       if (!mounted) return;
+                      if (await TiebaApi.isLikeOnCooldown()) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
                       final scaffold = ScaffoldMessenger.of(context);
                       final pIdx = _threads.indexWhere((x) => x.tid == tid);
                       if (pIdx < 0) return;
@@ -1056,9 +1075,19 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       onImageTap: (images, i) =>
                           ImageViewer.show(context, images, index: i),
                       onBodyTap: (_) => context.push('/post/$tid'),
-                      onLikeTap: (_) {
+                      onLikeTap: (_) async {
                         if (!UserManager.isLogin) return;
                         if (!mounted) return;
+                        if (await TiebaApi.isLikeOnCooldown()) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧'),
+                              ),
+                            );
+                          }
+                          return;
+                        }
                         final scaffold = ScaffoldMessenger.of(context);
                         final pIdx = _goodThreads.indexWhere(
                           (x) => x.tid == tid,

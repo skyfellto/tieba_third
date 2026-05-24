@@ -68,13 +68,19 @@ class _SearchThreadResultState extends State<SearchThreadResult>
     }
 
     final list = data['post_list'];
-    final rawItems = list is List ? list.cast<Map<String, dynamic>>() : <Map<String, dynamic>>[];
+    final rawItems = list is List
+        ? list.cast<Map<String, dynamic>>()
+        : <Map<String, dynamic>>[];
     final items = rawItems.map(_toPostItem).toList();
     final hasMore = data['has_more'] == 1;
 
     // Sync initial like state into manager
     for (final p in items) {
-      _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+      _likeManager.sync(
+        p.tid,
+        serverLiked: p.isLiked,
+        serverAgreeNum: int.tryParse(p.agreeNum) ?? 0,
+      );
     }
 
     setState(() {
@@ -112,7 +118,8 @@ class _SearchThreadResultState extends State<SearchThreadResult>
     final urls = <String>[];
     for (final m in media) {
       if (m is! Map) continue;
-      final url = (m['big_pic']?.toString() ?? m['small_pic']?.toString() ?? '');
+      final url =
+          (m['big_pic']?.toString() ?? m['small_pic']?.toString() ?? '');
       if (url.isNotEmpty) urls.add(url);
     }
     return urls;
@@ -127,8 +134,10 @@ class _SearchThreadResultState extends State<SearchThreadResult>
     final forumInfo = raw['forum_info'] as Map<String, dynamic>?;
     final forumAvatar = forumInfo?['avatar']?.toString() ?? '';
     final user = raw['user'] as Map<String, dynamic>?;
-    final userName = user?['show_nickname']?.toString() ??
-        user?['user_name']?.toString() ?? '';
+    final userName =
+        user?['show_nickname']?.toString() ??
+        user?['user_name']?.toString() ??
+        '';
     final portrait = user?['portrait']?.toString() ?? '';
     final userId = user?['user_id'] is int ? '${user!['user_id']}' : '';
     final likeNum = raw['like_num'] is int ? raw['like_num'] : 0;
@@ -137,7 +146,8 @@ class _SearchThreadResultState extends State<SearchThreadResult>
     String? lastTime;
     if (time > 0) {
       final dt = DateTime.fromMillisecondsSinceEpoch(time * 1000);
-      lastTime = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      lastTime =
+          '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }
 
     return PostItem(
@@ -177,7 +187,8 @@ class _SearchThreadResultState extends State<SearchThreadResult>
         onRefresh: () => _load(refresh: true),
         child: ListView.builder(
           padding: const EdgeInsets.all(12),
-          itemCount: _posts.length + (_loadingMore ? 1 : 0) + (_posts.isEmpty ? 1 : 0),
+          itemCount:
+              _posts.length + (_loadingMore ? 1 : 0) + (_posts.isEmpty ? 1 : 0),
           itemBuilder: (context, index) {
             if (_posts.isEmpty) {
               return const Center(
@@ -192,7 +203,8 @@ class _SearchThreadResultState extends State<SearchThreadResult>
                 padding: EdgeInsets.all(16),
                 child: Center(
                   child: SizedBox(
-                    width: 16, height: 16,
+                    width: 16,
+                    height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
@@ -207,15 +219,23 @@ class _SearchThreadResultState extends State<SearchThreadResult>
               onBodyTap: (_) => context.push('/post/$tid'),
               onForumTap: p.forumId.isNotEmpty
                   ? () => context.push(
-                        '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
-                      )
+                      '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
+                    )
                   : null,
               onUserTap: (uid) {
                 context.push('/user/$uid');
               },
-              onLikeTap: (tid) {
+              onLikeTap: (tid) async {
                 if (!UserManager.isLogin) return;
                 if (!mounted) return;
+                if (await TiebaApi.isLikeOnCooldown()) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
+                    );
+                  }
+                  return;
+                }
                 final scaffold = ScaffoldMessenger.of(context);
                 final pIdx = _posts.indexWhere((x) => x.tid == tid);
                 if (pIdx < 0) return;
@@ -241,18 +261,21 @@ class _SearchThreadResultState extends State<SearchThreadResult>
                       setState(() {
                         final i = _posts.indexWhere((x) => x.tid == tid);
                         if (i >= 0) {
-                          _posts[i].agreeNum =
-                              _likeManager.agreeNum(tid).toString();
+                          _posts[i].agreeNum = _likeManager
+                              .agreeNum(tid)
+                              .toString();
                         }
                       });
                       if (isRollback) {
                         final nowLiked = _likeManager.isLiked(tid);
-                        scaffold.showSnackBar(SnackBar(
-                          content: Text(
-                            nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                        scaffold.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                            ),
+                            duration: const Duration(seconds: 2),
                           ),
-                          duration: const Duration(seconds: 2),
-                        ));
+                        );
                       }
                     },
                   );

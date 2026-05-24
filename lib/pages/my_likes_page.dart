@@ -85,13 +85,23 @@ class _MyLikesPageState extends State<MyLikesPage>
                     : item['has_agree']) ==
                 1;
             final agreeNum = int.tryParse('${item['agree_num'] ?? 0}') ?? 0;
-            _likeManager.sync('thread:$tid', serverLiked: isLiked, serverAgreeNum: agreeNum);
+            _likeManager.sync(
+              'thread:$tid',
+              serverLiked: isLiked,
+              serverAgreeNum: agreeNum,
+            );
             final likedItem = LikedItem.fromJson(item, tid);
             state.items.add(likedItem);
             // 如果有回复，同步回复的点赞状态
-            if (likedItem.hasReply && likedItem.reply != null && likedItem.reply!.replyId.isNotEmpty) {
+            if (likedItem.hasReply &&
+                likedItem.reply != null &&
+                likedItem.reply!.replyId.isNotEmpty) {
               final replyAgree = int.tryParse(likedItem.reply!.agreeNum) ?? 0;
-              _likeManager.sync('reply:${likedItem.reply!.replyId}', serverLiked: true, serverAgreeNum: replyAgree);
+              _likeManager.sync(
+                'reply:${likedItem.reply!.replyId}',
+                serverLiked: true,
+                serverAgreeNum: replyAgree,
+              );
             }
           }
         }
@@ -133,11 +143,16 @@ class _MyLikesPageState extends State<MyLikesPage>
               labelColor: theme.brightness == Brightness.dark
                   ? Colors.white
                   : Colors.black,
-              labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+              ),
               unselectedLabelColor: theme.brightness == Brightness.dark
                   ? Colors.grey
                   : Colors.grey[100],
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.normal,
+              ),
               indicatorColor: theme.primaryColor,
               tabs: const [
                 Tab(text: '全部'),
@@ -198,7 +213,11 @@ class _MyLikesPageState extends State<MyLikesPage>
           padding: const EdgeInsets.all(12),
           itemCount:
               state.items.length +
-              (state.loadingMore ? 1 : state.hasMore ? 0 : 1),
+              (state.loadingMore
+                  ? 1
+                  : state.hasMore
+                  ? 0
+                  : 1),
           itemBuilder: (context, index) {
             if (index >= state.items.length) {
               if (state.loadingMore) {
@@ -206,7 +225,8 @@ class _MyLikesPageState extends State<MyLikesPage>
                   padding: EdgeInsets.all(16),
                   child: Center(
                     child: SizedBox(
-                      width: 16, height: 16,
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
@@ -215,14 +235,21 @@ class _MyLikesPageState extends State<MyLikesPage>
               return const Padding(
                 padding: EdgeInsets.all(16),
                 child: Center(
-                  child: Text('没有更多了',
-                      style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  child: Text(
+                    '没有更多了',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
                 ),
               );
             }
             final item = state.items[index];
-            final isReply = item.hasReply && item.reply != null && item.reply!.replyId.isNotEmpty;
-            final likeKey = isReply ? 'reply:${item.reply!.replyId}' : 'thread:${item.tid}';
+            final isReply =
+                item.hasReply &&
+                item.reply != null &&
+                item.reply!.replyId.isNotEmpty;
+            final likeKey = isReply
+                ? 'reply:${item.reply!.replyId}'
+                : 'thread:${item.tid}';
             return LikedItemCard(
               item: item,
               likeManager: _likeManager,
@@ -255,13 +282,24 @@ class _MyLikesPageState extends State<MyLikesPage>
     );
   }
 
-  void _handleLike(LikedItem item, int index, int tabIndex) {
+  Future<void> _handleLike(LikedItem item, int index, int tabIndex) async {
     if (!UserManager.isLogin || !mounted) return;
+    if (await TiebaApi.isLikeOnCooldown()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
+        );
+      }
+      return;
+    }
     final scaffold = ScaffoldMessenger.of(context);
 
     // 有回复时赞的是回复本身，否则赞帖子
-    final isReply = item.hasReply && item.reply != null && item.reply!.replyId.isNotEmpty;
-    final likeKey = isReply ? 'reply:${item.reply!.replyId}' : 'thread:${item.tid}';
+    final isReply =
+        item.hasReply && item.reply != null && item.reply!.replyId.isNotEmpty;
+    final likeKey = isReply
+        ? 'reply:${item.reply!.replyId}'
+        : 'thread:${item.tid}';
     final serverLiked = _likeManager.isLiked(likeKey);
     final serverAgree = _likeManager.agreeNum(likeKey);
 

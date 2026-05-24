@@ -90,6 +90,24 @@ class TiebaApi {
   /// 获取已缓存的 sample_id（可能为空）
   static String? get syncSampleId => _syncSampleId;
 
+  /// 点赞冷却检查
+  static const int _likeCooldownMs = 600000; // 10 分钟
+  static const String _lastLikeTimeKey = 'last_like_time';
+
+  /// 距离上次点赞是否在冷却期内
+  static Future<bool> isLikeOnCooldown() async {
+    final prefs = await SharedPreferences.getInstance();
+    final last = prefs.getInt(_lastLikeTimeKey);
+    if (last == null) return false;
+    return DateTime.now().millisecondsSinceEpoch - last < _likeCooldownMs;
+  }
+
+  /// 更新上次点赞时间（点赞成功后在 likeAgree 中调用）
+  static Future<void> updateLastLikeTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastLikeTimeKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
   static String _s(dynamic v) => v?.toString() ?? '';
 
   static String _randomHex(int length) {
@@ -327,9 +345,6 @@ class TiebaApi {
     final stTime = "${Random().nextInt(730) + 121}";
     final stSize =
         "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final zId = await getCachedZid();
-    final baiDuId = UserManager.baiduId;
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
     final eventDay = "${now.year}${now.month}${now.day}";
@@ -354,8 +369,6 @@ class TiebaApi {
     if (!prefs.containsKey('_active_timestamp')) {
       await prefs.setInt('_active_timestamp', activeTimestamp);
     }
-    debugPrint("cuid :: $cuid");
-    debugPrint("c3AId :: $c3Aid");
 
     final params = [
       ["BDUSS", bduss],
@@ -431,15 +444,13 @@ class TiebaApi {
       params.add(["obj_source", "a005"]);
     } else if (objType == 2) {
       params.add(["obj_source", "a007"]);
-    } else {
+    } else if (objType == 3) {
       params.add(["obj_source", "a002"]);
     }
     // post_id: 回复/楼中楼时传入
     if (postId.isNotEmpty) params.add(["post_id", postId]);
     // forum_id: 始终传入，空字符串表示不适用
     params.add(["forum_id", forumId.isNotEmpty ? forumId : ""]);
-    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
-    if (baiDuId != null && baiDuId.isNotEmpty) params.add(["baiduid", baiDuId]);
     final sign = _computeSign(params);
     params.add(["sign", sign]);
     final bodyStr = params
@@ -457,20 +468,16 @@ class TiebaApi {
             ..headers.addAll({
               "Content-Type": "application/x-www-form-urlencoded",
               "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie":
-                  "BAIDUID=$baiDuId;need_cookie_decrypt=1;ka=open;CUID=$cuid;BAIDUZID=$zId;DNARBBT=${base64Url.encode(utf8.encode(model.split('').reversed.join())).replaceAll('=', '')}",
+              "Cookie": "ka=open",
               "cuid": cuid,
               "cuid_galaxy2": cuid,
               "client_logid": clientLogid,
               "client_user_token": userId,
-              "c3_aid": c3Aid,
+              // "c3_aid": c3Aid,
               "Connection": "Keep-Alive",
               "cuid_gid": "",
               "Charset": "UTF-8",
-              "X-Bd-Traceid":
-                  "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
               "Accept-Encoding": "gzip",
-              "Host": "tiebac.baidu.com",
             })
             ..body = bodyStr;
 
@@ -487,10 +494,7 @@ class TiebaApi {
         return null;
       }
       if (json["data"] == null) return null;
-      debugPrint("errmsg :: ${json["error"]["errmsg"]}");
-      debugPrint(
-        "【likeAgree成功】threadId=$threadId objType=$objType opType=$opType",
-      );
+      await updateLastLikeTime();
       return 1;
     } catch (e) {
       return null;

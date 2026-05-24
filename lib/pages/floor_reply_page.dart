@@ -341,6 +341,14 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   Future<void> _handleLikeReply(SubPostList subReply) async {
     if (!UserManager.isLogin) return;
     if (!mounted) return;
+    if (await TiebaApi.isLikeOnCooldown()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
+        );
+      }
+      return;
+    }
     final scaffold = ScaffoldMessenger.of(context);
     final pidStr = subReply.id.toString();
     final replyKey = 'floor:$pidStr';
@@ -349,17 +357,21 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         ? subReply.agree.agreeNum.toInt()
         : 0;
 
-    debugPrint("\n【楼中楼点赞】开始 tid=${widget.tid} pid=$pidStr "
-        "serverLiked=$serverLiked serverAgree=$serverAgree "
-        "opType=${serverLiked ? 1 : 0}");
+    debugPrint(
+      "\n【楼中楼点赞】开始 tid=${widget.tid} pid=$pidStr "
+      "serverLiked=$serverLiked serverAgree=$serverAgree "
+      "opType=${serverLiked ? 1 : 0}",
+    );
 
     final (nowLiked, nowAgree) = _likeManager.toggle(
       key: replyKey,
       serverLiked: serverLiked,
       serverAgreeNum: serverAgree,
       request: (opType) async {
-        debugPrint("【楼中楼点赞】发起请求 opType=$opType "
-            "tid=${widget.tid} pid=$pidStr objType=2");
+        debugPrint(
+          "【楼中楼点赞】发起请求 opType=$opType "
+          "tid=${widget.tid} pid=$pidStr objType=2",
+        );
         final score = await TiebaApi.likeAgree(
           bduss: UserManager.bduss!,
           stoken: UserManager.stoken!,
@@ -371,15 +383,19 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           forumId: _forumId ?? '',
           opType: opType,
         );
-        debugPrint("【楼中楼点赞】请求结果 score=$score "
-            "${score != null ? '成功' : '失败'}");
+        debugPrint(
+          "【楼中楼点赞】请求结果 score=$score "
+          "${score != null ? '成功' : '失败'}",
+        );
         return score != null;
       },
       onUpdate: (isRollback) {
         if (!mounted) return;
-        debugPrint("【楼中楼点赞】onUpdate isRollback=$isRollback "
-            "nowIsLiked=${_likeManager.isLiked(replyKey)} "
-            "nowAgree=${_likeManager.agreeNum(replyKey)}");
+        debugPrint(
+          "【楼中楼点赞】onUpdate isRollback=$isRollback "
+          "nowIsLiked=${_likeManager.isLiked(replyKey)} "
+          "nowAgree=${_likeManager.agreeNum(replyKey)}",
+        );
         setState(() {
           final newAgreeLocal = _likeManager.agreeNum(replyKey);
           if (subReply.hasAgree()) {

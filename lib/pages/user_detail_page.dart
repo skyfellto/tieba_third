@@ -119,7 +119,11 @@ class _UserDetailPageState extends State<UserDetailPage>
 
   void _syncLikedFromPosts() {
     for (final p in _posts) {
-      _likeManager.sync(p.tid, serverLiked: p.isLiked, serverAgreeNum: int.tryParse(p.agreeNum) ?? 0);
+      _likeManager.sync(
+        p.tid,
+        serverLiked: p.isLiked,
+        serverAgreeNum: int.tryParse(p.agreeNum) ?? 0,
+      );
       if (p.isLiked && !_likedAgreeMap.containsKey(p.tid)) {
         _likedAgreeMap[p.tid] = int.tryParse(p.agreeNum) ?? 0;
       }
@@ -368,9 +372,19 @@ class _UserDetailPageState extends State<UserDetailPage>
                               '/forum/${p.forumId}?name=${Uri.encodeComponent(p.forumName)}&avatar=${Uri.encodeComponent(p.forumAvatar ?? '')}',
                             )
                           : null,
-                      onLikeTap: (_) {
+                      onLikeTap: (_) async {
                         if (!UserManager.isLogin) return;
                         if (!mounted) return;
+                        if (await TiebaApi.isLikeOnCooldown()) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧'),
+                              ),
+                            );
+                          }
+                          return;
+                        }
                         final scaffold = ScaffoldMessenger.of(context);
                         final pIdx = _posts.indexWhere((x) => x.tid == tid);
                         if (pIdx < 0) return;
@@ -378,7 +392,8 @@ class _UserDetailPageState extends State<UserDetailPage>
                           final (_, newAgree) = _likeManager.toggle(
                             key: tid,
                             serverLiked: _posts[pIdx].isLiked,
-                            serverAgreeNum: int.tryParse(_posts[pIdx].agreeNum) ?? 0,
+                            serverAgreeNum:
+                                int.tryParse(_posts[pIdx].agreeNum) ?? 0,
                             request: (opType) async {
                               final score = await TiebaApi.likeAgree(
                                 bduss: UserManager.bduss!,
@@ -394,22 +409,27 @@ class _UserDetailPageState extends State<UserDetailPage>
                             onUpdate: (isRollback) {
                               if (!mounted) return;
                               setState(() {
-                                final i = _posts.indexWhere((x) => x.tid == tid);
+                                final i = _posts.indexWhere(
+                                  (x) => x.tid == tid,
+                                );
                                 if (i >= 0) {
-                                  _posts[i].agreeNum =
-                                      _likeManager.agreeNum(tid).toString();
+                                  _posts[i].agreeNum = _likeManager
+                                      .agreeNum(tid)
+                                      .toString();
                                   _likedAgreeMap[tid] =
                                       int.tryParse(_posts[i].agreeNum) ?? 0;
                                 }
                               });
                               if (isRollback) {
                                 final nowLiked = _likeManager.isLiked(tid);
-                                scaffold.showSnackBar(SnackBar(
-                                  content: Text(
-                                    nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                scaffold.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      nowLiked ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试',
+                                    ),
+                                    duration: const Duration(seconds: 2),
                                   ),
-                                  duration: const Duration(seconds: 2),
-                                ));
+                                );
                               }
                             },
                           );
