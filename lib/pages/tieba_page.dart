@@ -9,6 +9,7 @@ import '../utils/data_cache.dart';
 import '../utils/user_manager.dart';
 import '../utils/forum_browse_history_manager.dart';
 import '../widgets/followed_forum_tile.dart';
+import '../constants/app_colors.dart';
 
 class TiebaPage extends StatefulWidget {
   const TiebaPage({super.key});
@@ -51,7 +52,7 @@ class _TiebaPageState extends State<TiebaPage>
   Future<void> _initLayoutConfig() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isDoubleColumn = prefs.getBool(_storageKey) ?? true;
+      _isDoubleColumn = prefs.getBool(_storageKey) ?? false;
       _configLoaded = true;
     });
   }
@@ -179,7 +180,7 @@ class _TiebaPageState extends State<TiebaPage>
             for (final item in info) {
               if (item is Map) {
                 final fid = item['forum_id']?.toString();
-                if (fid != null && item['error']?['err_no'] == 0) {
+                if (fid != null && item['signed'] == '1') {
                   success++;
                   final idx = _forums.indexWhere((f) => f.forumId == fid);
                   if (idx != -1) {
@@ -399,25 +400,109 @@ class _TiebaPageState extends State<TiebaPage>
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: _forums.length,
-            itemBuilder: (context, index) => FollowedForumTile(
-              forum: _forums[index],
-              isSigning: _signingForums.contains(_forums[index].forumId),
-              onTap: () {
-                final f = _forums[index];
-                context.push(
-                  '/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}',
-                );
-              },
-              onSign: () {
-                _handleSignForum(_forums[index]);
-              },
-            ),
-          ),
+          child: _isDoubleColumn
+              ? GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 3.2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _forums.length,
+                  itemBuilder: (context, index) => _buildGridTile(index),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  itemCount: _forums.length,
+                  itemBuilder: (context, index) => FollowedForumTile(
+                    forum: _forums[index],
+                    isSigning: _signingForums.contains(_forums[index].forumId),
+                    onTap: () {
+                      final f = _forums[index];
+                      context.push(
+                        '/forum/${f.forumId}?name=${Uri.encodeComponent(f.forumName)}&avatar=${Uri.encodeComponent(f.avatar)}',
+                      );
+                    },
+                    onSign: () {
+                      _handleSignForum(_forums[index]);
+                    },
+                  ),
+                ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGridTile(int index) {
+    final forum = _forums[index];
+    final isSigned = forum.isSign;
+    final isSigning = _signingForums.contains(forum.forumId);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          context.push(
+            '/forum/${forum.forumId}?name=${Uri.encodeComponent(forum.forumName)}&avatar=${Uri.encodeComponent(forum.avatar)}',
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  forum.forumName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: forum.levelId <= 3
+                      ? AppColors.levelGreen
+                      : forum.levelId <= 9
+                          ? AppColors.levelBlue
+                          : forum.levelId <= 15
+                              ? AppColors.levelYellow
+                              : AppColors.levelOrange,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  "Lv${forum.levelId}",
+                  style: const TextStyle(
+                    color: AppColors.levelNumber,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              if (isSigning)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                GestureDetector(
+                  onTap: isSigned ? null : () => _handleSignForum(forum),
+                  child: Icon(
+                    isSigned ? Icons.task_alt : Icons.pan_tool_outlined,
+                    size: 20,
+                    color: isSigned ? Colors.green : Colors.grey[400],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

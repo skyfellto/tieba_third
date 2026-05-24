@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../generated/RecommendForumInfo.pb.dart';
 import '../generated/GetForumDetail/GetForumDetailResponseData.pb.dart';
 import '../generated/FrsPage/FrsPage.pb.dart';
@@ -919,12 +920,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       if (!UserManager.isLogin) return;
                       if (!mounted) return;
                       if (await TiebaApi.isLikeOnCooldown()) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧'),
-                            ),
-                          );
+                        if (context.mounted) {
+                          showAgreeNotInTime(context);
                         }
                         return;
                       }
@@ -1079,12 +1076,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                         if (!UserManager.isLogin) return;
                         if (!mounted) return;
                         if (await TiebaApi.isLikeOnCooldown()) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧'),
-                              ),
-                            );
+                          if (context.mounted) {
+                            showAgreeNotInTime(context);
                           }
                           return;
                         }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../models/liked_item.dart';
 import '../widgets/liked_item_card.dart';
 import '../network/tieba_api.dart';
@@ -286,9 +287,7 @@ class _MyLikesPageState extends State<MyLikesPage>
     if (!UserManager.isLogin || !mounted) return;
     if (await TiebaApi.isLikeOnCooldown()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
-        );
+        showAgreeNotInTime(context);
       }
       return;
     }

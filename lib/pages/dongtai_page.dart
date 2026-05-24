@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../models/post_item.dart';
 import '../network/tieba_api.dart';
 import '../utils/auth_notifier.dart';
@@ -275,20 +276,13 @@ class _DongtaiPageState extends State<DongtaiPage>
                                   if (!UserManager.isLogin) return;
                                   if (!mounted) return;
                                   if (await TiebaApi.isLikeOnCooldown()) {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            '由于点赞风控，请勿点赞太频繁，10分钟后再试吧',
-                                          ),
-                                        ),
-                                      );
+                                    if (context.mounted) {
+                                      showAgreeNotInTime(context);
                                     }
                                     return;
                                   }
                                   final scaffold = ScaffoldMessenger.of(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                   );
                                   final pIdx = _posts.indexWhere(

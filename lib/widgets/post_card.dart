@@ -52,7 +52,8 @@ class PostCard extends StatelessWidget {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: onUserTap != null && post?.authorId.isNotEmpty == true
+                    onTap:
+                        onUserTap != null && post?.authorId.isNotEmpty == true
                         ? () => onUserTap!(post!.authorId)
                         : null,
                     child: Row(

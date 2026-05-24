@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../generated/Agree.pb.dart';
 import '../generated/PbContent.pb.dart';
 import '../generated/PbFloor/PbFloorResponseData.pb.dart';
@@ -343,9 +344,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     if (!mounted) return;
     if (await TiebaApi.isLikeOnCooldown()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
-        );
+        showAgreeNotInTime(context);
       }
       return;
     }

@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:fixnum/fixnum.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/device_info.dart';
 import 'package:tieba_third/utils/sofire_utils.dart';
@@ -56,6 +56,7 @@ class TiebaApi {
   static const String _baseHost = "http://tiebac.baidu.com";
   static const String _loginUrl = "$_baseHost/c/s/login";
   static const String _clientVersion = "12.64.1.1";
+  static final logger = Logger();
 
   /// Public accessor for client version used by external pages.
   static String get clientVersion => _clientVersion;
@@ -73,7 +74,7 @@ class TiebaApi {
     _syncClientId = prefs.getString(_syncClientIdKey);
     _syncSampleId = prefs.getString(_syncSampleIdKey);
     if (_syncSampleId != null && _syncSampleId!.isNotEmpty) {
-      debugPrint("【sync加载】clientId=$_syncClientId sampleId=$_syncSampleId");
+      logger.i("【sync加载】clientId=$_syncClientId sampleId=$_syncSampleId");
     }
   }
 
@@ -84,7 +85,7 @@ class TiebaApi {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_syncClientIdKey, clientId);
     await prefs.setString(_syncSampleIdKey, sampleId);
-    debugPrint("【sync保存】clientId=$clientId sampleId=$sampleId");
+    logger.i("【sync保存】clientId=$clientId sampleId=$sampleId");
   }
 
   /// 获取已缓存的 sample_id（可能为空）
@@ -211,9 +212,6 @@ class TiebaApi {
     final bodyBytes = request.writeToBuffer();
 
     final uri = Uri.parse("$_baseHost/c/f/excellent/personalized?cmd=309264");
-    // debugPrint("\n================================================");
-    // debugPrint("【调试】Protobuf 请求：$uri");
-    // debugPrint("================================================\n");
 
     final client = http.Client();
     try {
@@ -230,21 +228,21 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint("【调试】响应状态码：${response.statusCode}");
+      // logger.i("【调试】响应状态码：${response.statusCode}");
       if (response.statusCode != 200) {
-        // debugPrint("【调试】非200，降级占位");
+        // logger.i("【调试】非200，降级占位");
         return [];
       }
 
       final pb = PersonalizedResponse.fromBuffer(response.bodyBytes);
       if (pb.error.hasErrorCode() && pb.error.errorCode != 0) {
-        // debugPrint("【调试】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        // logger.i("【调试】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return [];
       }
 
       final threadList = pb.data.threadList;
       if (threadList.isEmpty) {
-        // debugPrint("【调试】thread_list 为空");
+        // logger.i("【调试】thread_list 为空");
         return [];
       }
 
@@ -253,10 +251,10 @@ class TiebaApi {
           .map((t) => PostItem.fromThreadInfo(t))
           .where((p) => p.title.isNotEmpty && p.tid.isNotEmpty)
           .toList();
-      // debugPrint("【调试】解析到 ${posts.length} 条帖子");
+      // logger.i("【调试】解析到 ${posts.length} 条帖子");
       return posts;
     } catch (e) {
-      // debugPrint("【调试】请求异常：$e");
+      logger.w("【调试】请求异常：$e");
       return [];
     } finally {
       client.close();
@@ -535,9 +533,6 @@ class TiebaApi {
     );
 
     // sortType=0(正序) → 不传r, sortType=1(倒序) → r=1
-    // debugPrint(
-    //   "【PbPage】sortType=$sortType → r=${sortType == 1 ? 1 : '(not set)'}",
-    // );
 
     final reqData = PbPageRequestData(
       common: common,
@@ -602,67 +597,25 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint("【调试】PbPage 响应状态码：${response.statusCode}");
       if (response.statusCode != 200) {
-        debugPrint("【调试】PbPage 非200响应");
+        logger.w("【调试】PbPage 非200响应");
         return null;
       }
 
       final pb = PbPageResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint(
-          "【调试】PbPage API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
-        );
+        logger.w("【调试】PbPage API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return null;
       }
 
       if (!pb.hasData()) {
-        debugPrint("【调试】PbPage data为空");
+        logger.w("【调试】PbPage data为空");
         return null;
       }
 
-      // debugPrint("【调试】PbPage 解析成功，回复数=${pb.data.postList.length}");
-      // // 调试：检查前3条 post 的原始数据
-      // final d = pb.data;
-      // debugPrint(
-      //   "【调试PbPage】hasFirstFloorPost=${d.hasFirstFloorPost()} "
-      //   "hasThread=${d.hasThread()} sortType=${d.sortType} ",
-      // );
-      // if (d.hasFirstFloorPost()) {
-      // final fp = d.firstFloorPost;
-      // debugPrint(
-      //   "【调试PbPage】firstFloor: floor=${fp.floor} "
-      //   "hasAuthor=${fp.hasAuthor()} contentLen=${fp.content.length} "
-      //   "subPostNum=${fp.subPostNumber}",
-      // );
-      // if (fp.content.isNotEmpty) {
-      //   final c0 = fp.content.first;
-      //   debugPrint(
-      //     "【调试PbPage】firstContent: type=${c0.type} text='${c0.text}' src='${c0.src.length > 0 ? c0.src.substring(0, 50) : ''}'",
-      //   );
-      // }
-      // }
-      // for (
-      //   int i = 0;
-      //   i < (d.postList.length > 3 ? 3 : d.postList.length);
-      //   i++
-      // )
-      // {
-      // final p = d.postList[i];
-      // debugPrint(
-      //   "【调试PbPage】post[$i]: floor=${p.floor} hasAuthor=${p.hasAuthor()} "
-      //   "contentLen=${p.content.length} ",
-      // );
-      // if (p.content.isNotEmpty) {
-      //   final c0 = p.content.first;
-      //   debugPrint(
-      //     "【调试PbPage】post[$i] content[0]: type=${c0.type} text='${c0.text}' src='${c0.src.length > 0 ? c0.src.substring(0, 50) : ''}' bigCdnSrc='${c0.bigCdnSrc.length > 0 ? c0.bigCdnSrc.substring(0, 50) : ''}'",
-      //   );
-      // }
-      // }
       return pb.data;
     } catch (e) {
-      debugPrint("【调试】PbPage 请求异常：$e");
+      logger.w("【调试】PbPage 请求异常：$e");
       return null;
     } finally {
       client.close();
@@ -712,9 +665,6 @@ class TiebaApi {
     final uri = Uri.parse(
       "$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf&rn=30",
     );
-    // debugPrint("\n================================================");
-    // debugPrint("【调试】PbFloor 请求：$uri tid=$threadId pid=$postId page=$page");
-    // debugPrint("================================================\n");
 
     final client = http.Client();
     try {
@@ -731,26 +681,24 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint("【调试】PbFloor 响应状态码：${response.statusCode}");
       if (response.statusCode != 200) return null;
 
       final pb = PbFloorResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint(
+        logger.w(
           "【调试】PbFloor API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
         );
         return null;
       }
 
       if (!pb.hasData()) {
-        debugPrint("【调试】PbFloor data为空");
+        logger.w("【调试】PbFloor data为空");
         return null;
       }
 
-      // debugPrint("【调试】PbFloor 解析成功，楼中楼数=${pb.data.subpostList.length}");
       return pb.data;
     } catch (e) {
-      debugPrint("【调试】PbFloor 请求异常：$e");
+      logger.w("【调试】PbFloor 请求异常：$e");
       return null;
     } finally {
       client.close();
@@ -829,7 +777,7 @@ class TiebaApi {
       if (err != null && err != "0" && err != 0) return null;
       return json;
     } catch (e) {
-      debugPrint("【楼中楼JSON异常】$e");
+      logger.w("【楼中楼JSON异常】$e");
       return null;
     } finally {
       client.close();
@@ -879,17 +827,6 @@ class TiebaApi {
     final uri = Uri.parse(
       "$_baseHost/c/f/forum/getforumdetail?cmd=303021&format=protobuf",
     );
-    // debugPrint("【论坛详情】请求：$uri forumId=$forumId");
-    // if (bduss.length > 10) {
-    //   debugPrint(
-    //     "【论坛详情】BDUSS前缀=${bduss.substring(0, 8)}... 长度=${bduss.length}",
-    //   );
-    // }
-    // if (stoken.isNotEmpty) {
-    //   debugPrint(
-    //     "【论坛详情】STOKEN前缀=${stoken.substring(0, 4)}... 长度=${stoken.length}",
-    //   );
-    // }
 
     final client = http.Client();
     try {
@@ -915,35 +852,28 @@ class TiebaApi {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 200) {
-        debugPrint("【论坛详情】非200响应：${response.statusCode}");
+        logger.w("【论坛详情】非200响应：${response.statusCode}");
         return null;
       }
 
       final pb = GetForumDetailResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError()) {
-        debugPrint(
+        logger.w(
           "【论坛详情】error子消息存在: code=${pb.error.errorCode} msg='${pb.error.errorMsg}' userMsg='${pb.error.userMsg}'",
         );
         if (pb.error.errorCode != 0) return null;
       } else {
-        debugPrint("【论坛详情】响应中无error子消息");
+        // logger.i("【论坛详情】响应中无error子消息");
       }
 
       if (!pb.hasData()) {
-        debugPrint("【论坛详情】data为空");
+        logger.w("【论坛详情】data为空");
         return null;
       }
 
-      // final fi = pb.data.hasForumInfo() ? pb.data.forumInfo : null;
-      // debugPrint(
-      //   "【论坛详情】解析成功 hasForumInfo=${pb.data.hasForumInfo()} "
-      //   "forumId=${fi?.forumId.toInt()} name='${fi?.forumName}' avatar='${fi?.avatar.isNotEmpty == true ? fi!.avatar.substring(0, 30) : ''}' "
-      //   "isLike=${fi?.isLike} memberCount=${fi?.memberCount} threadCount=${fi?.threadCount} "
-      //   "slogan='${fi?.slogan}'",
-      // );
       return pb.data;
     } catch (e) {
-      debugPrint("【论坛详情】请求异常：$e");
+      logger.w("【论坛详情】请求异常：$e");
       return null;
     } finally {
       client.close();
@@ -993,17 +923,6 @@ class TiebaApi {
     final uri = Uri.parse(
       "$_baseHost/c/f/forum/getLevelInfo?cmd=301005&format=protobuf",
     );
-    // debugPrint("【等级信息】请求：$uri forumId=$forumId");
-    // if (bduss.length > 10) {
-    //   debugPrint(
-    //     "【等级信息】BDUSS前缀=${bduss.substring(0, 8)}... 长度=${bduss.length}",
-    //   );
-    // }
-    // if (stoken.isNotEmpty) {
-    //   debugPrint(
-    //     "【等级信息】STOKEN前缀=${stoken.substring(0, 4)}... 长度=${stoken.length}",
-    //   );
-    // }
 
     final client = http.Client();
     try {
@@ -1028,50 +947,38 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint(
-      //   "【等级信息】HTTP ${response.statusCode} body=${response.bodyBytes.length}bytes "
-      //   "前50hex=${response.bodyBytes.take(50).map((b) => b.toRadixString(16).padLeft(2, '0')).join('')}",
-      // );
       if (response.statusCode != 200) {
-        debugPrint("【等级信息】非200响应：${response.statusCode}");
+        logger.w("【等级信息】非200响应：${response.statusCode}");
         return null;
       }
 
       final pb = GetLevelInfoResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError()) {
-        // debugPrint(
-        //   "【等级信息】error子消息存在: code=${pb.error.errorCode} msg='${pb.error.errorMsg}' userMsg='${pb.error.userMsg}'",
-        // );
         if (pb.error.errorCode != 0) return null;
       } else {
-        debugPrint("【等级信息】响应中无error子消息");
+        logger.w("【等级信息】响应中无error子消息");
       }
 
       if (!pb.hasData()) {
-        debugPrint("【等级信息】data为空");
+        logger.w("【等级信息】data为空");
         return null;
       }
 
       final d = pb.data;
-      // debugPrint(
-      //   "【等级信息】解析成功 userLevel=${d.userLevel} isLike=${d.isLike} levelName='${d.levelName}' "
-      //   "levelInfoCount=${d.levelInfo.length} "
-      //   "hasLevelInfo=${d.levelInfo.isNotEmpty}",
-      // );
       // 打印前3个等级
       for (
         int i = 0;
         i < (d.levelInfo.length > 3 ? 3 : d.levelInfo.length);
         i++
       ) {
-        final l = d.levelInfo[i];
-        debugPrint(
-          "【等级信息】levelInfo[$i]: id=${l.id} name='${l.name}' score=${l.score}",
-        );
+        // final l = d.levelInfo[i];
+        // logger.i(
+        //   "【等级信息】levelInfo[$i]: id=${l.id} name='${l.name}' score=${l.score}",
+        // );
       }
       return pb.data;
     } catch (e) {
-      debugPrint("【等级信息】请求异常：$e");
+      logger.w("【等级信息】请求异常：$e");
       return null;
     } finally {
       client.close();
@@ -1145,7 +1052,6 @@ class TiebaApi {
     final bodyBytes = request.writeToBuffer();
 
     final uri = Uri.parse("$_baseHost/c/f/frs/page?cmd=301001");
-    // debugPrint("【FrsPage】请求：$uri kw=$forumName pn=$page");
 
     final client = http.Client();
     try {
@@ -1170,42 +1076,39 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint(
-      //   "【FrsPage】HTTP ${response.statusCode} body=${response.bodyBytes.length}bytes",
-      // );
       if (response.statusCode != 200) {
-        debugPrint("【FrsPage】非200响应：${response.statusCode}");
+        logger.w("【FrsPage】非200响应：${response.statusCode}");
         return null;
       }
 
       final pb = FrsPageResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint("【FrsPage】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        logger.w("【FrsPage】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return null;
       }
 
       if (!pb.hasData()) {
-        debugPrint("【FrsPage】data为空");
+        logger.w("【FrsPage】data为空");
         return null;
       }
 
       final d = pb.data;
       // 屏蔽直播帖
       d.threadList.removeWhere((t) => t.hasAlaInfo());
-      debugPrint(
-        "【FrsPage响应】threadList=${d.threadList.length}条 "
-        "threadIdList=${d.threadIdList.length}条 "
-        "pn=$page loadType=$loadType sortType=$sortType "
-        "hasPage=${d.hasPage()} hasMore=${d.hasPage() ? d.page.hasMore : -1}",
-      );
-      if (d.threadIdList.isNotEmpty) {
-        debugPrint(
-          "【FrsPage响应】前10个threadId=${d.threadIdList.take(10).map((e) => e.toInt()).join(',')}",
-        );
-      }
+      // logger.i(
+      //   "【FrsPage响应】threadList=${d.threadList.length}条 "
+      //   "threadIdList=${d.threadIdList.length}条 "
+      //   "pn=$page loadType=$loadType sortType=$sortType "
+      //   "hasPage=${d.hasPage()} hasMore=${d.hasPage() ? d.page.hasMore : -1}",
+      // );
+      // if (d.threadIdList.isNotEmpty) {
+      //   logger.i(
+      //     "【FrsPage响应】前10个threadId=${d.threadIdList.take(10).map((e) => e.toInt()).join(',')}",
+      //   );
+      // }
       return d;
     } catch (e) {
-      debugPrint("【FrsPage】请求异常：$e");
+      logger.w("【FrsPage】请求异常：$e");
       return null;
     } finally {
       client.close();
@@ -1295,26 +1198,26 @@ class TiebaApi {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 200) {
-        debugPrint("【ThreadList】非200响应：${response.statusCode}");
+        logger.w("【ThreadList】非200响应：${response.statusCode}");
         return null;
       }
 
       final pb = ThreadListResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint(
+        logger.w(
           "【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
         );
         return null;
       }
 
       if (!pb.hasData()) {
-        debugPrint("【ThreadList】data为空");
+        logger.w("【ThreadList】data为空");
         return null;
       }
 
       return pb.data;
     } catch (e) {
-      debugPrint("【ThreadList】请求异常：$e");
+      logger.w("【ThreadList】请求异常：$e");
       return null;
     } finally {
       client.close();
@@ -1361,10 +1264,6 @@ class TiebaApi {
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
 
-    // debugPrint("\n【签到请求】POST /c/c/forum/sign");
-    // debugPrint("【签到参数】fid=$forumId kw=$forumName");
-    // debugPrint("【签到body】$bodyStr");
-
     final client = http.Client();
     try {
       final request =
@@ -1386,28 +1285,26 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint("【签到响应】状态码=${response.statusCode}");
-      // debugPrint("【签到响应】body=${response.body}");
 
       if (response.statusCode != 200) {
-        debugPrint("【签到失败】非200状态码");
+        logger.w("【签到失败】非200状态码");
         return null;
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint("【签到失败】error_code=$err msg=${json["error_msg"]}");
+        logger.w("【签到失败】error_code=$err msg=${json["error_msg"]}");
         return null;
       }
       // tiebalite SignResultBean: userInfo 为空表示签到失败
       if (json["user_info"] == null) {
-        debugPrint("【签到失败】user_info 为空");
+        logger.w("【签到失败】user_info 为空");
         return null;
       }
       return json;
     } catch (e) {
-      debugPrint("【签到异常】$e");
+      logger.w("【签到异常】$e");
       return null;
     } finally {
       client.close();
@@ -1465,19 +1362,19 @@ class TiebaApi {
       );
 
       if (response.statusCode != 200) {
-        debugPrint("【关注贴吧】非200状态码");
+        logger.w("【关注贴吧】非200状态码");
         return null;
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint("【关注贴吧】error_code=$err msg=${json["error_msg"]}");
+        logger.w("【关注贴吧】error_code=$err msg=${json["error_msg"]}");
         return null;
       }
       return json;
     } catch (e) {
-      debugPrint("【关注贴吧】异常：$e");
+      logger.w("【关注贴吧】异常：$e");
       return null;
     } finally {
       client.close();
@@ -1539,19 +1436,19 @@ class TiebaApi {
       );
 
       if (response.statusCode != 200) {
-        debugPrint("【取消关注】非200状态码");
+        logger.w("【取消关注】非200状态码");
         return false;
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint("【取消关注】error_code=$err msg=${json["error_msg"]}");
+        logger.w("【取消关注】error_code=$err msg=${json["error_msg"]}");
         return false;
       }
       return true;
     } catch (e) {
-      debugPrint("【取消关注】异常：$e");
+      logger.w("【取消关注】异常：$e");
       return false;
     } finally {
       client.close();
@@ -1630,21 +1527,7 @@ class TiebaApi {
         .join("&");
 
     final cookie = "CUID=$cuid;ka=open;TBBRAND=${di.model};BAIDUID=$baiduId;";
-    // final ua = "bdtb for Android $_clientVersion";
     final ua = di.userAgent(_clientVersion);
-
-    // debugPrint("\n【一键签到请求】POST /c/c/forum/msign");
-    // debugPrint("【一键签到forum_ids】$forumIds");
-    // debugPrint("【一键签到tbs】$tbs");
-    // debugPrint("【一键签到userId】$userId");
-    // debugPrint("【一键签到clientVersion】$_clientVersion");
-    // debugPrint("【一键签到cuid】$cuid");
-    // debugPrint("【一键签到phoneImei】$phoneImei");
-    // debugPrint("【一键签到timestamp】$timestamp");
-    // debugPrint("【一键签到sign】$sign");
-    // debugPrint("【一键签到body】$bodyStr");
-    // debugPrint("【一键签到Cookie】$cookie");
-    // debugPrint("【一键签到User-Agent】$ua");
 
     final client = http.Client();
     try {
@@ -1670,37 +1553,34 @@ class TiebaApi {
         await client.send(request),
       );
 
-      // debugPrint("【一键签到响应】状态码=${response.statusCode}");
-      // debugPrint("【一键签到响应】headers=${response.headers}");
-      // debugPrint("【一键签到响应】body=${response.body}");
-
       if (response.statusCode != 200) {
-        debugPrint("【一键签到失败】非200状态码 statusCode=${response.statusCode}");
-        debugPrint("【一键签到失败】响应body=${response.body}");
+        logger.w("【一键签到失败】非200状态码 statusCode=${response.statusCode}");
+        logger.w("【一键签到失败】响应body=${response.body}");
         return null;
       }
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
-      debugPrint("【一键签到JSON】$json");
+      logger.i("【一键签到JSON】$json");
 
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint(
+        logger.w(
           "【一键签到失败】error_code=$err msg=${json["error_msg"]} error_info=${json["error_info"]}",
         );
         return null;
       }
       // info 为字符串时表示失败（含空字符串），为数组时才是签到结果
       final info = json["info"];
-      debugPrint("【一键签到info】type=${info.runtimeType} value=$info");
+      logger.i("【一键签到info】type=${info.runtimeType} value=$info");
       if (info is String) {
-        debugPrint("【一键签到失败】info 为字符串: $info");
-        debugPrint("【一键签到失败】完整响应: ${response.body}");
+        logger.w("【一键签到失败】info 为字符串: $info");
+        logger.w("【一键签到失败】完整响应: ${response.body}");
         return null;
       }
+      logger.i("sign_map :: ${json["json_map"]}");
       return json;
     } catch (e) {
-      debugPrint("【一键签到异常】$e");
+      logger.w("【一键签到异常】$e");
       return null;
     } finally {
       client.close();
@@ -1749,8 +1629,6 @@ class TiebaApi {
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
 
-    // debugPrint("【用户帖子请求】uid=$uid page=$page");
-
     final client = http.Client();
     try {
       final request =
@@ -1772,14 +1650,13 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint("【用户帖子响应】状态码=${response.statusCode}");
 
       if (response.statusCode != 200) return [];
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint("【用户帖子失败】error_code=$err msg=${json["error_msg"]}");
+        logger.w("【用户帖子失败】error_code=$err msg=${json["error_msg"]}");
         return [];
       }
 
@@ -1876,7 +1753,7 @@ class TiebaApi {
       }
       return posts;
     } catch (e) {
-      debugPrint("【用户帖子异常】$e");
+      logger.w("【用户帖子异常】$e");
       return [];
     } finally {
       client.close();
@@ -1930,7 +1807,6 @@ class TiebaApi {
     final uri = Uri.parse(
       "$_baseHost/c/u/user/profile?cmd=303012&format=protobuf",
     );
-    // debugPrint("【用户资料Pb】请求：$uri uid=$uid");
 
     final client = http.Client();
     try {
@@ -1954,27 +1830,19 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint("【用户资料Pb】状态码=${response.statusCode}");
-      // debugPrint("【用户资料Pb】body长度=${response.bodyBytes.length}");
-
       if (response.statusCode != 200) return (null, <ForumItem>[]);
 
       final pb = ProfileResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint("【用户资料Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        logger.w("【用户资料Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return (null, <ForumItem>[]);
       }
       if (!pb.hasData() || !pb.data.hasUser()) {
-        debugPrint("【用户资料Pb】data 或 user 为空");
+        logger.w("【用户资料Pb】data 或 user 为空");
         return (null, <ForumItem>[]);
       }
 
       final user = pb.data.user;
-      // debugPrint(
-      //   "【用户资料Pb】uid=${user.id} name=${user.name} nameShow=${user.nameShow} "
-      //   "tbAge=${user.tbAge} concernNum=${user.concernNum} fansNum=${user.fansNum} "
-      //   "totalAgreeNum=${user.totalAgreeNum} intro长度=${user.intro.length}",
-      // );
 
       final forums = pb.data.concernedForumList
           .where((f) => f.forumName.isNotEmpty)
@@ -1988,11 +1856,10 @@ class TiebaApi {
             ),
           )
           .toList();
-      // debugPrint("【用户资料Pb】concernedForumList=${forums.length}个");
 
       return (UserProfileData.fromUserProto(user), forums);
     } catch (e) {
-      debugPrint("【用户资料Pb异常】$e");
+      logger.w("【用户资料Pb异常】$e");
       return (null, <ForumItem>[]);
     } finally {
       client.close();
@@ -2050,7 +1917,6 @@ class TiebaApi {
     final uri = Uri.parse(
       "$_baseHost/c/u/feed/userpost?cmd=303002&format=protobuf",
     );
-    // debugPrint("【用户帖子Pb】请求：$uri uid=$uid page=$page");
 
     final client = http.Client();
     try {
@@ -2067,18 +1933,16 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      // debugPrint("【用户帖子Pb】状态码=${response.statusCode}");
       if (response.statusCode != 200) return [];
 
       final pb = UserPostResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        debugPrint("【用户帖子Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        logger.w("【用户帖子Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return [];
       }
       if (!pb.hasData()) return [];
 
       final posts = pb.data.postList.map((info) {
-        // debugPrint("【用户帖子Pb】帖子 tid=${info.threadId} agreeNum=${info.agreeNum}");
         // 提取正文文本
         String? absText;
         for (final pic in info.content) {
@@ -2158,10 +2022,9 @@ class TiebaApi {
         );
       }).toList();
 
-      // debugPrint("【用户帖子Pb】解析到 ${posts.length} 条帖子");
       return posts;
     } catch (e) {
-      debugPrint("【用户帖子Pb异常】$e");
+      logger.w("【用户帖子Pb异常】$e");
       return [];
     } finally {
       client.close();
@@ -2211,8 +2074,6 @@ class TiebaApi {
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
 
-    // debugPrint("【用户关注吧】请求 uid=$uid friendUid=$friendUid page=$pageNo");
-
     final client = http.Client();
     try {
       final request = http.Request('POST', Uri.parse("$_baseHost/c/f/forum/like"))
@@ -2234,29 +2095,25 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint("【用户关注吧】状态码=${response.statusCode}");
-      // debugPrint(
-      //   "【用户关注吧】响应=${response.body.length > 500 ? response.body.substring(0, 500) : response.body}",
-      // );
 
       if (response.statusCode != 200) return [];
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) {
-        debugPrint("【用户关注吧失败】error_code=$err msg=${json["error_msg"]}");
+        logger.w("【用户关注吧失败】error_code=$err msg=${json["error_msg"]}");
         return [];
       }
 
       // 响应结构：{"forum_list": {"non-gconforum": [...]}}
       final forumListWrapper = json["forum_list"];
       if (forumListWrapper is! Map) {
-        debugPrint("【用户关注吧】forum_list 不是对象");
+        logger.w("【用户关注吧】forum_list 不是对象");
         return [];
       }
       final items = forumListWrapper["non-gconforum"];
       if (items is! List) {
-        debugPrint("【用户关注吧】non-gconforum 为空或不是列表");
+        logger.w("【用户关注吧】non-gconforum 为空或不是列表");
         return [];
       }
 
@@ -2271,10 +2128,9 @@ class TiebaApi {
         );
       }).toList();
 
-      // debugPrint("【用户关注吧】解析到 ${forums.length} 个贴吧");
       return forums;
     } catch (e) {
-      debugPrint("【用户关注吧异常】$e");
+      logger.w("【用户关注吧异常】$e");
       return [];
     } finally {
       client.close();
@@ -2356,7 +2212,6 @@ class TiebaApi {
     final bodyStr = params
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
-    // debugPrint("【收藏addStore】请求体=$bodyStr");
 
     final client = http.Client();
     try {
@@ -2382,16 +2237,12 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint(
-      //   "【收藏addStore】状态码=${response.statusCode} body=${response.body}",
-      // );
       if (response.statusCode != 200) return false;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
-      // debugPrint("【收藏addStore】error_code=$err msg=${json["error_msg"]}");
       return err == null || err == "0" || err == 0;
     } catch (e) {
-      debugPrint("【收藏addStore异常】$e");
+      logger.w("【收藏addStore异常】$e");
       return false;
     } finally {
       client.close();
@@ -2470,7 +2321,6 @@ class TiebaApi {
     final bodyStr = params
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
-    // debugPrint("【收藏removeStore】请求体=$bodyStr");
 
     final client = http.Client();
     try {
@@ -2495,16 +2345,12 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      // debugPrint(
-      //   "【收藏removeStore】状态码=${response.statusCode} body=${response.body}",
-      // );
       if (response.statusCode != 200) return false;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
-      // debugPrint("【收藏removeStore】error_code=$err msg=${json["error_msg"]}");
       return err == null || err == "0" || err == 0;
     } catch (e) {
-      debugPrint("【收藏removeStore异常】$e");
+      logger.w("【收藏removeStore异常】$e");
       return false;
     } finally {
       client.close();
@@ -2582,7 +2428,6 @@ class TiebaApi {
     final bodyStr = params
         .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
         .join("&");
-    // debugPrint("【收藏threadStore】请求体=$bodyStr");
 
     final client = http.Client();
     try {
@@ -2611,9 +2456,9 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      debugPrint(
-        "【收藏threadStore】status=${response.statusCode} body=${response.body}",
-      );
+      // logger.i(
+      //   "【收藏threadStore】status=${response.statusCode} body=${response.body}",
+      // );
       if (response.statusCode != 200) return [];
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
@@ -2622,7 +2467,7 @@ class TiebaApi {
       if (list is! List) return [];
       return list.cast<Map<String, dynamic>>();
     } catch (e) {
-      debugPrint("【收藏列表异常】$e");
+      logger.w("【收藏列表异常】$e");
       return [];
     } finally {
       client.close();
@@ -2684,7 +2529,7 @@ class TiebaApi {
 
       return pb.data;
     } catch (e) {
-      debugPrint("【搜索联想异常】$e");
+      logger.w("【搜索联想异常】$e");
       return null;
     } finally {
       client.close();
@@ -2724,7 +2569,7 @@ class TiebaApi {
       if (json["no"] != 0) return null;
       return json["data"] as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint("【搜索贴吧异常】$e");
+      logger.w("【搜索贴吧异常】$e");
       return null;
     } finally {
       client.close();
@@ -2756,7 +2601,7 @@ class TiebaApi {
       if (json["no"] != 0) return null;
       return json["data"] as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint("【搜索帖子异常】$e");
+      logger.w("【搜索帖子异常】$e");
       return null;
     } finally {
       client.close();
@@ -2785,7 +2630,7 @@ class TiebaApi {
       if (json["no"] != 0) return null;
       return json["data"] as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint("【搜索用户异常】$e");
+      logger.w("【搜索用户异常】$e");
       return null;
     } finally {
       client.close();
@@ -2849,7 +2694,7 @@ class TiebaApi {
     // 手动 setter 避免 from 命名冲突
     common.from = "1015363f";
 
-    debugPrint("【投票CommonReq】from=${common.from} clientId=$clientId");
+    // logger.i("【投票CommonReq】from=${common.from} clientId=$clientId");
 
     final requestPb = VoteRequest(
       data: Data(
@@ -2893,7 +2738,7 @@ class TiebaApi {
         .convert(utf8.encode("${signBuf.toString()}tiebaclient!!!"))
         .toString()
         .toUpperCase();
-    debugPrint("【投票sign】$sign stNum=$stNum stTime=$stTime stSize=$stSize");
+    // logger.i("【投票sign】$sign stNum=$stNum stTime=$stTime stSize=$stSize");
 
     final uri = Uri.parse(
       "https://tiebac.baidu.com/c/c/post/addPollPost?cmd=309006&format=protobuf",
@@ -2938,47 +2783,47 @@ class TiebaApi {
       final streamedResponse = await client.send(multipart);
       final response = await http.Response.fromStream(streamedResponse);
 
-      debugPrint("【投票请求】uri=$uri");
-      debugPrint("【投票请求】optionIds=$optionIds tid=$tid, fid=$fid");
+      // logger.i("【投票请求】uri=$uri");
+      // logger.i("【投票请求】optionIds=$optionIds tid=$tid, fid=$fid");
 
       if (response.statusCode != 200) {
-        debugPrint("【投票响应】状态码=${response.statusCode}");
+        logger.w("【投票响应】状态码=${response.statusCode}");
         return false;
       }
 
-      debugPrint("【投票响应】body字节数=${response.bodyBytes.length}");
+      // logger.i("【投票响应】body字节数=${response.bodyBytes.length}");
 
       // 尝试解析为 VoteResponse
       try {
         final voteResp = VoteResponse.fromBuffer(response.bodyBytes);
-        final code1 = voteResp.hasRes1() ? voteResp.res1.code : -1;
-        final msg1 = voteResp.hasRes1() ? voteResp.res1.msg : '';
-        final code2 = voteResp.hasRes2() ? voteResp.res2.code : -1;
-        final msg2 = voteResp.hasRes2() ? voteResp.res2.msg : '';
-        final extra2 = voteResp.hasRes2() ? voteResp.res2.extra : '';
-        debugPrint("【投票响应】res1: code=$code1 msg=$msg1");
-        debugPrint("【投票响应】res2: code=$code2 msg=$msg2 extra=$extra2");
+        // final code1 = voteResp.hasRes1() ? voteResp.res1.code : -1;
+        // final msg1 = voteResp.hasRes1() ? voteResp.res1.msg : '';
+        // final code2 = voteResp.hasRes2() ? voteResp.res2.code : -1;
+        // final msg2 = voteResp.hasRes2() ? voteResp.res2.msg : '';
+        // final extra2 = voteResp.hasRes2() ? voteResp.res2.extra : '';
+        // logger.i("【投票响应】res1: code=$code1 msg=$msg1");
+        // logger.i("【投票响应】res2: code=$code2 msg=$msg2 extra=$extra2");
         if (voteResp.hasRes1() && voteResp.res1.code == 0) {
-          debugPrint("【投票成功】");
+          // logger.i("【投票成功】");
           return true;
         }
         return false;
       } catch (e) {
-        debugPrint("【投票解析失败】$e");
+        logger.w("【投票解析失败】$e");
         // 尝试解析为 JSON（错误时返回 JSON）
         try {
           final text = String.fromCharCodes(response.bodyBytes);
           final json = jsonDecode(text) as Map<String, dynamic>;
-          debugPrint(
+          logger.w(
             "【投票JSON响应】error_code=${json['error_code']} error_msg=${json['error_msg']}",
           );
         } catch (_) {
-          debugPrint("【投票原始响应】${String.fromCharCodes(response.bodyBytes)}");
+          logger.w("【投票原始响应】${String.fromCharCodes(response.bodyBytes)}");
         }
         return false;
       }
     } catch (e) {
-      debugPrint("【投票提交异常】$e");
+      logger.w("【投票提交异常】$e");
       return false;
     } finally {
       client.close();
@@ -3017,7 +2862,7 @@ class TiebaApi {
       if (json["no"] != 0) return null;
       return json["data"] as Map<String, dynamic>?;
     } catch (e) {
-      debugPrint("【吧内搜索异常】$e");
+      logger.w("【吧内搜索异常】$e");
       return null;
     } finally {
       client.close();
@@ -3252,7 +3097,7 @@ class TiebaApi {
       final response = await http.Response.fromStream(
         await client.send(request),
       );
-      debugPrint("【sync响应】status=${response.statusCode} body=${response.body}");
+      // logger.i("【sync响应】status=${response.statusCode} body=${response.body}");
 
       if (response.statusCode != 200) return null;
       final json = jsonDecode(response.body) as Map<String, dynamic>;
@@ -3264,13 +3109,13 @@ class TiebaApi {
       if (clientData is Map && wlConfig is Map) {
         final clientId = "${clientData["client_id"] ?? ''}";
         final sampleId = "${wlConfig["sample_id"] ?? ''}";
-        debugPrint("【sync结果】clientId=$clientId sampleId=$sampleId");
+        // logger.i("【sync结果】clientId=$clientId sampleId=$sampleId");
         await saveSyncData(clientId, sampleId);
         return {"clientId": clientId, "sampleId": sampleId};
       }
       return null;
     } catch (e) {
-      debugPrint("【sync异常】$e");
+      logger.w("【sync异常】$e");
       return null;
     } finally {
       client.close();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
 import '../models/user_profile_data.dart';
@@ -376,12 +377,8 @@ class _UserDetailPageState extends State<UserDetailPage>
                         if (!UserManager.isLogin) return;
                         if (!mounted) return;
                         if (await TiebaApi.isLikeOnCooldown()) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧'),
-                              ),
-                            );
+                          if (context.mounted) {
+                            showAgreeNotInTime(context);
                           }
                           return;
                         }

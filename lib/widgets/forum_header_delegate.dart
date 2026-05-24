@@ -220,7 +220,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ),
                     offset: const Offset(-16, 4),
                     useRootNavigator: true,
-                    width: 120,
+                    width: 140,
                   ),
                   buttonStyleData: const ButtonStyleData(
                     height: 36,
@@ -239,8 +239,12 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                             "最早",
                             style: TextStyle(
                               fontSize: isActive ? 17 : 15,
-                              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                              color: isActive ? fgColor : fgColor.withValues(alpha: 0.6),
+                              fontWeight: isActive
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                              color: isActive
+                                  ? fgColor
+                                  : fgColor.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(width: 2),
@@ -300,7 +304,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
           ),
           offset: const Offset(-16, 4),
           useRootNavigator: true,
-          width: 120,
+          width: 90,
         ),
         buttonStyleData: const ButtonStyleData(
           height: 36,
@@ -347,11 +351,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  Widget _tabLabel(
-    String text,
-    Color fgColor, {
-    required bool isActive,
-  }) {
+  Widget _tabLabel(String text, Color fgColor, {required bool isActive}) {
     return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 16),

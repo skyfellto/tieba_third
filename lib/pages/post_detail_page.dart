@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../generated/PbPage/PbPageResponseData.pb.dart';
 import '../generated/Post.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
@@ -289,9 +290,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (!mounted) return;
     if (await TiebaApi.isLikeOnCooldown()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
-        );
+        showAgreeNotInTime(context);
       }
       return;
     }
@@ -915,9 +914,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (!mounted) return;
     if (await TiebaApi.isLikeOnCooldown()) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('由于点赞风控，请勿点赞太频繁，10分钟后再试吧')),
-        );
+        showAgreeNotInTime(context);
       }
       return;
     }
