@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tieba_third/utils/toast_utils.dart';
 import '../models/forum_item.dart';
 import '../models/forum_browse_record.dart';
 import '../network/tieba_api.dart';
@@ -122,17 +123,13 @@ class _TiebaPageState extends State<TiebaPage>
             }
           });
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('签到失败，请稍后重试')));
+          showInfo(context, '签到失败，请稍后重试');
         }
       }
     } catch (e) {
       // debugPrint("【签到异常】$e");
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('签到失败，请稍后重试')));
+        showInfo(context, '签到失败，请稍后重试');
       }
     } finally {
       if (mounted) setState(() => _signingForums.remove(forum.forumId));
@@ -147,9 +144,7 @@ class _TiebaPageState extends State<TiebaPage>
       var unsigned = _forums.where((f) => !f.isSign).toList();
       if (unsigned.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('今天已经全部签到过了')));
+          showInfo(context, '今天已经全部签到过了');
         }
         return;
       }
@@ -173,9 +168,7 @@ class _TiebaPageState extends State<TiebaPage>
           if (info is List) {
             // 一键签到接口调用成功，立即提示
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('一键签到成功')),
-              );
+              showInfo(context, '一键签到成功');
             }
             for (final item in info) {
               if (item is Map) {
@@ -239,9 +232,7 @@ class _TiebaPageState extends State<TiebaPage>
         } else {
           msg = '共成功签到 $success 个吧，剩余 $failed 个未签到';
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        showInfo(context, msg);
       }
     } finally {
       if (mounted) setState(() => _isSigningAll = false);
@@ -468,10 +459,10 @@ class _TiebaPageState extends State<TiebaPage>
                   color: forum.levelId <= 3
                       ? AppColors.levelGreen
                       : forum.levelId <= 9
-                          ? AppColors.levelBlue
-                          : forum.levelId <= 15
-                              ? AppColors.levelYellow
-                              : AppColors.levelOrange,
+                      ? AppColors.levelBlue
+                      : forum.levelId <= 15
+                      ? AppColors.levelYellow
+                      : AppColors.levelOrange,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(

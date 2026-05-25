@@ -258,20 +258,23 @@ class PostCard extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: tid.isNotEmpty ? () => onLikeTap?.call(tid) : null,
+                    behavior: HitTestBehavior.opaque,
                     child: _action(
                       isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
                       _agree,
                       isLiked ? Colors.red : null,
                     ),
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 4),
                   GestureDetector(
                     onTap: tid.isNotEmpty ? () => onReplyTap?.call(tid) : null,
+                    behavior: HitTestBehavior.opaque,
                     child: _action(Icons.chat_bubble_outline, _reply, null),
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 4),
                   GestureDetector(
                     onTap: tid.isNotEmpty ? () => onShareTap?.call(tid) : null,
+                    behavior: HitTestBehavior.opaque,
                     child: _action(Icons.share_outlined, "分享", null),
                   ),
                 ],
@@ -310,16 +313,19 @@ class PostCard extends StatelessWidget {
   String get _time => post?.lastTime ?? "刚刚";
 
   Widget _action(IconData icon, String label, Color? color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: color ?? Colors.grey[400]),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(color: color ?? Colors.grey[400], fontSize: 12),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color ?? Colors.grey[400]),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(color: color ?? Colors.grey[400], fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }
