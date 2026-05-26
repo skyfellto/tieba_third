@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/post_item.dart';
 import '../utils/user_manager.dart';
+import 'action_icon_button.dart';
 
 class PostCard extends StatelessWidget {
   final PostItem? post;
@@ -313,19 +314,6 @@ class PostCard extends StatelessWidget {
   String get _time => post?.lastTime ?? "刚刚";
 
   Widget _action(IconData icon, String label, Color? color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: color ?? Colors.grey[400]),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(color: color ?? Colors.grey[400], fontSize: 12),
-          ),
-        ],
-      ),
-    );
+    return postActionIcon(icon, label, color);
   }
 }

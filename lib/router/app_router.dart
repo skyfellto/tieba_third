@@ -14,7 +14,7 @@ import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
 import '../pages/forum_search_result_page.dart';
 import '../utils/auth_notifier.dart';
-import '../widgets/moonlight_bottom_nav_bar.dart';
+import '../widgets/main_screen.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
     RouteObserver<ModalRoute<void>>();
@@ -145,23 +145,4 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
-// 主屏幕 Widget，现在只负责托管底部导航和路由
-class MainScreen extends StatelessWidget {
-  final StatefulNavigationShell navigationShell;
 
-  const MainScreen({super.key, required this.navigationShell});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: navigationShell, // 这里显示当前的分支页面
-      bottomNavigationBar: MoonlightBottomNavBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) {
-          // 由 go_router 处理跳转
-          navigationShell.goBranch(index);
-        },
-      ),
-    );
-  }
-}
