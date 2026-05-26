@@ -138,7 +138,7 @@ class _MyLikesPageState extends State<MyLikesPage>
       body: Column(
         children: [
           Container(
-            color: theme.scaffoldBackgroundColor,
+            color: theme.primaryColor,
             child: TabBar(
               controller: _tabController,
               labelColor: theme.brightness == Brightness.dark
