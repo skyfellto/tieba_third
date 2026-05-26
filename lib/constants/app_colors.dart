@@ -35,4 +35,12 @@ class AppColors {
   static const Color levelOrange = Color(0xFFFF810D); // 15级及以上
 
   static const Color levelNumber = Color(0xFFF8F9FA);
+
+  /// 根据等级返回对应的颜色
+  static Color levelColor(int levelId) {
+    if (levelId <= 3) return levelGreen;
+    if (levelId <= 9) return levelBlue;
+    if (levelId <= 15) return levelYellow;
+    return levelOrange;
+  }
 }

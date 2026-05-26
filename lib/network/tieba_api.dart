@@ -52,273 +52,54 @@ import '../generated/SearchSug/SearchSugResponseData.pb.dart';
 import '../generated/VoteRequest.pb.dart';
 import '../generated/VoteResponse.pb.dart';
 
+
+part 'tieba_api_shared.dart';
+part 'tieba_api_auth.dart';
+part 'tieba_api_feed.dart';
+part 'tieba_api_post_detail.dart';
+part 'tieba_api_forum.dart';
+part 'tieba_api_search.dart';
+part 'tieba_api_interact.dart';
+part 'tieba_api_user.dart';
+
 class TiebaApi {
-  static const String _baseHost = "http://tiebac.baidu.com";
-  static const String _loginUrl = "$_baseHost/c/s/login";
-  static const String _clientVersion = "12.64.1.1";
-  static final logger = Logger();
-
-  /// Public accessor for client version used by external pages.
   static String get clientVersion => _clientVersion;
-
-  /// sync 接口返回的 client_id / sample_id
-  static String? _syncClientId;
-  static String? _syncSampleId;
-
-  static const String _syncClientIdKey = 'sync_client_id';
-  static const String _syncSampleIdKey = 'sync_sample_id';
-
-  /// 从 SharedPreferences 加载已持久化的 sync 数据
-  static Future<void> loadSyncData() async {
-    final prefs = await SharedPreferences.getInstance();
-    _syncClientId = prefs.getString(_syncClientIdKey);
-    _syncSampleId = prefs.getString(_syncSampleIdKey);
-    if (_syncSampleId != null && _syncSampleId!.isNotEmpty) {
-      logger.i("【sync加载】clientId=$_syncClientId sampleId=$_syncSampleId");
-    }
-  }
-
-  /// 持久化 sync 数据
-  static Future<void> saveSyncData(String clientId, String sampleId) async {
-    _syncClientId = clientId;
-    _syncSampleId = sampleId;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_syncClientIdKey, clientId);
-    await prefs.setString(_syncSampleIdKey, sampleId);
-    logger.i("【sync保存】clientId=$clientId sampleId=$sampleId");
-  }
-
-  /// 获取已缓存的 sample_id（可能为空）
   static String? get syncSampleId => _syncSampleId;
 
-  /// 点赞冷却检查
-  static const int _likeCooldownMs = 600000; // 10 分钟
-  static const String _lastLikeTimeKey = 'last_like_time';
+  static Future<void> loadSyncData() => _loadSyncData();
+  static Future<void> saveSyncData(String clientId, String sampleId) =>
+      _saveSyncData(clientId, sampleId);
+  static Future<bool> isLikeOnCooldown() => _isLikeOnCooldown();
 
-  /// 距离上次点赞是否在冷却期内
-  static Future<bool> isLikeOnCooldown() async {
-    final prefs = await SharedPreferences.getInstance();
-    final last = prefs.getInt(_lastLikeTimeKey);
-    if (last == null) return false;
-    return DateTime.now().millisecondsSinceEpoch - last < _likeCooldownMs;
-  }
-
-  /// 更新上次点赞时间（点赞成功后在 likeAgree 中调用）
-  static Future<void> updateLastLikeTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_lastLikeTimeKey, DateTime.now().millisecondsSinceEpoch);
-  }
-
-  static String _s(dynamic v) => v?.toString() ?? '';
-
-  static String _randomHex(int length) {
-    const chars = '0123456789abcdef';
-    return List.generate(
-      length,
-      (_) => chars[Random().nextInt(chars.length)],
-    ).join();
-  }
-
-  static String _computeSign(List<List<String>> data) {
-    data.sort((a, b) => a[0].compareTo(b[0]));
-    final buf = StringBuffer();
-    for (final pair in data) {
-      buf.write("${pair[0]}=${pair[1]}");
-    }
-    return md5
-        .convert(utf8.encode("${buf.toString()}tiebaclient!!!"))
-        .toString();
-  }
-
-  /// 登录并获取用户信息
   static Future<Map<String, dynamic>?> loginAndGetUserInfo({
     required String bduss,
     required String stoken,
     String? customCookie,
-  }) async {
-    final data = [
-      ["_client_version", _clientVersion],
-      ["bdusstoken", bduss],
-    ];
-    final sign = _computeSign(data);
-    data.add(["sign", sign]);
-    final bodyStr = data
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
+  }) =>
+      _AuthApi.loginAndGetUserInfo(
+          bduss: bduss, stoken: stoken, customCookie: customCookie);
 
-    final client = http.Client();
-    try {
-      final request = http.Request('POST', Uri.parse(_loginUrl))
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": customCookie ?? "BDUSS=$bduss; STOKEN=$stoken",
-        })
-        ..body = bodyStr;
+  static Future<Map<String, String>?> fetchSync({
+    required String bduss,
+    required String stoken,
+  }) =>
+      _AuthApi.fetchSync(bduss: bduss, stoken: stoken);
 
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode == 302) return null;
-      if (response.statusCode != 200) return null;
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      if (json["error_code"] != "0" && json["error_code"] != 0) return null;
-      return json;
-    } catch (_) {
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取首页个性化推荐帖子列表（Protobuf 版）
   static Future<List<PostItem>> fetchPersonalizedThreads({
     required String bduss,
     required String stoken,
     int page = 1,
     int loadType = 1,
-  }) async {
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      phoneImei: DeviceInfo().phoneImei,
-      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-    );
+  }) =>
+      _FeedApi.fetchPersonalizedThreads(
+          bduss: bduss, stoken: stoken, page: page, loadType: loadType);
 
-    final reqData = PersonalizedRequestData(
-      common: common,
-      loadType: loadType,
-      pn: page,
-      pageThreadCount: 15,
-      tagCode: 0,
-      needTags: 0,
-      qType: 1,
-      needForumlist: 0,
-      newNetType: 1,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-    );
-
-    final request = PersonalizedRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse("$_baseHost/c/f/excellent/personalized?cmd=309264");
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      // logger.i("【调试】响应状态码：${response.statusCode}");
-      if (response.statusCode != 200) {
-        // logger.i("【调试】非200，降级占位");
-        return [];
-      }
-
-      final pb = PersonalizedResponse.fromBuffer(response.bodyBytes);
-      if (pb.error.hasErrorCode() && pb.error.errorCode != 0) {
-        // logger.i("【调试】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
-        return [];
-      }
-
-      final threadList = pb.data.threadList;
-      if (threadList.isEmpty) {
-        // logger.i("【调试】thread_list 为空");
-        return [];
-      }
-
-      final posts = threadList
-          .where((t) => !t.hasAlaInfo()) // 屏蔽直播帖
-          .map((t) => PostItem.fromThreadInfo(t))
-          .where((p) => p.title.isNotEmpty && p.tid.isNotEmpty)
-          .toList();
-      // logger.i("【调试】解析到 ${posts.length} 条帖子");
-      return posts;
-    } catch (e) {
-      logger.w("【调试】请求异常：$e");
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取关注的吧列表（ForumGuide Protobuf 版）
   static Future<List<ForumItem>> fetchForumRecommend({
     required String bduss,
     required String stoken,
-  }) async {
-    final reqData = ForumGuideRequestData(sortType: 1, callFrom: 4);
-    final request = ForumGuideRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
+  }) =>
+      _FeedApi.fetchForumRecommend(bduss: bduss, stoken: stoken);
 
-    final uri = Uri.parse(
-      "$_baseHost/c/f/forum/forumGuide?cmd=309683&format=protobuf",
-    );
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) return [];
-
-      final pb = ForumGuideResponse.fromBuffer(response.bodyBytes);
-      if (pb.error.errorCode != 0) return [];
-
-      return pb.data.likeForum
-          .map(
-            (f) => ForumItem(
-              forumId: f.forumId.toString(),
-              forumName: f.forumName,
-              avatar: f.avatar,
-              levelId: f.levelId,
-              isSign: f.isSign == 1,
-            ),
-          )
-          .toList();
-    } catch (_) {
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 点赞帖子（基于 MiniTiebaApi 实现）
-  /// 点赞帖子，返回新点赞数，失败返回 null
-  /// 统一点赞/取消点赞
-  /// [objType]: 3=帖子, 1=回复, 2=楼中楼回复
-  /// [postId]: 回复/楼中楼时传入
-  /// [forumId]: 楼中楼时传入
-  /// 统一点赞/取消点赞
-  /// [objType]: 3=帖子, 1=回复, 2=楼中楼回复
   static Future<int?> likeAgree({
     required String bduss,
     required String stoken,
@@ -330,178 +111,19 @@ class TiebaApi {
     int objType = 3,
     int opType = 0,
     bool allowAlreadyLiked = false,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final clientLogid = timestamp + Random().nextInt(9999).toString();
-    // ignore: unnecessary_brace_in_string_interps
-    final cuid = DeviceInfo().cuid;
-    final phoneImei = DeviceInfo().phoneImei;
-    final c3Aid = DeviceInfo().c3Aid;
-    final brand = DeviceInfo().brand;
-    final model = DeviceInfo().model;
-    final androidId = DeviceInfo().androidId;
-    final stTime = "${Random().nextInt(730) + 121}";
-    final stSize =
-        "${((Random().nextDouble() * 8 + 0.4) * int.parse(stTime)).round()}";
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final eventDay = "${now.year}${now.month}${now.day}";
-    final firstInstallTime =
-        prefs.getInt('_first_install_time') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_first_install_time')) {
-      await prefs.setInt('_first_install_time', firstInstallTime);
-    }
-    final lastUpdateTime =
-        prefs.getInt('_last_update_time') ?? firstInstallTime;
-    if (DateTime.now().millisecondsSinceEpoch - lastUpdateTime > 7 * 86400000) {
-      await prefs.setInt(
-        '_last_update_time',
-        DateTime.now().millisecondsSinceEpoch,
-      );
-    }
-    // active_timestamp 是首次活跃时间（非当前时间），持久化存一份
-    final activeTimestamp =
-        prefs.getInt('_active_timestamp') ??
-        DateTime.now().millisecondsSinceEpoch;
-    if (!prefs.containsKey('_active_timestamp')) {
-      await prefs.setInt('_active_timestamp', activeTimestamp);
-    }
+  }) =>
+      _InteractApi.likeAgree(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          userId: userId,
+          threadId: threadId,
+          postId: postId,
+          forumId: forumId,
+          objType: objType,
+          opType: opType,
+          allowAlreadyLiked: allowAlreadyLiked);
 
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["agree_type", "2"],
-      ["_client_id", _syncClientId ?? ""],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["from", "1015363f"],
-      ["net_type", "1"],
-      ["obj_type", "$objType"],
-      ["op_type", "$opType"],
-      ["os_version", DeviceInfo().osVersion],
-      ["stErrorNums", "1"],
-      ["stMethod", "1"],
-      ["stMode", "1"],
-      ["stSize", stSize],
-      ["stTime", stTime],
-      ["stTimesNum", "1"],
-      ["stoken", stoken],
-      ["tbs", tbs],
-      ["thread_id", threadId],
-      ["timestamp", timestamp],
-      ["last_update_time", "$lastUpdateTime"],
-      ["first_install_time", "$firstInstallTime"],
-      ["active_timestamp", "$activeTimestamp"],
-      ["event_day", eventDay],
-      ["need_cam_decrypt", "1"],
-      ["need_decrypt", "1"],
-      ["cmode", "1"],
-      ["sdk_ver", "2.34.0"],
-      ["diao", ""],
-      ["extra", ""],
-      ["is_teenager", "0"],
-      ["is_long_press_agree", "0"],
-      ["personalized_rec_switch", "1"],
-      ["sample_id", _syncSampleId ?? ''],
-      [
-        "iemi",
-        base64Url
-            .encode(utf8.encode(phoneImei.split('').reversed.join()))
-            .replaceAll('=', ''),
-      ],
-      [
-        "ledom",
-        base64Url
-            .encode(utf8.encode(model.split('').reversed.join()))
-            .replaceAll('=', ''),
-      ],
-      [
-        "dnarb",
-        base64Url
-            .encode(utf8.encode(brand.split('').reversed.join()))
-            .replaceAll('=', ''),
-      ],
-      [
-        "di_diordna",
-        base64Url
-            .encode(utf8.encode(androidId.split('').reversed.join()))
-            .replaceAll('=', ''),
-      ],
-      ["framework_ver", "3340042"],
-      ["naws_game_ver", "2035000"],
-      ["c3_aid", c3Aid],
-      ["cam", ""],
-      ["start_scheme", ""],
-      ["start_type", "1"],
-      ["device_score", "0.5"],
-    ];
-    if (objType == 1) {
-      params.add(["obj_source", "a005"]);
-    } else if (objType == 2) {
-      params.add(["obj_source", "a007"]);
-    } else if (objType == 3) {
-      params.add(["obj_source", "a002"]);
-    }
-    // post_id: 回复/楼中楼时传入
-    if (postId.isNotEmpty) params.add(["post_id", postId]);
-    // forum_id: 始终传入，空字符串表示不适用
-    params.add(["forum_id", forumId.isNotEmpty ? forumId : ""]);
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("https://tiebac.baidu.com/c/c/agree/opAgree"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "client_logid": clientLogid,
-              "client_user_token": userId,
-              // "c3_aid": c3Aid,
-              "Connection": "Keep-Alive",
-              "cuid_gid": "",
-              "Charset": "UTF-8",
-              "Accept-Encoding": "gzip",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        if (err == "3280001" && allowAlreadyLiked) {
-          return -1;
-        }
-        return null;
-      }
-      if (json["data"] == null) return null;
-      await updateLastLikeTime();
-      return 1;
-    } catch (e) {
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取帖子详情（PbPage API）
   static Future<PbPageResponseData?> fetchPostDetail({
     required String bduss,
     required String stoken,
@@ -514,115 +136,20 @@ class TiebaApi {
     String lastPid = '0',
     String forumId = '0',
     String stType = 'pb',
-  }) async {
-    final cuidPb = DeviceInfo().cuid;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      phoneImei: DeviceInfo().phoneImei,
-      cuid: cuidPb,
-      cuidGalaxy2: cuidPb,
-      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      tbs: tbs,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-    );
+  }) =>
+      _PostDetailApi.fetchPostDetail(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          threadId: threadId,
+          page: page,
+          postId: postId,
+          seeLz: seeLz,
+          sortType: sortType,
+          lastPid: lastPid,
+          forumId: forumId,
+          stType: stType);
 
-    // sortType=0(正序) → 不传r, sortType=1(倒序) → r=1
-
-    final reqData = PbPageRequestData(
-      common: common,
-      kz: Int64.parseInt(threadId),
-      pid: Int64.parseInt(postId),
-      pn: page,
-      lz: seeLz ? 1 : 0,
-      withFloor: 1,
-    );
-    // 倒序设 r=1，正序不传 r
-    if (sortType == 1) reqData.r = 1;
-    reqData
-      ..floorRn = 4
-      ..rn = 15
-      ..scrW = DeviceInfo().scrW
-      ..scrH = DeviceInfo().scrH
-      ..scrDip = DeviceInfo().scrDip
-      ..qType = 2
-      ..mark = 0
-      ..back = 0
-      ..sourceType = 2
-      ..floorSortType = 1
-      ..isCommReverse = 0
-      ..needRepostRecommendForum = 0
-      ..requestTimes = 0
-      ..sModel = 0
-      ..similarFrom = 0
-      ..fromSmartFrs = 0
-      ..fromPush = 0
-      ..immersionVideoCommentSource = 0
-      ..isFoldCommentReq = 0
-      ..isJumpfloor = 0
-      ..jumpfloorNum = 0
-      ..threadType = 0
-      ..lastPid = Int64.parseInt(lastPid)
-      ..forumId = Int64.parseInt(forumId)
-      ..stType = stType
-      ..banner = 0
-      ..weipost = 0
-      ..broadcastId = Int64.ZERO
-      ..adParam = AdParam(loadCount: 0, refreshCount: 1, isReqAd: 1)
-      ..appPos = AppPosInfo();
-
-    final request = PbPageRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse("$_baseHost/c/f/pb/page?cmd=302001&format=protobuf");
-
-    final modelPb = DeviceInfo().model;
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "CUID=$cuidPb; ka=open; TBBRAND=$modelPb",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) {
-        logger.w("【调试】PbPage 非200响应");
-        return null;
-      }
-
-      final pb = PbPageResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) {
-        logger.w("【调试】PbPage API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
-        return null;
-      }
-
-      if (!pb.hasData()) {
-        logger.w("【调试】PbPage data为空");
-        return null;
-      }
-
-      return pb.data;
-    } catch (e) {
-      logger.w("【调试】PbPage 请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取楼中楼（PbFloor API）
   static Future<PbFloorResponseData?> fetchSubReplies({
     required String bduss,
     required String stoken,
@@ -631,81 +158,16 @@ class TiebaApi {
     required String forumId,
     int page = 1,
     String subPostId = '0',
-  }) async {
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      phoneImei: DeviceInfo().phoneImei,
-      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-    );
+  }) =>
+      _PostDetailApi.fetchSubReplies(
+          bduss: bduss,
+          stoken: stoken,
+          threadId: threadId,
+          postId: postId,
+          forumId: forumId,
+          page: page,
+          subPostId: subPostId);
 
-    final reqData = PbFloorRequestData(
-      common: common,
-      kz: Int64.parseInt(threadId),
-      pid: Int64.parseInt(postId),
-      spid: subPostId != '0' ? Int64.parseInt(subPostId) : Int64.ZERO,
-      pn: page,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      forumId: Int64.parseInt(forumId),
-      isCommReverse: 0,
-      oriUgcType: 0,
-    );
-
-    final request = PbFloorRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse(
-      "$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf&rn=30",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) return null;
-
-      final pb = PbFloorResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) {
-        logger.w(
-          "【调试】PbFloor API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
-        );
-        return null;
-      }
-
-      if (!pb.hasData()) {
-        logger.w("【调试】PbFloor data为空");
-        return null;
-      }
-
-      return pb.data;
-    } catch (e) {
-      logger.w("【调试】PbFloor 请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取楼中楼回复列表（JSON API，支持 rn 分页）
   static Future<Map<String, dynamic>?> fetchFloorRepliesJson({
     required String bduss,
     required String stoken,
@@ -715,277 +177,35 @@ class TiebaApi {
     int page = 1,
     String subPostId = '0',
     int rn = 30,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+  }) =>
+      _PostDetailApi.fetchFloorRepliesJson(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          threadId: threadId,
+          postId: postId,
+          page: page,
+          subPostId: subPostId,
+          rn: rn);
 
-    final params = [
-      ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_version", _clientVersion],
-      ["client_id", clientId],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["from", "1021636m"],
-      ["kz", threadId],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["os_version", DeviceInfo().osVersion],
-      ["phone_imei", phoneImei],
-      ["pid", postId],
-      ["pn", "$page"],
-      ["rn", "$rn"],
-      ["spid", subPostId],
-      ["stoken", stoken],
-      ["subapp_type", "mini"],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/f/pb/floor"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) return null;
-      return json;
-    } catch (e) {
-      logger.w("【楼中楼JSON异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取贴吧详细信息（GetForumDetail API）
   static Future<GetForumDetailResponseData?> fetchForumDetail({
     required String bduss,
     required String stoken,
     required String forumId,
     required String userId,
-  }) async {
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
-      phoneImei: phoneImei,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      timestamp: Int64(timestamp),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      model: DeviceInfo().model,
-      brand: DeviceInfo().brand,
-      osVersion: "12",
-      from: "1020031h",
-      phoneNewimei: phoneImei,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-    );
+  }) =>
+      _ForumApi.fetchForumDetail(
+          bduss: bduss, stoken: stoken, forumId: forumId, userId: userId);
 
-    final reqData = GetForumDetailRequestData(
-      forumId: Int64.parseInt(forumId),
-      common: common,
-    );
-
-    final request = GetForumDetailRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse(
-      "$_baseHost/c/f/forum/getforumdetail?cmd=303021&format=protobuf",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
-          "Charset": "UTF-8",
-          "Client-Type": "2",
-          "client_user_token": userId,
-          "Cuid": cuid,
-          "Cuid-Galaxy2": cuid,
-          "Cuid-Gid": "",
-          "Cuid-Galaxy3": cuid,
-        })
-        ..fields['STOKEN'] = stoken
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) {
-        logger.w("【论坛详情】非200响应：${response.statusCode}");
-        return null;
-      }
-
-      final pb = GetForumDetailResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError()) {
-        logger.w(
-          "【论坛详情】error子消息存在: code=${pb.error.errorCode} msg='${pb.error.errorMsg}' userMsg='${pb.error.userMsg}'",
-        );
-        if (pb.error.errorCode != 0) return null;
-      } else {
-        // logger.i("【论坛详情】响应中无error子消息");
-      }
-
-      if (!pb.hasData()) {
-        logger.w("【论坛详情】data为空");
-        return null;
-      }
-
-      return pb.data;
-    } catch (e) {
-      logger.w("【论坛详情】请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取贴吧等级信息（GetLevelInfo API）
   static Future<GetLevelInfoResponseData?> fetchLevelInfo({
     required String bduss,
     required String stoken,
     required String forumId,
     required String userId,
-  }) async {
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
-      phoneImei: phoneImei,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      timestamp: Int64(timestamp),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      model: DeviceInfo().model,
-      brand: DeviceInfo().brand,
-      osVersion: "12",
-      from: "1020031h",
-      phoneNewimei: phoneImei,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-    );
+  }) =>
+      _ForumApi.fetchLevelInfo(
+          bduss: bduss, stoken: stoken, forumId: forumId, userId: userId);
 
-    final reqData = GetLevelInfoRequestData(
-      forumId: Int64.parseInt(forumId),
-      common: common,
-    );
-
-    final request = GetLevelInfoRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse(
-      "$_baseHost/c/f/forum/getLevelInfo?cmd=301005&format=protobuf",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
-          "Charset": "UTF-8",
-          "Client-Type": "2",
-          "client_user_token": userId,
-          "Cuid": cuid,
-          "Cuid-Galaxy2": cuid,
-          "Cuid-Gid": "",
-          "Cuid-Galaxy3": cuid,
-        })
-        ..fields['STOKEN'] = stoken
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) {
-        logger.w("【等级信息】非200响应：${response.statusCode}");
-        return null;
-      }
-
-      final pb = GetLevelInfoResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError()) {
-        if (pb.error.errorCode != 0) return null;
-      } else {
-        logger.w("【等级信息】响应中无error子消息");
-      }
-
-      if (!pb.hasData()) {
-        logger.w("【等级信息】data为空");
-        return null;
-      }
-
-      final d = pb.data;
-      // 打印前3个等级
-      for (
-        int i = 0;
-        i < (d.levelInfo.length > 3 ? 3 : d.levelInfo.length);
-        i++
-      ) {
-        // final l = d.levelInfo[i];
-        // logger.i(
-        //   "【等级信息】levelInfo[$i]: id=${l.id} name='${l.name}' score=${l.score}",
-        // );
-      }
-      return pb.data;
-    } catch (e) {
-      logger.w("【等级信息】请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取贴吧页面信息（FrsPage API）— 包含用户等级/关注状态
   static Future<FrsPageResponseData?> fetchFrsPage({
     required String bduss,
     required String stoken,
@@ -995,128 +215,17 @@ class TiebaApi {
     int loadType = 1,
     int sortType = 0,
     int isGood = 0,
-  }) async {
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
-      phoneImei: phoneImei,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      timestamp: Int64(timestamp),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      model: DeviceInfo().model,
-      brand: DeviceInfo().brand,
-      osVersion: "12",
-      from: "1020031h",
-      phoneNewimei: phoneImei,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-    );
+  }) =>
+      _ForumApi.fetchFrsPage(
+          bduss: bduss,
+          stoken: stoken,
+          forumName: forumName,
+          userId: userId,
+          page: page,
+          loadType: loadType,
+          sortType: sortType,
+          isGood: isGood);
 
-    final reqData = FrsPageRequestData(
-      kw: forumName,
-      pn: page,
-      rn: 90,
-      rnNeed: 30,
-      loadType: loadType,
-      sortType: sortType,
-      isGood: isGood,
-      common: common,
-      stType: "tb_forumlist",
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-      callFrom: 0,
-      isSelection: 0,
-      cid: 0,
-      ctime: 0,
-      dataSize: 0,
-      netError: 0,
-      stParam: 0,
-      categoryId: 0,
-      isDefaultNavtab: 0,
-      adParam: frs_ad_param.AdParam(loadCount: 0, refreshCount: 1),
-      appPos: AppPosInfo(),
-    );
-
-    final request = FrsPageRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse("$_baseHost/c/f/frs/page?cmd=301001");
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
-          "Charset": "UTF-8",
-          "Client-Type": "2",
-          "client_user_token": userId,
-          "Cuid": cuid,
-          "Cuid-Galaxy2": cuid,
-          "Cuid-Gid": "",
-          "Cuid-Galaxy3": cuid,
-        })
-        ..fields['STOKEN'] = stoken
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) {
-        logger.w("【FrsPage】非200响应：${response.statusCode}");
-        return null;
-      }
-
-      final pb = FrsPageResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) {
-        logger.w("【FrsPage】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
-        return null;
-      }
-
-      if (!pb.hasData()) {
-        logger.w("【FrsPage】data为空");
-        return null;
-      }
-
-      final d = pb.data;
-      // 屏蔽直播帖
-      d.threadList.removeWhere((t) => t.hasAlaInfo());
-      // logger.i(
-      //   "【FrsPage响应】threadList=${d.threadList.length}条 "
-      //   "threadIdList=${d.threadIdList.length}条 "
-      //   "pn=$page loadType=$loadType sortType=$sortType "
-      //   "hasPage=${d.hasPage()} hasMore=${d.hasPage() ? d.page.hasMore : -1}",
-      // );
-      // if (d.threadIdList.isNotEmpty) {
-      //   logger.i(
-      //     "【FrsPage响应】前10个threadId=${d.threadIdList.take(10).map((e) => e.toInt()).join(',')}",
-      //   );
-      // }
-      return d;
-    } catch (e) {
-      logger.w("【FrsPage】请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 增量加载帖子列表（POST /c/f/frs/threadlist?cmd=301002）
-  /// 参考 tiebalite ForumNetworkDataSource.loadThread
   static Future<ThreadListResponseData?> fetchThreadList({
     required String bduss,
     required String stoken,
@@ -1126,337 +235,59 @@ class TiebaApi {
     required String threadIds,
     int sortType = 0,
     int page = 1,
-  }) async {
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
-      phoneImei: phoneImei,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      timestamp: Int64(timestamp),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      model: DeviceInfo().model,
-      brand: DeviceInfo().brand,
-      osVersion: "12",
-      from: "1020031h",
-      phoneNewimei: phoneImei,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-    );
+  }) =>
+      _ForumApi.fetchThreadList(
+          bduss: bduss,
+          stoken: stoken,
+          forumName: forumName,
+          forumId: forumId,
+          userId: userId,
+          threadIds: threadIds,
+          sortType: sortType,
+          page: page);
 
-    final reqData = ThreadListRequestData(
-      threadIds: threadIds,
-      forumId: Int64.parseInt(forumId),
-      forumName: forumName,
-      pn: page,
-      sortType: sortType,
-      needAbstract: 0,
-      stType: 0,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-      common: common,
-      appPos: AppPosInfo(),
-      adParam: tl_ad_param.AdParam(loadCount: 0, refreshCount: 1),
-    );
-
-    final request = ThreadListRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse("$_baseHost/c/f/frs/threadlist?cmd=301002");
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "ka: open; CUID: $cuid; TBBRAND: ${DeviceInfo().model}",
-          "Charset": "UTF-8",
-          "Client-Type": "2",
-          "client_user_token": userId,
-          "Cuid": cuid,
-          "Cuid-Galaxy2": cuid,
-          "Cuid-Gid": "",
-          "Cuid-Galaxy3": cuid,
-        })
-        ..fields['STOKEN'] = stoken
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) {
-        logger.w("【ThreadList】非200响应：${response.statusCode}");
-        return null;
-      }
-
-      final pb = ThreadListResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) {
-        logger.w(
-          "【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
-        );
-        return null;
-      }
-
-      if (!pb.hasData()) {
-        logger.w("【ThreadList】data为空");
-        return null;
-      }
-
-      return pb.data;
-    } catch (e) {
-      logger.w("【ThreadList】请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 单独签到（POST /c/c/forum/sign）
-  /// 参考 tiebalite OfficialTiebaApi.signFlow
   static Future<Map<String, dynamic>?> signForum({
     required String bduss,
     required String stoken,
     required String tbs,
     required String forumId,
     required String forumName,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+  }) =>
+      _ForumApi.signForum(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          forumId: forumId,
+          forumName: forumName);
 
-    // tiebalite signFlow: Cookie=ka=open, _client_version=11.10.8.6
-    // 使用 defaultCommonParamInterceptor 风格参数 + 签到专有字段
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["fid", forumId],
-      ["from", "tieba"],
-      ["kw", forumName],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["_phone_imei", phoneImei],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/c/forum/sign"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) {
-        logger.w("【签到失败】非200状态码");
-        return null;
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        logger.w("【签到失败】error_code=$err msg=${json["error_msg"]}");
-        return null;
-      }
-      // tiebalite SignResultBean: userInfo 为空表示签到失败
-      if (json["user_info"] == null) {
-        logger.w("【签到失败】user_info 为空");
-        return null;
-      }
-      return json;
-    } catch (e) {
-      logger.w("【签到异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 关注贴吧（POST /c/c/forum/like）
   static Future<Map<String, dynamic>?> likeForum({
     required String bduss,
     required String stoken,
     required String tbs,
     required String forumId,
     required String forumName,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final cuid = DeviceInfo().cuid;
+  }) =>
+      _ForumApi.likeForum(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          forumId: forumId,
+          forumName: forumName);
 
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["cuid", cuid],
-      ["fid", forumId],
-      ["kw", forumName],
-      ["stoken", stoken],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/c/forum/like"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) {
-        logger.w("【关注贴吧】非200状态码");
-        return null;
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        logger.w("【关注贴吧】error_code=$err msg=${json["error_msg"]}");
-        return null;
-      }
-      return json;
-    } catch (e) {
-      logger.w("【关注贴吧】异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 取消关注贴吧（POST /c/c/forum/unfavolike）
   static Future<bool> unlikeForum({
     required String bduss,
     required String stoken,
     required String tbs,
     required String forumId,
     required String forumName,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final cuid = DeviceInfo().cuid;
-    final c3Aid = DeviceInfo().c3Aid;
+  }) =>
+      _ForumApi.unlikeForum(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          forumId: forumId,
+          forumName: forumName);
 
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["c3_aid", c3Aid],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["fid", forumId],
-      ["kw", forumName],
-      ["stoken", stoken],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/c/forum/unfavolike"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "c3_aid": c3Aid,
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) {
-        logger.w("【取消关注】非200状态码");
-        return false;
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        logger.w("【取消关注】error_code=$err msg=${json["error_msg"]}");
-        return false;
-      }
-      return true;
-    } catch (e) {
-      logger.w("【取消关注】异常：$e");
-      return false;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 一键签到（POST /c/c/forum/msign）
-  /// 参考官方抓包参数
   static Future<Map<String, dynamic>?> mSign({
     required String bduss,
     required String stoken,
@@ -1464,1375 +295,43 @@ class TiebaApi {
     required String forumIds,
     required String userId,
     required String baiduId,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final di = DeviceInfo();
-    final now = DateTime.now();
-    final eventDay = "${now.year}${now.month}${now.day}";
+  }) =>
+      _ForumApi.mSign(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          forumIds: forumIds,
+          userId: userId,
+          baiduId: baiduId);
 
-    // oaid: 模拟 OAID 对象
-    final oaid = jsonEncode({
-      "v": "",
-      "isTrackLimited": 0,
-      "sc": -200,
-      "sup": 0,
-    });
-
-    final params = [
-      ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", "${di.sdkInt}"],
-      ["_phone_imei", phoneImei],
-      ["active_timestamp", "${di.activeTimestamp}"],
-      ["android_id", di.androidId],
-      ["authsid", "null"],
-      ["baidu_id", baiduId],
-      ["brand", di.brand],
-      ["c3_aid", di.c3Aid],
-      ["cmode", "1"],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["event_day", eventDay],
-      ["extra", ""],
-      ["first_install_time", "${di.firstInstallTime}"],
-      ["forum_ids", forumIds],
-      ["framework_ver", "3340042"],
-      ["from", "tieba"],
-      ["is_teenager", "0"],
-      ["last_update_time", "${di.lastUpdateTime}"],
-      ["mac", "02:00:00:00:00:00"],
-      ["model", di.model],
-      ["net_type", "1"],
-      ["oaid", oaid],
-      ["sdk_ver", "2.34.0"],
-      ["stErrorNums", "0"],
-      ["start_scheme", ""],
-      ["start_type", "1"],
-      ["swan_game_ver", "1038000"],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-      ["user_id", userId],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final cookie = "CUID=$cuid;ka=open;TBBRAND=${di.model};BAIDUID=$baiduId;";
-    final ua = di.userAgent(_clientVersion);
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/c/forum/msign"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": ua,
-              "Cookie": cookie,
-              "client_logid": "${DeviceInfo.initTime}",
-              "Accept-Encoding": "gzip",
-              "Host": "c.tieba.baidu.com",
-              "Connection": "Keep-Alive",
-              "Charset": "UTF-8",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) {
-        logger.w("【一键签到失败】非200状态码 statusCode=${response.statusCode}");
-        logger.w("【一键签到失败】响应body=${response.body}");
-        return null;
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      logger.i("【一键签到JSON】$json");
-
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        logger.w(
-          "【一键签到失败】error_code=$err msg=${json["error_msg"]} error_info=${json["error_info"]}",
-        );
-        return null;
-      }
-      // info 为字符串时表示失败（含空字符串），为数组时才是签到结果
-      final info = json["info"];
-      logger.i("【一键签到info】type=${info.runtimeType} value=$info");
-      if (info is String) {
-        logger.w("【一键签到失败】info 为字符串: $info");
-        logger.w("【一键签到失败】完整响应: ${response.body}");
-        return null;
-      }
-      logger.i("sign_map :: ${json["json_map"]}");
-      return json;
-    } catch (e) {
-      logger.w("【一键签到异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取用户帖子列表（JSON API）
-  /// 参考 tiebalite MiniTiebaApi.userPost
-  static Future<List<PostItem>> fetchUserPosts({
-    required String bduss,
-    required String stoken,
-    required String uid,
-    int page = 1,
-    int isThread = 1,
-    int rn = 20,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-
-    final params = [
-      ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["from", "tieba"],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["_phone_imei", phoneImei],
-      ["uid", uid],
-      ["page", "$page"],
-      ["is_thread", "$isThread"],
-      ["rn", "$rn"],
-      ["need_content", "1"],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/u/feed/userpost"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) return [];
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        logger.w("【用户帖子失败】error_code=$err msg=${json["error_msg"]}");
-        return [];
-      }
-
-      final postList = json["post_list"];
-      if (postList is! List) return [];
-
-      final posts = <PostItem>[];
-      for (final item in postList) {
-        final itemMap = item as Map<String, dynamic>;
-        // 提取正文文本
-        String? absText;
-        final content = itemMap["content"];
-        if (content is List && content.isNotEmpty) {
-          final firstContent = content[0] as Map<String, dynamic>?;
-          if (firstContent != null) {
-            final postContent = firstContent["post_content"];
-            if (postContent is List && postContent.isNotEmpty) {
-              final texts = postContent
-                  .map(
-                    (c) =>
-                        (c as Map<String, dynamic>)["text"]?.toString() ?? "",
-                  )
-                  .where((t) => t.isNotEmpty)
-                  .toList();
-              if (texts.isNotEmpty) absText = texts.join(" ");
-            }
-          }
-        }
-
-        // 尝试从 abstracts 提取
-        if ((absText == null || absText.isEmpty) &&
-            itemMap["abstracts"] is List) {
-          final abstractsList = itemMap["abstracts"] as List;
-          if (abstractsList.isNotEmpty) {
-            absText = abstractsList
-                .map(
-                  (a) => (a as Map<String, dynamic>)["text"]?.toString() ?? "",
-                )
-                .where((t) => t.isNotEmpty)
-                .join(" ");
-          }
-        }
-
-        final tid = _s(itemMap["thread_id"]);
-        if (tid.isEmpty) continue;
-
-        final isThreadVal = _s(itemMap["is_thread"]);
-        String? lastTime;
-        try {
-          final ct = int.tryParse(_s(itemMap["create_time"]));
-          if (ct != null && ct > 0) {
-            final dt = DateTime.fromMillisecondsSinceEpoch(ct * 1000);
-            final now = DateTime.now();
-            if (now.year == dt.year) {
-              if (now.day == dt.day && now.month == dt.month) {
-                final diff = now.difference(dt);
-                if (diff.inMinutes < 1) {
-                  lastTime = null;
-                } else if (diff.inMinutes <= 40) {
-                  lastTime = "${diff.inMinutes} 分钟前";
-                } else {
-                  lastTime =
-                      "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-                }
-              } else {
-                lastTime =
-                    "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-              }
-            } else {
-              lastTime =
-                  "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-            }
-          }
-        } catch (_) {}
-
-        posts.add(
-          PostItem(
-            tid: tid,
-            title: _s(itemMap["title"]),
-            authorId: _s(itemMap["user_id"]),
-            authorName: _s(itemMap["name_show"]),
-            authorPortrait: itemMap["user_portrait"]?.toString(),
-            forumId: _s(itemMap["forum_id"]),
-            forumName: _s(itemMap["forum_name"]),
-            replyNum: _s(itemMap["reply_num"]),
-            agreeNum: _s(itemMap["agree_num"]),
-            abstractText: absText,
-            lastTime: lastTime,
-            isAd: false,
-            isTop:
-                isThreadVal == "1" && int.tryParse(_s(itemMap["is_top"])) == 1,
-          ),
-        );
-      }
-      return posts;
-    } catch (e) {
-      logger.w("【用户帖子异常】$e");
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取用户资料（Protobuf API）
-  /// POST /c/u/user/profile?cmd=303012&format=protobuf
-  /// 参考 tiebalite OfficialProtobufTiebaApi.profileFlow
-  /// 返回 (用户资料, 关注的吧列表)
-  static Future<(UserProfileData?, List<ForumItem>)> fetchUserProfilePb({
-    required String bduss,
-    required String stoken,
-    required String uid,
-  }) async {
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
-      phoneImei: phoneImei,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      timestamp: Int64(timestamp),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      model: DeviceInfo().model,
-      brand: DeviceInfo().brand,
-      osVersion: "12",
-      from: "1020031h",
-      phoneNewimei: phoneImei,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-    );
-
-    final reqData = ProfileRequestData(
-      common: common,
-      uid: Int64.parseInt(uid),
-      needPostCount: 1,
-      friendUid: Int64.ZERO,
-      isGuest: 0,
-    );
-    final request = ProfileRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse(
-      "$_baseHost/c/u/user/profile?cmd=303012&format=protobuf",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie":
-              "ka=open; CUID=${common.cuid}; TBBRAND=${DeviceInfo().model}",
-          "Charset": "UTF-8",
-          "Client-Type": "2",
-          "client_user_token": uid,
-          "Cuid": common.cuid,
-          "Cuid-Galaxy2": common.cuid,
-          "Cuid-Gid": "",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) return (null, <ForumItem>[]);
-
-      final pb = ProfileResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) {
-        logger.w("【用户资料Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
-        return (null, <ForumItem>[]);
-      }
-      if (!pb.hasData() || !pb.data.hasUser()) {
-        logger.w("【用户资料Pb】data 或 user 为空");
-        return (null, <ForumItem>[]);
-      }
-
-      final user = pb.data.user;
-
-      final forums = pb.data.concernedForumList
-          .where((f) => f.forumName.isNotEmpty)
-          .map(
-            (f) => ForumItem(
-              forumId: f.forumId.toInt().toString(),
-              forumName: f.forumName,
-              avatar: f.avatar,
-              levelId: 0,
-              isSign: false,
-            ),
-          )
-          .toList();
-
-      return (UserProfileData.fromUserProto(user), forums);
-    } catch (e) {
-      logger.w("【用户资料Pb异常】$e");
-      return (null, <ForumItem>[]);
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取用户帖子列表（Protobuf API）
-  /// POST /c/u/feed/userpost?cmd=303002&format=protobuf
-  /// 参考 tiebalite OfficialProtobufTiebaApi.userPostFlow
-  static Future<List<PostItem>> fetchUserPostsPb({
-    required String bduss,
-    required String stoken,
-    required String uid,
-    int page = 1,
-    int rn = 20,
-    int isThread = 1,
-    Map<String, String>? forumAvatarMap,
-  }) async {
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
-      phoneImei: phoneImei,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      timestamp: Int64(timestamp),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      model: DeviceInfo().model,
-      brand: DeviceInfo().brand,
-      osVersion: "12",
-      from: "1020031h",
-      phoneNewimei: phoneImei,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      qType: 2,
-    );
-
-    final reqData = UserPostRequestData(
-      common: common,
-      uid: Int64.parseInt(uid),
-      pn: page,
-      rn: rn,
-      isThread: isThread,
-      needContent: 1,
-    );
-    final request = UserPostRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse(
-      "$_baseHost/c/u/feed/userpost?cmd=303002&format=protobuf",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) return [];
-
-      final pb = UserPostResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) {
-        logger.w("【用户帖子Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
-        return [];
-      }
-      if (!pb.hasData()) return [];
-
-      final posts = pb.data.postList.map((info) {
-        // 提取正文文本
-        String? absText;
-        for (final pic in info.content) {
-          for (final a in pic.postContent) {
-            if (a.type == 0 && a.text.isNotEmpty) {
-              absText = (absText == null) ? a.text : "$absText ${a.text}";
-            }
-          }
-          if (absText != null && absText.length > 150) {
-            absText = absText.substring(0, 150);
-            break;
-          }
-        }
-
-        // 提取图片
-        final images = <String>[];
-        for (final m in info.media) {
-          if (m.bigPic.isNotEmpty) {
-            images.add(m.bigPic);
-          } else if (m.srcPic.isNotEmpty) {
-            images.add(m.srcPic);
-          }
-          if (images.length >= 3) break;
-        }
-
-        // 格式化时间
-        String? lastTime;
-        final ct = info.createTime;
-        if (ct > 0) {
-          final dt = DateTime.fromMillisecondsSinceEpoch(ct * 1000);
-          final now = DateTime.now();
-          if (now.year == dt.year) {
-            if (now.day == dt.day && now.month == dt.month) {
-              final diff = now.difference(dt);
-              if (diff.inMinutes < 1) {
-                lastTime = null;
-              } else if (diff.inMinutes <= 40) {
-                lastTime = "${diff.inMinutes} 分钟前";
-              } else {
-                lastTime =
-                    "今天 ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-              }
-            } else {
-              lastTime =
-                  "${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-            }
-          } else {
-            lastTime =
-                "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-          }
-        }
-
-        bool isLiked = info.agree.hasAgree == 1 ? true : false;
-
-        return PostItem(
-          tid: info.threadId.toInt().toString(),
-          title: info.title,
-          authorId: info.userId.toInt() > 0
-              ? info.userId.toInt().toString()
-              : '',
-          authorName: info.nameShow.isNotEmpty ? info.nameShow : info.userName,
-          authorPortrait: info.userPortrait.isNotEmpty
-              ? info.userPortrait
-              : null,
-          forumId: info.forumId.toInt().toString(),
-          forumName: info.forumName,
-          forumAvatar: forumAvatarMap?[info.forumId.toInt().toString()],
-          replyNum: info.replyNum.toString(),
-          agreeNum: info.agreeNum.toString(),
-          abstractText: absText,
-          lastTime: lastTime,
-          imageUrls: images,
-          isAd: false,
-          isTop: false,
-          isLiked: isLiked,
-          firstPostId: info.postId.toInt().toString(),
-        );
-      }).toList();
-
-      return posts;
-    } catch (e) {
-      logger.w("【用户帖子Pb异常】$e");
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取用户关注的吧列表（JSON API）
-  /// POST /c/f/forum/like
-  /// 参考 tiebalite OfficialTiebaApi.userLikeForumFlow
-  static Future<List<ForumItem>> fetchUserLikeForums({
-    required String bduss,
-    required String stoken,
-    required String uid,
-    String? friendUid,
-    int pageNo = 1,
-    int pageSize = 50,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-
-    final params = [
-      ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["from", "tieba"],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["_phone_imei", phoneImei],
-      ["uid", uid],
-      ["friend_uid", friendUid ?? uid],
-      ["is_guest", friendUid != null ? "1" : "0"],
-      ["page_no", "$pageNo"],
-      ["page_size", "$pageSize"],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request = http.Request('POST', Uri.parse("$_baseHost/c/f/forum/like"))
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie":
-              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
-          "Cuid": cuid,
-          "Cuid-Galaxy2": cuid,
-          "Cuid-Gid": "",
-          "Client-Type": "2",
-          "Charset": "UTF-8",
-          "client_logid": "${DeviceInfo.initTime}",
-        })
-        ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) return [];
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) {
-        logger.w("【用户关注吧失败】error_code=$err msg=${json["error_msg"]}");
-        return [];
-      }
-
-      // 响应结构：{"forum_list": {"non-gconforum": [...]}}
-      final forumListWrapper = json["forum_list"];
-      if (forumListWrapper is! Map) {
-        logger.w("【用户关注吧】forum_list 不是对象");
-        return [];
-      }
-      final items = forumListWrapper["non-gconforum"];
-      if (items is! List) {
-        logger.w("【用户关注吧】non-gconforum 为空或不是列表");
-        return [];
-      }
-
-      final forums = items.map((f) {
-        final fMap = f as Map<String, dynamic>;
-        return ForumItem(
-          forumId: _s(fMap["id"]),
-          forumName: _s(fMap["name"]),
-          avatar: _s(fMap["avatar"]),
-          levelId: int.tryParse(_s(fMap["level_id"])) ?? 0,
-          isSign: false,
-        );
-      }).toList();
-
-      return forums;
-    } catch (e) {
-      logger.w("【用户关注吧异常】$e");
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 收藏帖子 — 参考 tiebalite OfficialTiebaApi.addStoreFlow
-  static Future<bool> addStore({
-    required String bduss,
-    required String stoken,
-    required String threadId,
-    required String userId,
-    required String tbs,
-    required String postId,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final today = DateTime.now();
-    final eventDay = "${today.year}${today.month}${today.day}";
-    final stNum = Random().nextInt(750) + 100;
-    final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
-        .round()
-        .toString();
-    final hasStParams = stNum > 120;
-    final zId = await getCachedZid();
-    // data: [{"pid":"真实postId","status":1,"tid":"threadId"}] — 匹配抓包
-    final data = jsonEncode([
-      {"pid": postId, "status": 1, "tid": threadId},
-    ]);
-
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
-      ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
-      ["baiduid", cuid],
-      ["brand", DeviceInfo().brand],
-      ["c3_aid", DeviceInfo().c3Aid],
-      ["cmode", "1"],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["data", data],
-      ["event_day", eventDay],
-      ["extra", ""],
-      ["first_install_time", "${DeviceInfo().firstInstallTime}"],
-      ["framework_ver", "3340042"],
-      ["from", "tieba"],
-      ["is_teenager", "0"],
-      ["last_update_time", "${DeviceInfo().lastUpdateTime}"],
-      ["mac", "02:00:00:00:00:00"],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["_phone_imei", phoneImei],
-      ["sample_id", ""],
-      ["sdk_ver", "2.34.0"],
-      if (hasStParams) ["stErrorNums", "1"],
-      if (hasStParams) ["stMethod", "1"],
-      if (hasStParams) ["stMode", "1"],
-      if (hasStParams) ["stTimesNum", "1"],
-      if (hasStParams) ["stTime", stTime],
-      if (hasStParams) ["stSize", stSize],
-      ["start_scheme", ""],
-      ["start_type", "1"],
-      ["stoken", stoken],
-      ["swan_game_ver", "1038000"],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-      ["user_id", userId],
-    ];
-    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request('POST', Uri.parse("$_baseHost/c/c/post/addstore"))
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie":
-                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
-              "client_user_token": userId,
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "cuid_gid": "",
-              "c3_aid": DeviceInfo().c3Aid,
-              "_client_type": "2",
-              "Charset": "UTF-8",
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return false;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      return err == null || err == "0" || err == 0;
-    } catch (e) {
-      logger.w("【收藏addStore异常】$e");
-      return false;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 取消收藏帖子 — 参考 tiebalite OfficialTiebaApi.removeStoreFlow
-  static Future<bool> removeStore({
-    required String bduss,
-    required String stoken,
-    required String threadId,
-    required String userId,
-    required String tbs,
-    String forumId = 'null',
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final today = DateTime.now();
-    final eventDay = "${today.year}${today.month}${today.day}";
-    final stNum = Random().nextInt(750) + 100;
-    final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
-        .round()
-        .toString();
-    final hasStParams = stNum > 120;
-    final zId = await getCachedZid();
-
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
-      ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
-      ["baiduid", cuid],
-      ["brand", DeviceInfo().brand],
-      ["c3_aid", DeviceInfo().c3Aid],
-      ["cmode", "1"],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["event_day", eventDay],
-      ["extra", ""],
-      ["fid", forumId],
-      ["first_install_time", "1700000000000"],
-      ["framework_ver", "3340042"],
-      ["from", "tieba"],
-      ["is_teenager", "0"],
-      ["last_update_time", "1700000000000"],
-      ["mac", "02:00:00:00:00:00"],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["_phone_imei", phoneImei],
-      ["sample_id", ""],
-      ["sdk_ver", "2.34.0"],
-      if (hasStParams) ["stErrorNums", "1"],
-      if (hasStParams) ["stMethod", "1"],
-      if (hasStParams) ["stMode", "1"],
-      if (hasStParams) ["stTimesNum", "1"],
-      if (hasStParams) ["stTime", stTime],
-      if (hasStParams) ["stSize", stSize],
-      ["start_scheme", ""],
-      ["start_type", "1"],
-      ["stoken", stoken],
-      ["swan_game_ver", "1038000"],
-      ["tbs", tbs],
-      ["tid", threadId],
-      ["timestamp", timestamp],
-      ["user_id", userId],
-    ];
-    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request = http.Request('POST', Uri.parse("$_baseHost/c/c/post/rmstore"))
-        ..followRedirects = false
-        ..headers.addAll({
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie":
-              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
-          "client_user_token": userId,
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "cuid_gid": "",
-          "c3_aid": DeviceInfo().c3Aid,
-          "_client_type": "2",
-          "Charset": "UTF-8",
-          "client_logid": "${DeviceInfo.initTime}",
-        })
-        ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return false;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      return err == null || err == "0" || err == 0;
-    } catch (e) {
-      logger.w("【收藏removeStore异常】$e");
-      return false;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取收藏列表 — 参考 tiebalite 抓包
-  static Future<List<Map<String, dynamic>>> fetchThreadStore({
-    required String bduss,
-    required String stoken,
-    int rn = 20,
-    int offset = 0,
-    String userId = '',
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final today = DateTime.now();
-    final eventDay = "${today.year}${today.month}${today.day}";
-    final stNum = Random().nextInt(750) + 100;
-    final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
-        .round()
-        .toString();
-    final hasStParams = stNum > 120;
-    final zId = await getCachedZid();
-
-    final params = [
-      ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_id", _syncClientId ?? ""],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_os_version", DeviceInfo().osVersion],
-      ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
-      ["baiduid", cuid],
-      ["brand", DeviceInfo().brand],
-      ["c3_aid", DeviceInfo().c3Aid],
-      ["cmode", "1"],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["event_day", eventDay],
-      ["extra", ""],
-      ["first_install_time", "${DeviceInfo().firstInstallTime}"],
-      ["framework_ver", "3340042"],
-      ["from", "tieba"],
-      ["is_teenager", "0"],
-      ["last_update_time", "${DeviceInfo().lastUpdateTime}"],
-      ["mac", "02:00:00:00:00:00"],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["offset", "$offset"],
-      ["_phone_imei", phoneImei],
-      ["rn", "$rn"],
-      ["sample_id", ""],
-      ["sdk_ver", "2.34.0"],
-      if (hasStParams) ["stErrorNums", "1"],
-      if (hasStParams) ["stMethod", "1"],
-      if (hasStParams) ["stMode", "1"],
-      if (hasStParams) ["stTimesNum", "1"],
-      if (hasStParams) ["stTime", stTime],
-      if (hasStParams) ["stSize", stSize],
-      ["start_scheme", ""],
-      ["start_type", "1"],
-      ["stoken", stoken],
-      ["swan_game_ver", "1038000"],
-      ["timestamp", timestamp],
-      ["user_id", userId],
-    ];
-    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("https://tiebac.baidu.com/c/f/post/threadstore"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie":
-                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
-              "client_user_token": userId,
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "cuid_gid": "",
-              "c3_aid": DeviceInfo().c3Aid,
-              "_client_type": "2",
-              "Charset": "UTF-8",
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      // logger.i(
-      //   "【收藏threadStore】status=${response.statusCode} body=${response.body}",
-      // );
-      if (response.statusCode != 200) return [];
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) return [];
-      final list = json["store_thread"];
-      if (list is! List) return [];
-      return list.cast<Map<String, dynamic>>();
-    } catch (e) {
-      logger.w("【收藏列表异常】$e");
-      return [];
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 搜索联想（Protobuf）
   static Future<SearchSugResponseData?> fetchSearchSug({
     required String bduss,
     required String stoken,
     required String word,
     String isforum = '0',
-  }) async {
-    final common = CommonRequest(
-      clientType: 2,
-      clientVersion: _clientVersion,
-      phoneImei: DeviceInfo().phoneImei,
-      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
-      netType: 1,
-      bDUSS: bduss,
-      stoken: stoken,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-    );
+  }) =>
+      _ForumApi.fetchSearchSug(
+          bduss: bduss, stoken: stoken, word: word, isforum: isforum);
 
-    final reqData = SearchSugRequestData(
-      common: common,
-      word: word,
-      isforum: isforum,
-    );
-
-    final request = SearchSugRequest(data: reqData);
-    final bodyBytes = request.writeToBuffer();
-
-    final uri = Uri.parse(
-      "$_baseHost/c/s/searchSug?cmd=309438&format=protobuf",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "x_bd_data_type": "protobuf",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        );
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode != 200) return null;
-
-      final pb = SearchSugResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError() && pb.error.errorCode != 0) return null;
-
-      return pb.data;
-    } catch (e) {
-      logger.w("【搜索联想异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 搜索贴吧 — GET https://tieba.baidu.com/mo/q/search/forum
-  static Map<String, String> _searchHeaders(String? bduss) {
-    return {
-      "User-Agent": DeviceInfo().userAgent(_clientVersion),
-      "X-Requested-With": "com.baidu.tieba",
-      "Accept": "application/json, text/plain, */*",
-      "Accept-Language": "zh-CN,zh;q=0.9",
-      if (bduss != null && bduss.isNotEmpty) "Cookie": "BDUSS=$bduss",
-    };
-  }
-
-  /// 搜索贴吧 — GET https://tieba.baidu.com/mo/q/search/forum
   static Future<Map<String, dynamic>?> searchForum(
     String keyword, {
     String? bduss,
-  }) async {
-    final uri = Uri.parse(
-      "https://tieba.baidu.com/mo/q/search/forum?word=${Uri.encodeComponent(keyword)}",
-    );
-    final client = http.Client();
-    try {
-      final request = http.Request('GET', uri)
-        ..headers.addAll(_searchHeaders(bduss))
-        ..headers["Referer"] =
-            "https://tieba.baidu.com/mo/q/hybrid/search?keyword=${Uri.encodeComponent(keyword)}";
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      if (json["no"] != 0) return null;
-      return json["data"] as Map<String, dynamic>?;
-    } catch (e) {
-      logger.w("【搜索贴吧异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
+  }) =>
+      _SearchApi.searchForum(keyword, bduss: bduss);
 
-  /// 搜索帖子 — GET https://tieba.baidu.com/mo/q/search/thread
   static Future<Map<String, dynamic>?> searchThread({
     required String keyword,
     int page = 1,
     String? bduss,
-  }) async {
-    final uri = Uri.parse(
-      "https://tieba.baidu.com/mo/q/search/thread"
-      "?word=${Uri.encodeComponent(keyword)}"
-      "&pn=$page&st=5&tt=1&ct=1&is_use_zonghe=1&cv=99.9.101",
-    );
-    final client = http.Client();
-    try {
-      final request = http.Request('GET', uri)
-        ..headers.addAll(_searchHeaders(bduss))
-        ..headers["Referer"] =
-            "https://tieba.baidu.com/mo/q/hybrid/search?keyword=${Uri.encodeComponent(keyword)}";
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      if (json["no"] != 0) return null;
-      return json["data"] as Map<String, dynamic>?;
-    } catch (e) {
-      logger.w("【搜索帖子异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
+  }) =>
+      _SearchApi.searchThread(keyword: keyword, page: page, bduss: bduss);
 
-  /// 搜索用户 — GET https://tieba.baidu.com/mo/q/search/user
   static Future<Map<String, dynamic>?> searchUser(
     String keyword, {
     String? bduss,
-  }) async {
-    final uri = Uri.parse(
-      "https://tieba.baidu.com/mo/q/search/user?word=${Uri.encodeComponent(keyword)}",
-    );
-    final client = http.Client();
-    try {
-      final request = http.Request('GET', uri)
-        ..headers.addAll(_searchHeaders(bduss))
-        ..headers["Referer"] =
-            "https://tieba.baidu.com/mo/q/hybrid/search?keyword=${Uri.encodeComponent(keyword)}";
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      if (json["no"] != 0) return null;
-      return json["data"] as Map<String, dynamic>?;
-    } catch (e) {
-      logger.w("【搜索用户异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
+  }) =>
+      _SearchApi.searchUser(keyword, bduss: bduss);
 
-  /// 提交投票 — POST /c/c/post/addPollPost
-  static Future<bool> voteSubmit({
-    required String bduss,
-    required String stoken,
-    required String tid,
-    required String optionIds,
-    required String fid,
-    String? userId = "7019922344",
-    // String? zId,
-  }) async {
-    final cuid = DeviceInfo().cuid;
-    final zId = await getCachedZid();
-
-    final now = DateTime.now();
-    final msTs = now.millisecondsSinceEpoch;
-    final eventDay = "${now.year}${now.month}${now.day}";
-    final clientId = "wappc_${msTs}_${Random().nextInt(1000)}";
-    final c3Aid = DeviceInfo().c3Aid;
-    final di = DeviceInfo();
-    // final clientId = "wappc_1778822989595_244";
-
-    final common = CommonReq(
-      // userAgent: "bdtb for Android 22.5.3.0",
-      userAgent: DeviceInfo().userAgent(_clientVersion),
-      bDUSS: bduss,
-      stoken: stoken,
-      cuid: cuid,
-      cuidGalaxy2: cuid,
-      clientId: clientId,
-      clientType: 2,
-      // clientVersion: "22.5.3.0",
-      clientVersion: _clientVersion,
-      timestamp: Int64(msTs),
-      netType: 1,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      c3Aid: c3Aid,
-      cmode: 1,
-      sdkVer: "3.36.0",
-      frameworkVer: "4220001",
-      pversion: "1.0.3",
-      startType: 1,
-      eventDay: eventDay,
-      activeTimestamp: Int64(di.activeTimestamp),
-      firstInstallTime: Int64(di.firstInstallTime),
-      lastUpdateTime: Int64(di.lastUpdateTime),
-      personalizedRecSwitch: 1,
-      zId: zId,
-      needDecrypt: 1,
-      needCamDecrypt: 1,
-      phoneImei: DeviceInfo().phoneImei,
-    );
-
-    // 手动 setter 避免 from 命名冲突
-    common.from = "1015363f";
-
-    // logger.i("【投票CommonReq】from=${common.from} clientId=$clientId");
-
-    final requestPb = VoteRequest(
-      data: Data(
-        tid: Int64.parseInt(tid),
-        optionIds: optionIds,
-        fid: Int64.parseInt(fid),
-        common: common,
-      ),
-    );
-
-    final bodyBytes = requestPb.writeToBuffer();
-
-    // ST 反垃圾参数
-    final stNum = Random().nextInt(750) + 100;
-    final stTime = stNum.toString();
-    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
-        .round()
-        .toString();
-    const stMethod = "1";
-    const stMode = "1";
-    const stTimesNum = "1";
-    const stErrorNums = "1";
-
-    // 计算 sign：所有表单字段（data 和 sign 除外），按 key 排序
-    final signFields = <List<String>>[
-      ["BDUSS", bduss],
-      ["stErrorNums", stErrorNums],
-      ["stMethod", stMethod],
-      ["stMode", stMode],
-      ["stSize", stSize],
-      ["stTime", stTime],
-      ["stTimesNum", stTimesNum],
-      ["stoken", stoken],
-    ];
-    signFields.sort((a, b) => a[0].compareTo(b[0]));
-    final signBuf = StringBuffer();
-    for (final f in signFields) {
-      signBuf.write("${f[0]}=${f[1]}");
-    }
-    final sign = md5
-        .convert(utf8.encode("${signBuf.toString()}tiebaclient!!!"))
-        .toString()
-        .toUpperCase();
-    // logger.i("【投票sign】$sign stNum=$stNum stTime=$stTime stSize=$stSize");
-
-    final uri = Uri.parse(
-      "https://tiebac.baidu.com/c/c/post/addPollPost?cmd=309006&format=protobuf",
-    );
-
-    final client = http.Client();
-    try {
-      final multipart = http.MultipartRequest('POST', uri)
-        ..headers.addAll({
-          "Content-Type":
-              "multipart/form-data; boundary=--------7da3d81520810*",
-          "x_bd_data_type": "protobuf",
-          // "User-Agent": "bdtb for Android 22.5.3.0",
-          "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "cuid": cuid,
-          "cuid_galaxy2": cuid,
-          "cuid_gid": "",
-          "c3_aid": c3Aid,
-          // "c3_aid": "A00-${Random().nextInt(900000000) + 100000000}",
-          "Charset": "UTF-8",
-          "client_logid": "${DeviceInfo.initTime}",
-          "client_user_token": userId ?? '',
-          "Connection": "Keep-Alive",
-          "Accept-Encoding": "gzip",
-          "X-Bd-Traceid":
-              "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
-          "Host": "tiebac.baidu.com",
-        })
-        ..files.add(
-          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
-        )
-        ..fields['BDUSS'] = bduss
-        ..fields['sign'] = sign
-        ..fields['stErrorNums'] = stErrorNums
-        ..fields['stMethod'] = stMethod
-        ..fields['stMode'] = stMode
-        ..fields['stSize'] = stSize
-        ..fields['stTime'] = stTime
-        ..fields['stTimesNum'] = stTimesNum
-        ..fields['stoken'] = stoken;
-
-      final streamedResponse = await client.send(multipart);
-      final response = await http.Response.fromStream(streamedResponse);
-
-      // logger.i("【投票请求】uri=$uri");
-      // logger.i("【投票请求】optionIds=$optionIds tid=$tid, fid=$fid");
-
-      if (response.statusCode != 200) {
-        logger.w("【投票响应】状态码=${response.statusCode}");
-        return false;
-      }
-
-      // logger.i("【投票响应】body字节数=${response.bodyBytes.length}");
-
-      // 尝试解析为 VoteResponse
-      try {
-        final voteResp = VoteResponse.fromBuffer(response.bodyBytes);
-        // final code1 = voteResp.hasRes1() ? voteResp.res1.code : -1;
-        // final msg1 = voteResp.hasRes1() ? voteResp.res1.msg : '';
-        // final code2 = voteResp.hasRes2() ? voteResp.res2.code : -1;
-        // final msg2 = voteResp.hasRes2() ? voteResp.res2.msg : '';
-        // final extra2 = voteResp.hasRes2() ? voteResp.res2.extra : '';
-        // logger.i("【投票响应】res1: code=$code1 msg=$msg1");
-        // logger.i("【投票响应】res2: code=$code2 msg=$msg2 extra=$extra2");
-        if (voteResp.hasRes1() && voteResp.res1.code == 0) {
-          // logger.i("【投票成功】");
-          return true;
-        }
-        return false;
-      } catch (e) {
-        logger.w("【投票解析失败】$e");
-        // 尝试解析为 JSON（错误时返回 JSON）
-        try {
-          final text = String.fromCharCodes(response.bodyBytes);
-          final json = jsonDecode(text) as Map<String, dynamic>;
-          logger.w(
-            "【投票JSON响应】error_code=${json['error_code']} error_msg=${json['error_msg']}",
-          );
-        } catch (_) {
-          logger.w("【投票原始响应】${String.fromCharCodes(response.bodyBytes)}");
-        }
-        return false;
-      }
-    } catch (e) {
-      logger.w("【投票提交异常】$e");
-      return false;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 吧内搜索 — GET https://tieba.baidu.com/mo/q/search/thread
-  /// [st]: 1=时间倒序, 2=相关性排序
-  /// [tt]: 2=全部, 1=只看主题贴
   static Future<Map<String, dynamic>?> searchForumThreads({
     required String keyword,
     required String fname,
@@ -2841,35 +340,135 @@ class TiebaApi {
     int st = 1,
     int tt = 2,
     String? bduss,
-  }) async {
-    final uri = Uri.parse(
-      "https://tieba.baidu.com/mo/q/search/thread"
-      "?word=${Uri.encodeComponent(keyword)}"
-      "&pn=$page&rn=$rn&fname=${Uri.encodeComponent(fname)}"
-      "&st=$st&tt=$tt&ct=2&cv=$_clientVersion",
-    );
-    final client = http.Client();
-    try {
-      final request = http.Request('GET', uri)
-        ..headers.addAll(_searchHeaders(bduss))
-        ..headers["Referer"] =
-            "https://tieba.baidu.com/mo/q/hybrid/search?keyword=${Uri.encodeComponent(keyword)}";
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      if (json["no"] != 0) return null;
-      return json["data"] as Map<String, dynamic>?;
-    } catch (e) {
-      logger.w("【吧内搜索异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
+  }) =>
+      _SearchApi.searchForumThreads(
+          keyword: keyword,
+          fname: fname,
+          page: page,
+          rn: rn,
+          st: st,
+          tt: tt,
+          bduss: bduss);
 
-  /// 获取我的点赞列表（POST /c/f/post/threadstore）
+  static Future<bool> addStore({
+    required String bduss,
+    required String stoken,
+    required String threadId,
+    required String userId,
+    required String tbs,
+    required String postId,
+  }) =>
+      _InteractApi.addStore(
+          bduss: bduss,
+          stoken: stoken,
+          threadId: threadId,
+          userId: userId,
+          tbs: tbs,
+          postId: postId);
+
+  static Future<bool> removeStore({
+    required String bduss,
+    required String stoken,
+    required String threadId,
+    required String userId,
+    required String tbs,
+    String forumId = 'null',
+  }) =>
+      _InteractApi.removeStore(
+          bduss: bduss,
+          stoken: stoken,
+          threadId: threadId,
+          userId: userId,
+          tbs: tbs,
+          forumId: forumId);
+
+  static Future<List<Map<String, dynamic>>> fetchThreadStore({
+    required String bduss,
+    required String stoken,
+    int rn = 20,
+    int offset = 0,
+    String userId = '',
+  }) =>
+      _InteractApi.fetchThreadStore(
+          bduss: bduss,
+          stoken: stoken,
+          rn: rn,
+          offset: offset,
+          userId: userId);
+
+  static Future<bool> voteSubmit({
+    required String bduss,
+    required String stoken,
+    required String tid,
+    required String optionIds,
+    required String fid,
+    String? userId = "7019922344",
+  }) =>
+      _InteractApi.voteSubmit(
+          bduss: bduss,
+          stoken: stoken,
+          tid: tid,
+          optionIds: optionIds,
+          fid: fid,
+          userId: userId);
+
+  static Future<List<PostItem>> fetchUserPosts({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int page = 1,
+    int isThread = 1,
+    int rn = 20,
+  }) =>
+      _UserApi.fetchUserPosts(
+          bduss: bduss,
+          stoken: stoken,
+          uid: uid,
+          page: page,
+          isThread: isThread,
+          rn: rn);
+
+  static Future<(UserProfileData?, List<ForumItem>)> fetchUserProfilePb({
+    required String bduss,
+    required String stoken,
+    required String uid,
+  }) =>
+      _UserApi.fetchUserProfilePb(bduss: bduss, stoken: stoken, uid: uid);
+
+  static Future<List<PostItem>> fetchUserPostsPb({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int page = 1,
+    int rn = 20,
+    int isThread = 1,
+    Map<String, String>? forumAvatarMap,
+  }) =>
+      _UserApi.fetchUserPostsPb(
+          bduss: bduss,
+          stoken: stoken,
+          uid: uid,
+          page: page,
+          rn: rn,
+          isThread: isThread,
+          forumAvatarMap: forumAvatarMap);
+
+  static Future<List<ForumItem>> fetchUserLikeForums({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    String? friendUid,
+    int pageNo = 1,
+    int pageSize = 50,
+  }) =>
+      _UserApi.fetchUserLikeForums(
+          bduss: bduss,
+          stoken: stoken,
+          uid: uid,
+          friendUid: friendUid,
+          pageNo: pageNo,
+          pageSize: pageSize);
+
   static Future<Map<String, dynamic>?> fetchLikedPosts({
     required String bduss,
     required String stoken,
@@ -2877,248 +476,12 @@ class TiebaApi {
     required int tabId,
     required int page,
     int rn = 20,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final cuid = DeviceInfo().cuid;
-    final zId = await getCachedZid();
-    final di = DeviceInfo();
-    final now = DateTime.now();
-    final eventDay = "${now.year}${now.month}${now.day}";
-
-    final params = [
-      ["BDUSS", bduss],
-      ["_client_type", "2"],
-      ["_client_version", _clientVersion],
-      ["_client_id", _syncClientId ?? ""],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["c3_aid", DeviceInfo().c3Aid],
-      ["stoken", stoken],
-      ["tbs", tbs],
-      ["tab_id", "$tabId"],
-      ["pn", "$page"],
-      ["rn", "$rn"],
-      ["_timestamp", timestamp],
-      ["from", "1015363f"],
-      ["subapp_type", "hybrid"],
-      ["net_type", "1"],
-      ["q_type", "0"],
-      ["sdk_ver", "2.34.0"],
-      ["cmode", "1"],
-      ["start_type", "1"],
-      ["extra", ""],
-      ["device_score", "0.5"],
-      ["is_teenager", "0"],
-      ["need_decrypt", "1"],
-      ["user_agent", DeviceInfo().userAgent(_clientVersion)],
-      ["scr_h", DeviceInfo().scrH.toString()],
-      ["scr_w", DeviceInfo().scrW.toString()],
-      ["scr_dip", DeviceInfo().scrDip.toString()],
-      ["active_timestamp", "${di.activeTimestamp}"],
-      ["first_install_time", "${di.firstInstallTime}"],
-      ["last_update_time", "${di.lastUpdateTime}"],
-      ["event_day", eventDay],
-    ];
-    if (zId != null && zId.isNotEmpty) params.add(["z_id", zId]);
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final ua = DeviceInfo().userAgent(_clientVersion);
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("https://tieba.baidu.com/c/u/feed/userAgree"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-              "User-Agent": ua,
-              "Cookie":
-                  "BDUSS_BFESS=$bduss;BDUSS=$bduss;STOKEN=$stoken;BAIDUID=${UserManager.baiduId};cuid_galaxy2=$cuid;CUID=$cuid;cuid_gid=;BAIDUID_BFESS=${UserManager.baiduId};TBBRAND=;ka=open;RT=${UserManager.cookie("RT")}",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "c3_aid": DeviceInfo().c3Aid,
-              "Origin": "https://tieba.baidu.com",
-              "Referer":
-                  "https://tieba.baidu.com/mo/q/hybrid-main-usercenter/myLike/hybrid?nonavigationbar=1",
-              "x-requested-with": "XMLHttpRequest",
-              "Subapp-Type": "hybrid",
-              "Sec-Fetch-Dest": "empty",
-              "Sec-Fetch-Site": "same-origin",
-              "Sec-Fetch-Mode": "cors",
-              "Accept": "application/json, text/plain, */*",
-              "Connection": "keep-alive",
-              "Accept-Encoding": "gzip, deflate",
-              "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-
-      if (response.statusCode != 200) {
-        return null;
-      }
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-
-      // 兼容两种响应格式：hybrid API (error_code) / 旧 API (error.errno)
-      final errCode = json['error_code'];
-      if (errCode != null && errCode != 0 && errCode != "0") return null;
-      final errno = json['error']?['errno'];
-      if (errno != null && errno != 0 && errno != "0") return null;
-      return json;
-    } catch (e) {
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 调用 /c/s/sync 获取 sample_id 和 client_id
-  /// 返回 (clientId, sampleId)，失败返回 null
-  static Future<Map<String, String>?> fetchSync({
-    required String bduss,
-    required String stoken,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final cuid = DeviceInfo().cuid;
-    final phoneImei = DeviceInfo().phoneImei;
-    final brand = DeviceInfo().brand;
-    final model = DeviceInfo().model;
-    final androidId = DeviceInfo().androidId;
-    final baiDuId = UserManager.baiduId;
-
-    final params = [
-      ["BDUSS", bduss],
-      [
-        "_client_id",
-        "wappc_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}",
-      ],
-      ["_client_type", "2"],
-      ["_client_version", "12.41.7.1"],
-      ["_msg_status", "1"],
-      ["_phone_screen", "0,0"],
-      ["_pic_quality", "0"],
-      ["active_timestamp", "${DeviceInfo().activeTimestamp}"],
-      ["baiduid", baiDuId ?? ''],
-      ["board", model],
-      ["brand", brand],
-      ["c3_aid", DeviceInfo().c3Aid],
-      [
-        "cam",
-        base64Url.encode(utf8.encode("02:00:00:00:00:00")).replaceAll('=', ''),
-      ],
-      ["cmode", "1"],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      [
-        "di_diordna",
-        base64Url
-            .encode(utf8.encode(androidId.split('').reversed.join()))
-            .replaceAll('=', ''),
-      ],
-      [
-        "event_day",
-        "${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}",
-      ],
-      ["extra", ""],
-      ["first_install_time", "${DeviceInfo().firstInstallTime}"],
-      ["framework_ver", "3340042"],
-      ["from", "tieba"],
-      [
-        "iemi",
-        base64Url
-            .encode(utf8.encode(phoneImei.split('').reversed.join()))
-            .replaceAll('=', ''),
-      ],
-      ["incremental", "1024"],
-      ["is_teenager", "0"],
-      ["last_update_time", "${DeviceInfo().lastUpdateTime}"],
-      ["md5", "F86F4C238491AB3BEBFA33AC42C1582B"],
-      ["model", model],
-      ["net_type", "1"],
-      ["package", "com.baidu.tieba"],
-      ["running_abi", "64"],
-      ["scr_dip", "0.0"],
-      ["scr_h", "0"],
-      ["scr_w", "0"],
-      ["signmd5", "225172691"],
-      ["stErrorNums", "1"],
-      ["stMethod", "1"],
-      ["stMode", "1"],
-      [
-        "stSize",
-        "${((Random().nextDouble() * 8 + 0.4) * int.parse("${Random().nextInt(730) + 121}")).round()}",
-      ],
-      ["stTime", "${Random().nextInt(730) + 121}"],
-      ["stTimesNum", "1"],
-      ["start_scheme", ""],
-      ["start_type", "1"],
-      ["stoken", stoken],
-      ["support_abi", "64"],
-      ["timestamp", timestamp],
-      ["versioncode", "202965248"],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request('POST', Uri.parse("https://c.tieba.baidu.com/c/s/sync"))
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": "bdtb for Android 12.41.7.1",
-              "Cookie": "ka=open;BAIDUID=$baiDuId",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "cuid_gid": "",
-              "c3_aid": DeviceInfo().c3Aid,
-              "client_logid": "${DeviceInfo.initTime}",
-              "Connection": "Keep-Alive",
-              "Accept-Encoding": "gzip",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      // logger.i("【sync响应】status=${response.statusCode} body=${response.body}");
-
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) return null;
-
-      final clientData = json["client"];
-      final wlConfig = json["wl_config"];
-      if (clientData is Map && wlConfig is Map) {
-        final clientId = "${clientData["client_id"] ?? ''}";
-        final sampleId = "${wlConfig["sample_id"] ?? ''}";
-        // logger.i("【sync结果】clientId=$clientId sampleId=$sampleId");
-        await saveSyncData(clientId, sampleId);
-        return {"clientId": clientId, "sampleId": sampleId};
-      }
-      return null;
-    } catch (e) {
-      logger.w("【sync异常】$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
+  }) =>
+      _UserApi.fetchLikedPosts(
+          bduss: bduss,
+          stoken: stoken,
+          tbs: tbs,
+          tabId: tabId,
+          page: page,
+          rn: rn);
 }

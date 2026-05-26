@@ -35,18 +35,6 @@ class PostReplyCard extends StatelessWidget {
     this.onUserTap,
   });
 
-  Color levelColor(usermodel.User author) {
-    if (author.levelId <= 3) {
-      return AppColors.levelGreen;
-    } else if (author.levelId <= 9) {
-      return AppColors.levelBlue;
-    } else if (author.levelId <= 15) {
-      return AppColors.levelYellow;
-    } else {
-      return AppColors.levelOrange;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final aid = post.authorId.toInt();
@@ -191,7 +179,7 @@ class PostReplyCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
             decoration: BoxDecoration(
-              color: levelColor(author),
+              color: AppColors.levelColor(author.levelId),
               borderRadius: BorderRadius.circular(3),
             ),
             child: Text(
