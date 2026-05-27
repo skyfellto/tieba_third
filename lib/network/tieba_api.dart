@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/device_info.dart';
 import 'package:tieba_third/utils/sofire_utils.dart';
 import 'package:tieba_third/utils/user_manager.dart';
+import 'package:tieba_third/utils/personalization_manager.dart';
 import '../models/post_item.dart';
 import '../models/forum_item.dart';
 import '../models/user_profile_data.dart';

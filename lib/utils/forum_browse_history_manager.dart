@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/forum_browse_record.dart';
+import 'personalization_manager.dart';
 
 class ForumBrowseHistoryManager {
   static const String _storageKey = 'forum_browse_history';
-  static const int _maxRecords = 200;
+  static int get _maxRecords => PersonalizationManager.browseHistoryMax;
 
   static Future<void> saveRecord(ForumBrowseRecord record) async {
     final prefs = await SharedPreferences.getInstance();

@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_browse_record.dart';
+import 'personalization_manager.dart';
 
 class UserBrowseHistoryManager {
   static const String _key = 'user_browse_history';
-  static const int _maxRecords = 200;
+  static int get _maxRecords => PersonalizationManager.browseHistoryMax;
 
   static Future<void> saveRecord({
     required String uid,

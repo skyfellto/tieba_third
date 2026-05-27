@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_manager.dart';
 import 'auth_notifier.dart';
+import 'personalization_manager.dart';
 
 class AccountManager {
   static const _keyAccountList = 'account_list';
@@ -61,6 +62,8 @@ class AccountManager {
         await UserManager.clearCurrent();
       }
     }
+    await PersonalizationManager.init();
+    PersonalizationManager.loadForAccount(_currentBduss ?? '');
   }
 
   /// UserManager.login() 后自动调用，将当前凭证同步到账号列表
@@ -119,15 +122,20 @@ class AccountManager {
       rawCookie: acc.rawCookie,
     );
     _restoring = false;
+    PersonalizationManager.loadForAccount(bduss);
   }
 
   /// 退出当前账号
   static Future<void> logoutCurrent() async {
     final sp = await SharedPreferences.getInstance();
+    final oldBduss = _currentBduss;
     if (_currentBduss != null) {
       _accounts.removeWhere((a) => a.bduss == _currentBduss);
     }
     await UserManager.clearCurrent();
+    if (oldBduss != null) {
+      await PersonalizationManager.clearForAccount(oldBduss);
+    }
     AuthNotifier().notify();
 
     if (_accounts.isNotEmpty) {

@@ -5,11 +5,13 @@ import '../constants/app_colors.dart';
 class MoonlightBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
+  final bool floating;
 
   const MoonlightBottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.floating = false,
   });
 
   // 把导航配置数据也移到这里内部管理
@@ -42,6 +44,7 @@ class MoonlightBottomNavBar extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        borderRadius: floating ? BorderRadius.circular(16) : null,
         boxShadow: [
           BoxShadow(
             color: isDark ? Colors.black54 : Colors.black12,
@@ -50,7 +53,9 @@ class MoonlightBottomNavBar extends StatelessWidget {
           ),
         ],
       ),
+      clipBehavior: floating ? Clip.antiAlias : Clip.none,
       child: SafeArea(
+        bottom: !floating,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(

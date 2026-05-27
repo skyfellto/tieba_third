@@ -921,7 +921,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       if (!mounted) return;
                       if (await TiebaApi.isLikeOnCooldown()) {
                         if (context.mounted) {
-                          showInfo(context, '由于点赞风控，请勿点赞太频繁，10分钟后再试吧');
+                          showLikeCooldownMessage(context);
                         }
                         return;
                       }
@@ -1077,7 +1077,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                         if (!mounted) return;
                         if (await TiebaApi.isLikeOnCooldown()) {
                           if (context.mounted) {
-                            showInfo(context, '由于点赞风控，请勿点赞太频繁，10分钟后再试吧');
+                            showLikeCooldownMessage(context);
                           }
                           return;
                         }

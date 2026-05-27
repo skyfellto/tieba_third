@@ -10,6 +10,7 @@ import '../network/tieba_api.dart';
 import '../utils/data_cache.dart';
 import '../utils/user_manager.dart';
 import '../utils/forum_browse_history_manager.dart';
+import '../utils/personalization_manager.dart';
 import '../widgets/followed_forum_tile.dart';
 
 class TiebaPage extends StatefulWidget {
@@ -290,7 +291,7 @@ class _TiebaPageState extends State<TiebaPage>
   }
 
   Widget _buildPassedForums() {
-    if (_forumRecords.isEmpty) return const SizedBox.shrink();
+    if (_forumRecords.isEmpty || !PersonalizationManager.showPassedForums) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

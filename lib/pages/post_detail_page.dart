@@ -290,7 +290,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (!mounted) return;
     if (await TiebaApi.isLikeOnCooldown()) {
       if (mounted) {
-        showInfo(context, '由于点赞风控，请勿点赞太频繁，10分钟后再试吧');
+        showLikeCooldownMessage(context);
       }
       return;
     }
@@ -914,7 +914,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
     if (!mounted) return;
     if (await TiebaApi.isLikeOnCooldown()) {
       if (mounted) {
-        showInfo(context, '由于点赞风控，请勿点赞太频繁，10分钟后再试吧');
+        showLikeCooldownMessage(context);
       }
       return;
     }

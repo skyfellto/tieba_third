@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/browse_record.dart';
+import 'personalization_manager.dart';
 
 class BrowseHistoryManager {
   static const String _storageKey = 'browse_history';
-  static const int _maxRecords = 200;
+  static int get _maxRecords => PersonalizationManager.browseHistoryMax;
 
   /// 保存浏览记录（去重：同一 tid 覆盖旧记录）
   static Future<void> saveRecord(BrowseRecord record) async {

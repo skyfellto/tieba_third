@@ -10,8 +10,9 @@ String? _syncSampleId;
 const String _syncClientIdKey = 'sync_client_id';
 const String _syncSampleIdKey = 'sync_sample_id';
 
-const int _likeCooldownMs = 600000;
 const String _lastLikeTimeKey = 'last_like_time';
+
+int get _likeCooldownMs => PersonalizationManager.likeCooldownMinutes * 60 * 1000;
 
 String _s(dynamic v) => v?.toString() ?? '';
 

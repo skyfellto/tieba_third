@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'personalization_manager.dart';
 
 void showInfo(BuildContext context, String msg) {
   if (!context.mounted) return;
@@ -28,4 +30,16 @@ void showInfo(BuildContext context, String msg) {
       duration: const Duration(seconds: 1, microseconds: 500),
     ),
   );
+}
+
+Future<void> showLikeCooldownMessage(BuildContext context) async {
+  final sp = await SharedPreferences.getInstance();
+  final last = sp.getInt('last_like_time');
+  final cooldownMs = PersonalizationManager.likeCooldownMinutes * 60 * 1000;
+  final remaining = last != null
+      ? ((cooldownMs - (DateTime.now().millisecondsSinceEpoch - last)) / 60000).ceil().clamp(0, PersonalizationManager.likeCooldownMinutes)
+      : PersonalizationManager.likeCooldownMinutes;
+  if (!context.mounted) return;
+  // ignore: use_build_context_synchronously
+  showInfo(context, '由于点赞风控，请勿点赞太频繁，$remaining分钟后再试吧');
 }
