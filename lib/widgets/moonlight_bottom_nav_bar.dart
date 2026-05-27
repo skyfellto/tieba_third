@@ -67,10 +67,13 @@ class MoonlightBottomNavBar extends StatelessWidget {
   }
 
   Widget _buildNavItem(
-      Map<String, dynamic> item, bool isSelected, int index, bool isDark) {
+    Map<String, dynamic> item,
+    bool isSelected,
+    int index,
+    bool isDark,
+  ) {
     final selectedColor = isDark ? Colors.white : const Color(0xFF222436);
-    final unselectedColor =
-        isDark ? Colors.white60 : const Color(0xFF8E8E93);
+    final unselectedColor = isDark ? Colors.white60 : const Color(0xFF8E8E93);
 
     return GestureDetector(
       onTap: () => onTap(index),

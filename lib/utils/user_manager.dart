@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'auth_notifier.dart';
+import 'account_manager.dart';
 
 class UserManager {
   static String? bduss;
@@ -100,24 +101,38 @@ class UserManager {
     UserManager.tiebaUid = tiebaUid;
     UserManager.rawCookie = rawCookie;
     AuthNotifier().notify();
+    AccountManager.onUserLogin();
   }
-
-  // 是否登录
   static bool get isLogin => bduss != null && stoken != null;
 
   // 退出登录
   static Future<void> logout() async {
+    await clearCurrent();
+    AuthNotifier().notify();
+  }
+
+  /// 清除当前账号的 UserManager 静态字段和 SharedPreferences key（不调 AuthNotifier）
+  static Future<void> clearCurrent() async {
     final sp = await SharedPreferences.getInstance();
-    await sp.clear();
+    await sp.remove(_keyBDUSS);
+    await sp.remove(_keySTOKEN);
+    await sp.remove(_keyUserName);
+    await sp.remove(_keyNameShow);
+    await sp.remove(_keyPortrait);
+    await sp.remove(_keyTbs);
+    await sp.remove(_keyUserId);
+    await sp.remove(_keyBaiduId);
+    await sp.remove(_keyTiebaUid);
+    await sp.remove(_keyRawCookie);
     bduss = null;
     stoken = null;
     userName = null;
+    nameShow = null;
     portrait = null;
     tbs = null;
     userId = null;
     baiduId = null;
     tiebaUid = null;
     rawCookie = null;
-    AuthNotifier().notify();
   }
 }

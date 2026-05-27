@@ -13,6 +13,9 @@ import '../pages/my_likes_page.dart';
 import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
 import '../pages/forum_search_result_page.dart';
+import '../pages/settings_page.dart';
+import '../pages/account_management_page.dart';
+import '../pages/personalization_page.dart';
 import '../utils/auth_notifier.dart';
 import '../widgets/main_screen.dart';
 
@@ -141,6 +144,21 @@ final GoRouter appRouter = GoRouter(
         keyword: state.uri.queryParameters['keyword'] ?? '',
         forumName: state.uri.queryParameters['forumName'] ?? '',
       ),
+    ),
+    // 设置页（独立路由）
+    GoRoute(
+      path: '/settings',
+      pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage()),
+    ),
+    // 账号管理页（独立路由）
+    GoRoute(
+      path: '/settings/account',
+      pageBuilder: (context, state) => const NoTransitionPage(child: AccountManagementPage()),
+    ),
+    // 个性化页（独立路由）
+    GoRoute(
+      path: '/settings/personalization',
+      pageBuilder: (context, state) => const NoTransitionPage(child: PersonalizationPage()),
     ),
   ],
 );

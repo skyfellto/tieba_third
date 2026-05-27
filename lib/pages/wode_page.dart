@@ -36,7 +36,7 @@ class _WodePageState extends State<WodePage> {
   void _handleBrowseHistoryTap() => context.push('/wode/browse-history');
   void _handleThemeTap() => themeNotifier.toggle();
   void _handleServiceTap() {}
-  void _handleSettingsTap() {}
+  void _handleSettingsTap() => context.push('/settings');
   void _handleAboutTap() {}
 
   @override
