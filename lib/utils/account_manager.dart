@@ -93,6 +93,7 @@ class AccountManager {
     }
     _currentBduss = bduss;
     await _save(sp);
+    PersonalizationManager.loadForAccount(bduss);
   }
 
   /// 切换到指定账号
@@ -158,10 +159,12 @@ class AccountManager {
         rawCookie: first.rawCookie,
       );
       _restoring = false;
+      PersonalizationManager.loadForAccount(first.bduss);
     } else {
       _currentBduss = null;
       await sp.remove(_keyCurrentBduss);
       await _save(sp);
+      PersonalizationManager.loadForAccount('');
     }
   }
 

@@ -137,6 +137,7 @@ class _PersonalizationPageState extends State<PersonalizationPage> {
   }
 
   Future<void> _handleLikeCooldownChanged(String value) async {
+    _likeFocusTimer?.cancel();
     if (_suppressFocusCallback) return;
     _suppressFocusCallback = true;
     try {
@@ -145,7 +146,11 @@ class _PersonalizationPageState extends State<PersonalizationPage> {
         _likeCooldownController.text = PersonalizationManager.likeCooldownMinutes.toString();
         return;
       }
-      if (v == 0) {
+      final clamped = v.clamp(0, 1440);
+      if (clamped != v) {
+        _likeCooldownController.text = clamped.toString();
+      }
+      if (clamped == 0) {
         final confirmed = await showConfirmDialog(
           context,
           '风险提示',
@@ -156,7 +161,7 @@ class _PersonalizationPageState extends State<PersonalizationPage> {
           return;
         }
       }
-      PersonalizationManager.setLikeCooldownMinutes(v);
+      PersonalizationManager.setLikeCooldownMinutes(clamped);
       setState(() {});
     } finally {
       _suppressFocusCallback = false;
@@ -164,6 +169,7 @@ class _PersonalizationPageState extends State<PersonalizationPage> {
   }
 
   Future<void> _handleBrowseHistoryMaxChanged(String value) async {
+    _browseFocusTimer?.cancel();
     if (_suppressFocusCallback) return;
     _suppressFocusCallback = true;
     try {
@@ -172,7 +178,11 @@ class _PersonalizationPageState extends State<PersonalizationPage> {
         _browseHistoryController.text = PersonalizationManager.browseHistoryMax.toString();
         return;
       }
-      if (v == 0) {
+      final clamped = v.clamp(0, 10000);
+      if (clamped != v) {
+        _browseHistoryController.text = clamped.toString();
+      }
+      if (clamped == 0) {
         final confirmed = await showConfirmDialog(
           context,
           '功能关闭提示',
@@ -183,7 +193,7 @@ class _PersonalizationPageState extends State<PersonalizationPage> {
           return;
         }
       }
-      PersonalizationManager.setBrowseHistoryMax(v);
+      PersonalizationManager.setBrowseHistoryMax(clamped);
       setState(() {});
     } finally {
       _suppressFocusCallback = false;
