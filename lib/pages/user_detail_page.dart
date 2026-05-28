@@ -218,6 +218,7 @@ class _UserDetailPageState extends State<UserDetailPage>
         stoken: UserManager.stoken!,
         uid: UserManager.userId ?? '',
         friendUid: widget.uid,
+        baiduid: UserManager.baiduId ?? '',
       );
       // debugPrint(
       //   "【用户详情】_loadForums fetchUserLikeForums 返回 ${forums.length} 个贴吧",

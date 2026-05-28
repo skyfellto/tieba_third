@@ -440,6 +440,7 @@ class _UserApi {
     required String bduss,
     required String stoken,
     required String uid,
+    required String baiduid,
     String? friendUid,
     int pageNo = 1,
     int pageSize = 50,
@@ -484,7 +485,7 @@ class _UserApi {
           "Content-Type": "application/x-www-form-urlencoded",
           "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie":
-              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
+              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$baiduid;",
           "Cuid": cuid,
           "Cuid-Galaxy2": cuid,
           "Cuid-Gid": "",

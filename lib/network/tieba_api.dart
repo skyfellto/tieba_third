@@ -53,7 +53,6 @@ import '../generated/SearchSug/SearchSugResponseData.pb.dart';
 import '../generated/VoteRequest.pb.dart';
 import '../generated/VoteResponse.pb.dart';
 
-
 part 'tieba_api_shared.dart';
 part 'tieba_api_auth.dart';
 part 'tieba_api_feed.dart';
@@ -76,30 +75,33 @@ class TiebaApi {
     required String bduss,
     required String stoken,
     String? customCookie,
-  }) =>
-      _AuthApi.loginAndGetUserInfo(
-          bduss: bduss, stoken: stoken, customCookie: customCookie);
+  }) => _AuthApi.loginAndGetUserInfo(
+    bduss: bduss,
+    stoken: stoken,
+    customCookie: customCookie,
+  );
 
   static Future<Map<String, String>?> fetchSync({
     required String bduss,
     required String stoken,
-  }) =>
-      _AuthApi.fetchSync(bduss: bduss, stoken: stoken);
+  }) => _AuthApi.fetchSync(bduss: bduss, stoken: stoken);
 
   static Future<List<PostItem>> fetchPersonalizedThreads({
     required String bduss,
     required String stoken,
     int page = 1,
     int loadType = 1,
-  }) =>
-      _FeedApi.fetchPersonalizedThreads(
-          bduss: bduss, stoken: stoken, page: page, loadType: loadType);
+  }) => _FeedApi.fetchPersonalizedThreads(
+    bduss: bduss,
+    stoken: stoken,
+    page: page,
+    loadType: loadType,
+  );
 
   static Future<List<ForumItem>> fetchForumRecommend({
     required String bduss,
     required String stoken,
-  }) =>
-      _FeedApi.fetchForumRecommend(bduss: bduss, stoken: stoken);
+  }) => _FeedApi.fetchForumRecommend(bduss: bduss, stoken: stoken);
 
   static Future<int?> likeAgree({
     required String bduss,
@@ -112,18 +114,18 @@ class TiebaApi {
     int objType = 3,
     int opType = 0,
     bool allowAlreadyLiked = false,
-  }) =>
-      _InteractApi.likeAgree(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          userId: userId,
-          threadId: threadId,
-          postId: postId,
-          forumId: forumId,
-          objType: objType,
-          opType: opType,
-          allowAlreadyLiked: allowAlreadyLiked);
+  }) => _InteractApi.likeAgree(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    userId: userId,
+    threadId: threadId,
+    postId: postId,
+    forumId: forumId,
+    objType: objType,
+    opType: opType,
+    allowAlreadyLiked: allowAlreadyLiked,
+  );
 
   static Future<PbPageResponseData?> fetchPostDetail({
     required String bduss,
@@ -137,19 +139,19 @@ class TiebaApi {
     String lastPid = '0',
     String forumId = '0',
     String stType = 'pb',
-  }) =>
-      _PostDetailApi.fetchPostDetail(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          threadId: threadId,
-          page: page,
-          postId: postId,
-          seeLz: seeLz,
-          sortType: sortType,
-          lastPid: lastPid,
-          forumId: forumId,
-          stType: stType);
+  }) => _PostDetailApi.fetchPostDetail(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    threadId: threadId,
+    page: page,
+    postId: postId,
+    seeLz: seeLz,
+    sortType: sortType,
+    lastPid: lastPid,
+    forumId: forumId,
+    stType: stType,
+  );
 
   static Future<PbFloorResponseData?> fetchSubReplies({
     required String bduss,
@@ -159,15 +161,15 @@ class TiebaApi {
     required String forumId,
     int page = 1,
     String subPostId = '0',
-  }) =>
-      _PostDetailApi.fetchSubReplies(
-          bduss: bduss,
-          stoken: stoken,
-          threadId: threadId,
-          postId: postId,
-          forumId: forumId,
-          page: page,
-          subPostId: subPostId);
+  }) => _PostDetailApi.fetchSubReplies(
+    bduss: bduss,
+    stoken: stoken,
+    threadId: threadId,
+    postId: postId,
+    forumId: forumId,
+    page: page,
+    subPostId: subPostId,
+  );
 
   static Future<Map<String, dynamic>?> fetchFloorRepliesJson({
     required String bduss,
@@ -178,34 +180,40 @@ class TiebaApi {
     int page = 1,
     String subPostId = '0',
     int rn = 30,
-  }) =>
-      _PostDetailApi.fetchFloorRepliesJson(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          threadId: threadId,
-          postId: postId,
-          page: page,
-          subPostId: subPostId,
-          rn: rn);
+  }) => _PostDetailApi.fetchFloorRepliesJson(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    threadId: threadId,
+    postId: postId,
+    page: page,
+    subPostId: subPostId,
+    rn: rn,
+  );
 
   static Future<GetForumDetailResponseData?> fetchForumDetail({
     required String bduss,
     required String stoken,
     required String forumId,
     required String userId,
-  }) =>
-      _ForumApi.fetchForumDetail(
-          bduss: bduss, stoken: stoken, forumId: forumId, userId: userId);
+  }) => _ForumApi.fetchForumDetail(
+    bduss: bduss,
+    stoken: stoken,
+    forumId: forumId,
+    userId: userId,
+  );
 
   static Future<GetLevelInfoResponseData?> fetchLevelInfo({
     required String bduss,
     required String stoken,
     required String forumId,
     required String userId,
-  }) =>
-      _ForumApi.fetchLevelInfo(
-          bduss: bduss, stoken: stoken, forumId: forumId, userId: userId);
+  }) => _ForumApi.fetchLevelInfo(
+    bduss: bduss,
+    stoken: stoken,
+    forumId: forumId,
+    userId: userId,
+  );
 
   static Future<FrsPageResponseData?> fetchFrsPage({
     required String bduss,
@@ -216,16 +224,16 @@ class TiebaApi {
     int loadType = 1,
     int sortType = 0,
     int isGood = 0,
-  }) =>
-      _ForumApi.fetchFrsPage(
-          bduss: bduss,
-          stoken: stoken,
-          forumName: forumName,
-          userId: userId,
-          page: page,
-          loadType: loadType,
-          sortType: sortType,
-          isGood: isGood);
+  }) => _ForumApi.fetchFrsPage(
+    bduss: bduss,
+    stoken: stoken,
+    forumName: forumName,
+    userId: userId,
+    page: page,
+    loadType: loadType,
+    sortType: sortType,
+    isGood: isGood,
+  );
 
   static Future<ThreadListResponseData?> fetchThreadList({
     required String bduss,
@@ -236,16 +244,16 @@ class TiebaApi {
     required String threadIds,
     int sortType = 0,
     int page = 1,
-  }) =>
-      _ForumApi.fetchThreadList(
-          bduss: bduss,
-          stoken: stoken,
-          forumName: forumName,
-          forumId: forumId,
-          userId: userId,
-          threadIds: threadIds,
-          sortType: sortType,
-          page: page);
+  }) => _ForumApi.fetchThreadList(
+    bduss: bduss,
+    stoken: stoken,
+    forumName: forumName,
+    forumId: forumId,
+    userId: userId,
+    threadIds: threadIds,
+    sortType: sortType,
+    page: page,
+  );
 
   static Future<Map<String, dynamic>?> signForum({
     required String bduss,
@@ -253,13 +261,13 @@ class TiebaApi {
     required String tbs,
     required String forumId,
     required String forumName,
-  }) =>
-      _ForumApi.signForum(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          forumId: forumId,
-          forumName: forumName);
+  }) => _ForumApi.signForum(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    forumId: forumId,
+    forumName: forumName,
+  );
 
   static Future<Map<String, dynamic>?> likeForum({
     required String bduss,
@@ -267,13 +275,13 @@ class TiebaApi {
     required String tbs,
     required String forumId,
     required String forumName,
-  }) =>
-      _ForumApi.likeForum(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          forumId: forumId,
-          forumName: forumName);
+  }) => _ForumApi.likeForum(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    forumId: forumId,
+    forumName: forumName,
+  );
 
   static Future<bool> unlikeForum({
     required String bduss,
@@ -281,13 +289,13 @@ class TiebaApi {
     required String tbs,
     required String forumId,
     required String forumName,
-  }) =>
-      _ForumApi.unlikeForum(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          forumId: forumId,
-          forumName: forumName);
+  }) => _ForumApi.unlikeForum(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    forumId: forumId,
+    forumName: forumName,
+  );
 
   static Future<Map<String, dynamic>?> mSign({
     required String bduss,
@@ -296,42 +304,48 @@ class TiebaApi {
     required String forumIds,
     required String userId,
     required String baiduId,
-  }) =>
-      _ForumApi.mSign(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          forumIds: forumIds,
-          userId: userId,
-          baiduId: baiduId);
+  }) => _ForumApi.mSign(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    forumIds: forumIds,
+    userId: userId,
+    baiduId: baiduId,
+  );
 
   static Future<SearchSugResponseData?> fetchSearchSug({
     required String bduss,
     required String stoken,
     required String word,
     String isforum = '0',
-  }) =>
-      _ForumApi.fetchSearchSug(
-          bduss: bduss, stoken: stoken, word: word, isforum: isforum);
+  }) => _ForumApi.fetchSearchSug(
+    bduss: bduss,
+    stoken: stoken,
+    word: word,
+    isforum: isforum,
+  );
+
+  static Future<Map<String, dynamic>?> fetchBawuList({
+    required String bduss,
+    required String stoken,
+    required String fid,
+  }) => _ForumApi.fetchBawuList(bduss: bduss, stoken: stoken, fid: fid);
 
   static Future<Map<String, dynamic>?> searchForum(
     String keyword, {
     String? bduss,
-  }) =>
-      _SearchApi.searchForum(keyword, bduss: bduss);
+  }) => _SearchApi.searchForum(keyword, bduss: bduss);
 
   static Future<Map<String, dynamic>?> searchThread({
     required String keyword,
     int page = 1,
     String? bduss,
-  }) =>
-      _SearchApi.searchThread(keyword: keyword, page: page, bduss: bduss);
+  }) => _SearchApi.searchThread(keyword: keyword, page: page, bduss: bduss);
 
   static Future<Map<String, dynamic>?> searchUser(
     String keyword, {
     String? bduss,
-  }) =>
-      _SearchApi.searchUser(keyword, bduss: bduss);
+  }) => _SearchApi.searchUser(keyword, bduss: bduss);
 
   static Future<Map<String, dynamic>?> searchForumThreads({
     required String keyword,
@@ -341,15 +355,15 @@ class TiebaApi {
     int st = 1,
     int tt = 2,
     String? bduss,
-  }) =>
-      _SearchApi.searchForumThreads(
-          keyword: keyword,
-          fname: fname,
-          page: page,
-          rn: rn,
-          st: st,
-          tt: tt,
-          bduss: bduss);
+  }) => _SearchApi.searchForumThreads(
+    keyword: keyword,
+    fname: fname,
+    page: page,
+    rn: rn,
+    st: st,
+    tt: tt,
+    bduss: bduss,
+  );
 
   static Future<bool> addStore({
     required String bduss,
@@ -358,14 +372,16 @@ class TiebaApi {
     required String userId,
     required String tbs,
     required String postId,
-  }) =>
-      _InteractApi.addStore(
-          bduss: bduss,
-          stoken: stoken,
-          threadId: threadId,
-          userId: userId,
-          tbs: tbs,
-          postId: postId);
+    required String baiduid,
+  }) => _InteractApi.addStore(
+    bduss: bduss,
+    stoken: stoken,
+    threadId: threadId,
+    userId: userId,
+    tbs: tbs,
+    postId: postId,
+    baiduid: baiduid,
+  );
 
   static Future<bool> removeStore({
     required String bduss,
@@ -373,29 +389,33 @@ class TiebaApi {
     required String threadId,
     required String userId,
     required String tbs,
+    required String baiduid,
     String forumId = 'null',
-  }) =>
-      _InteractApi.removeStore(
-          bduss: bduss,
-          stoken: stoken,
-          threadId: threadId,
-          userId: userId,
-          tbs: tbs,
-          forumId: forumId);
+  }) => _InteractApi.removeStore(
+    bduss: bduss,
+    stoken: stoken,
+    threadId: threadId,
+    userId: userId,
+    tbs: tbs,
+    forumId: forumId,
+    baiduid: baiduid,
+  );
 
   static Future<List<Map<String, dynamic>>> fetchThreadStore({
     required String bduss,
     required String stoken,
+    required String baiduid,
     int rn = 20,
     int offset = 0,
     String userId = '',
-  }) =>
-      _InteractApi.fetchThreadStore(
-          bduss: bduss,
-          stoken: stoken,
-          rn: rn,
-          offset: offset,
-          userId: userId);
+  }) => _InteractApi.fetchThreadStore(
+    bduss: bduss,
+    stoken: stoken,
+    rn: rn,
+    offset: offset,
+    userId: userId,
+    baiduid: baiduid,
+  );
 
   static Future<bool> voteSubmit({
     required String bduss,
@@ -404,14 +424,14 @@ class TiebaApi {
     required String optionIds,
     required String fid,
     String? userId = "7019922344",
-  }) =>
-      _InteractApi.voteSubmit(
-          bduss: bduss,
-          stoken: stoken,
-          tid: tid,
-          optionIds: optionIds,
-          fid: fid,
-          userId: userId);
+  }) => _InteractApi.voteSubmit(
+    bduss: bduss,
+    stoken: stoken,
+    tid: tid,
+    optionIds: optionIds,
+    fid: fid,
+    userId: userId,
+  );
 
   static Future<List<PostItem>> fetchUserPosts({
     required String bduss,
@@ -420,21 +440,20 @@ class TiebaApi {
     int page = 1,
     int isThread = 1,
     int rn = 20,
-  }) =>
-      _UserApi.fetchUserPosts(
-          bduss: bduss,
-          stoken: stoken,
-          uid: uid,
-          page: page,
-          isThread: isThread,
-          rn: rn);
+  }) => _UserApi.fetchUserPosts(
+    bduss: bduss,
+    stoken: stoken,
+    uid: uid,
+    page: page,
+    isThread: isThread,
+    rn: rn,
+  );
 
   static Future<(UserProfileData?, List<ForumItem>)> fetchUserProfilePb({
     required String bduss,
     required String stoken,
     required String uid,
-  }) =>
-      _UserApi.fetchUserProfilePb(bduss: bduss, stoken: stoken, uid: uid);
+  }) => _UserApi.fetchUserProfilePb(bduss: bduss, stoken: stoken, uid: uid);
 
   static Future<List<PostItem>> fetchUserPostsPb({
     required String bduss,
@@ -444,31 +463,33 @@ class TiebaApi {
     int rn = 20,
     int isThread = 1,
     Map<String, String>? forumAvatarMap,
-  }) =>
-      _UserApi.fetchUserPostsPb(
-          bduss: bduss,
-          stoken: stoken,
-          uid: uid,
-          page: page,
-          rn: rn,
-          isThread: isThread,
-          forumAvatarMap: forumAvatarMap);
+  }) => _UserApi.fetchUserPostsPb(
+    bduss: bduss,
+    stoken: stoken,
+    uid: uid,
+    page: page,
+    rn: rn,
+    isThread: isThread,
+    forumAvatarMap: forumAvatarMap,
+  );
 
   static Future<List<ForumItem>> fetchUserLikeForums({
     required String bduss,
     required String stoken,
     required String uid,
+    required String baiduid,
     String? friendUid,
     int pageNo = 1,
     int pageSize = 50,
-  }) =>
-      _UserApi.fetchUserLikeForums(
-          bduss: bduss,
-          stoken: stoken,
-          uid: uid,
-          friendUid: friendUid,
-          pageNo: pageNo,
-          pageSize: pageSize);
+  }) => _UserApi.fetchUserLikeForums(
+    bduss: bduss,
+    stoken: stoken,
+    uid: uid,
+    friendUid: friendUid,
+    pageNo: pageNo,
+    pageSize: pageSize,
+    baiduid: baiduid,
+  );
 
   static Future<Map<String, dynamic>?> fetchLikedPosts({
     required String bduss,
@@ -477,12 +498,12 @@ class TiebaApi {
     required int tabId,
     required int page,
     int rn = 20,
-  }) =>
-      _UserApi.fetchLikedPosts(
-          bduss: bduss,
-          stoken: stoken,
-          tbs: tbs,
-          tabId: tabId,
-          page: page,
-          rn: rn);
+  }) => _UserApi.fetchLikedPosts(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    tabId: tabId,
+    page: page,
+    rn: rn,
+  );
 }

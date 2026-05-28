@@ -345,6 +345,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         threadId: tid,
         userId: UserManager.userId ?? '',
         tbs: UserManager.tbs ?? '',
+        baiduid: UserManager.baiduId ?? '',
       );
       // debugPrint("【收藏】removeStore 返回 ok=$ok");
       if (ok && mounted) setState(() => _isCollected = false);
@@ -365,6 +366,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
         userId: UserManager.userId ?? '',
         tbs: UserManager.tbs ?? '',
         postId: pid,
+        baiduid: UserManager.baiduId ?? '',
       );
       // debugPrint("【收藏】addStore 返回 ok=$ok");
       if (ok && mounted) setState(() => _isCollected = true);

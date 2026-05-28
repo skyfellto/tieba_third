@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
+
 class FavoritesPage extends StatefulWidget {
   const FavoritesPage({super.key});
 
@@ -38,6 +39,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
       rn: _pageSize,
       offset: refresh ? 0 : _offset + _pageSize,
       userId: UserManager.userId ?? '',
+      baiduid: UserManager.baiduId ?? '',
     );
 
     if (mounted && items.isNotEmpty) {

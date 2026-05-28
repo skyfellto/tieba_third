@@ -198,6 +198,7 @@ class _InteractApi {
     required String userId,
     required String tbs,
     required String postId,
+    required String baiduid,
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
@@ -224,7 +225,7 @@ class _InteractApi {
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
       ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
-      ["baiduid", cuid],
+      ["baiduid", baiduid],
       ["brand", DeviceInfo().brand],
       ["c3_aid", DeviceInfo().c3Aid],
       ["cmode", "1"],
@@ -275,7 +276,7 @@ class _InteractApi {
               "Content-Type": "application/x-www-form-urlencoded",
               "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie":
-                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
+                  "ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$baiduid;",
               "client_user_token": userId,
               "cuid": cuid,
               "cuid_galaxy2": cuid,
@@ -308,6 +309,7 @@ class _InteractApi {
     required String threadId,
     required String userId,
     required String tbs,
+    required String baiduid,
     String forumId = 'null',
   }) async {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
@@ -331,7 +333,7 @@ class _InteractApi {
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
       ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
-      ["baiduid", cuid],
+      ["baiduid", baiduid],
       ["brand", DeviceInfo().brand],
       ["c3_aid", DeviceInfo().c3Aid],
       ["cmode", "1"],
@@ -382,7 +384,7 @@ class _InteractApi {
           "Content-Type": "application/x-www-form-urlencoded",
           "User-Agent": DeviceInfo().userAgent(_clientVersion),
           "Cookie":
-              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
+              "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$baiduid;",
           "client_user_token": userId,
           "cuid": cuid,
           "cuid_galaxy2": cuid,
@@ -412,6 +414,7 @@ class _InteractApi {
   static Future<List<Map<String, dynamic>>> fetchThreadStore({
     required String bduss,
     required String stoken,
+    required String baiduid,
     int rn = 20,
     int offset = 0,
     String userId = '',
@@ -438,7 +441,7 @@ class _InteractApi {
       ["_client_version", _clientVersion],
       ["_os_version", DeviceInfo().osVersion],
       ["active_timestamp", "${DateTime.now().millisecondsSinceEpoch ~/ 1000}"],
-      ["baiduid", cuid],
+      ["baiduid", baiduid],
       ["brand", DeviceInfo().brand],
       ["c3_aid", DeviceInfo().c3Aid],
       ["cmode", "1"],
@@ -492,7 +495,7 @@ class _InteractApi {
               "Content-Type": "application/x-www-form-urlencoded",
               "User-Agent": DeviceInfo().userAgent(_clientVersion),
               "Cookie":
-                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$cuid;",
+                  "CUID=$cuid;ka=open;TBBRAND=${DeviceInfo().model};BAIDUID=$baiduid;",
               "client_user_token": userId,
               "cuid": cuid,
               "cuid_galaxy2": cuid,

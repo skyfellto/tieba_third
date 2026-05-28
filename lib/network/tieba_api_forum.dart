@@ -830,4 +830,45 @@ class _ForumApi {
       client.close();
     }
   }
+
+  static Future<Map<String, dynamic>?> fetchBawuList({
+    required String bduss,
+    required String stoken,
+    required String fid,
+  }) async {
+    final uri = Uri.parse(
+      "https://tieba.baidu.com/mo/q/bawulist?fid=$fid&_client_type=2&_client_version=$_clientVersion",
+    );
+    final client = http.Client();
+    try {
+      final cuid = DeviceInfo().cuid;
+      final request = http.Request('GET', uri)
+        ..headers.addAll({
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "X-Requested-With": "com.baidu.tieba",
+          "Accept": "application/json, text/plain, */*",
+          "Accept-Language": "zh-CN,zh;q=0.9",
+          "Cookie":
+              "BDUSS=$bduss; STOKEN=$stoken; cuid_galaxy2=$cuid; CUID=$cuid; BDUSS_BFESS=$bduss; BAIDUID=${UserManager.baiduId}; BAIDUID_BFESS=${UserManager.baiduId}",
+        });
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      if (response.statusCode != 200) {
+        _logger.w("【吧务列表】非200状态码");
+        return null;
+      }
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      if (json["no"] != 0) {
+        _logger.w("【吧务列表】error_no=${json["no"]} error=${json["error"]}");
+        return null;
+      }
+      return json;
+    } catch (e) {
+      _logger.w("【吧务列表异常】$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
 }
