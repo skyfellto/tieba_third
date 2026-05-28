@@ -18,6 +18,7 @@ import '../utils/forum_browse_history_manager.dart';
 import '../widgets/post_card.dart';
 import '../widgets/forum_header_delegate.dart';
 import '../widgets/image_viewer.dart';
+import '../models/forum_info_data.dart';
 import 'package:share_plus/share_plus.dart';
 
 /// 贴吧详情页
@@ -49,6 +50,17 @@ class _ForumDetailPageState extends State<ForumDetailPage>
   int _levelupScore = 0;
   bool _isLike = false;
   bool _isLiking = false;
+  bool _isSignedIn = false;
+  int _contSignNum = 0;
+  bool _isSigning = false;
+  String _forumIdForSign = '';
+  int _memberNum = 0;
+  int _threadNum = 0;
+  int _postNum = 0;
+  String _slogan = '';
+  String _forumAvatar = '';
+  String _forumName = '';
+  List<ForumManagerData> _managers = [];
 
   late TabController _tabController;
   int _currentTab = 0;
@@ -185,6 +197,21 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                       onLikeForum: _handleLikeForum,
                       onUnlikeForum: _handleUnlikeForum,
                       isLiking: _isLiking,
+                      isSignedIn: _isSignedIn,
+                      contSignNum: _contSignNum,
+                      isSigning: _isSigning,
+                      onSignTap: _handleSignForum,
+                      onAvatarTap: () {
+                        if (_forumAvatar.isNotEmpty) {
+                          ImageViewer.show(context, [_forumAvatar]);
+                        }
+                      },
+                      onForumNameTap: () {
+                        context.push(
+                          '/forums/${widget.fid}/about',
+                          extra: _buildForumInfoData(),
+                        );
+                      },
                       onTapFeatured: () => _tabController.animateTo(1),
                       onPop: () => context.pop(),
                       onSearchTap: () {
@@ -324,6 +351,30 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _levelName = fi.levelName;
           _curScore = fi.curScore;
           _levelupScore = fi.levelupScore;
+          _isSignedIn = fi.signInInfo.userInfo.isSignIn == 1;
+          _contSignNum = fi.signInInfo.userInfo.contSignNum;
+          _forumIdForSign = fi.id.toString();
+          _memberNum = fi.memberNum;
+          _threadNum = fi.threadNum;
+          _postNum = fi.postNum;
+          _slogan = fi.slogan;
+          _forumAvatar = fi.avatar.isNotEmpty
+              ? fi.avatar
+              : (widget.forumAvatar ?? '');
+          _forumName = fi.name.isNotEmpty ? fi.name : (widget.forumName ?? '');
+          _managers = fi.managers
+              .map(
+                (m) => ForumManagerData(
+                  portrait: m.portrait,
+                  showName: m.showName.isNotEmpty ? m.showName : null,
+                  name: m.name,
+                ),
+              )
+              .toList();
+          // final logger = Logger();
+          // logger.i(
+          //   "islike :: ${fi.isLike} id :: ${fi.id}  manager :: ${fi.managers}  slogan :: ${fi.slogan}  contSignNum :: ${fi.signInInfo.userInfo.contSignNum}  issignin :: ${fi.signInInfo.userInfo.isSignIn}  avatar :: ${fi.avatar}  memberNum :: ${fi.memberNum}}",
+          // );
         }
         if (frsData != null) {
           _threads = _processThreadData(frsData);
@@ -331,7 +382,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _threadPage = 1;
           _hasMoreThreads = frsData.hasPage() && frsData.page.hasMore == 1;
           _threadIdList = frsData.threadIdList.map((e) => e.toInt()).toList();
-          debugPrint("【初始加载】threadIdList=${_threadIdList.length}条");
+          // debugPrint("【初始加载】threadIdList=${_threadIdList.length}条");
         }
         if (_forumInfo == null && frsData == null) {
           _error = "加载失败";
@@ -786,6 +837,49 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         ).showSnackBar(const SnackBar(content: Text('取消关注失败，请稍后重试')));
       }
     }
+  }
+
+  Future<void> _handleSignForum() async {
+    if (_isSigning || !UserManager.isLogin) return;
+    setState(() => _isSigning = true);
+    try {
+      final result = await TiebaApi.signForum(
+        bduss: UserManager.bduss!,
+        stoken: UserManager.stoken!,
+        tbs: UserManager.tbs ?? '',
+        forumId: _forumIdForSign,
+        forumName: _forumName,
+      );
+      if (mounted && result != null) {
+        final userInfo = result['user_info'];
+        if (userInfo is Map) {
+          setState(() {
+            _isSignedIn = true;
+            _contSignNum =
+                (userInfo['cont_sign_num'] as num?)?.toInt() ?? _contSignNum;
+          });
+        }
+      } else if (mounted) {
+        showInfo(context, '签到失败，请稍后重试');
+      }
+    } catch (_) {
+      if (mounted) showInfo(context, '签到失败，请稍后重试');
+    } finally {
+      if (mounted) setState(() => _isSigning = false);
+    }
+  }
+
+  ForumInfoData _buildForumInfoData() {
+    return ForumInfoData(
+      fid: widget.fid,
+      name: _forumName,
+      avatar: _forumAvatar,
+      memberNum: _memberNum,
+      threadNum: _threadNum,
+      postNum: _postNum,
+      slogan: _slogan,
+      managers: _managers,
+    );
   }
 
   // ===================== Content =====================

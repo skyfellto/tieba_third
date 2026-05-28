@@ -28,6 +28,12 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback? onLikeForum;
   final VoidCallback? onUnlikeForum;
   final bool isLiking;
+  final bool isSignedIn;
+  final int contSignNum;
+  final bool isSigning;
+  final VoidCallback? onSignTap;
+  final VoidCallback? onAvatarTap;
+  final VoidCallback? onForumNameTap;
 
   const ForumHeaderDelegate({
     this.topPadding = 0,
@@ -51,6 +57,12 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
     this.onLikeForum,
     this.onUnlikeForum,
     this.isLiking = false,
+    this.isSignedIn = false,
+    this.contSignNum = 0,
+    this.isSigning = false,
+    this.onSignTap,
+    this.onAvatarTap,
+    this.onForumNameTap,
   });
 
   @override
@@ -109,30 +121,36 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: avatarRadius,
-                backgroundColor: Colors.white24,
-                backgroundImage: avatarUrl.isNotEmpty
-                    ? NetworkImage(
-                        avatarUrl,
-                        headers: UserManager.avatarHeaders,
-                      )
-                    : null,
-                // ignore: unnecessary_underscores
-                onBackgroundImageError: (_, __) {},
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  radius: avatarRadius,
+                  backgroundColor: Colors.white24,
+                  backgroundImage: avatarUrl.isNotEmpty
+                      ? NetworkImage(
+                          avatarUrl,
+                          headers: UserManager.avatarHeaders,
+                        )
+                      : null,
+                  // ignore: unnecessary_underscores
+                  onBackgroundImageError: (_, __) {},
+                ),
               ),
               SizedBox(width: nameGap),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    name,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: nameFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: fgColor,
+                  GestureDetector(
+                    onTap: onForumNameTap,
+                    child: Text(
+                      name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: nameFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: fgColor,
+                      ),
                     ),
                   ),
                   if (levelFade > 0)
@@ -154,6 +172,7 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (isLike) _buildSignButton(context),
               IconButton(
                 icon: Icon(Icons.search, color: fgColor, size: 22),
                 onPressed: onSearchTap,
@@ -195,7 +214,57 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
       levelupScore != oldDelegate.levelupScore ||
       currentTab != oldDelegate.currentTab ||
       selectedSort != oldDelegate.selectedSort ||
-      isLiking != oldDelegate.isLiking;
+      isLiking != oldDelegate.isLiking ||
+      isSignedIn != oldDelegate.isSignedIn ||
+      contSignNum != oldDelegate.contSignNum ||
+      isSigning != oldDelegate.isSigning;
+
+  Widget _buildSignButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isSignedIn) {
+      return Container(
+        margin: const EdgeInsets.only(right: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: isDark ? Color(0xFF4A5568) : Color(0xFFEBF8FF),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          '已连续签到$contSignNum天',
+          style: TextStyle(
+            fontSize: 11,
+            color: isDark ? Colors.grey[200] : Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: isSigning ? null : onSignTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              isSigning ? '签到中' : '签到',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF222436),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildTabBar(BuildContext context, Color fgColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

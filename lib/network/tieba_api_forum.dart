@@ -392,7 +392,9 @@ class _ForumApi {
 
       final pb = ThreadListResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        _logger.w("【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        _logger.w(
+          "【ThreadList】API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
+        );
         return null;
       }
 
@@ -409,6 +411,7 @@ class _ForumApi {
       client.close();
     }
   }
+
   static Future<Map<String, dynamic>?> signForum({
     required String bduss,
     required String stoken,

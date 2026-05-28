@@ -38,7 +38,7 @@ class _MainScreenState extends State<MainScreen> {
       extendBody: floating,
       bottomNavigationBar: Padding(
         padding: floating
-            ? const EdgeInsets.fromLTRB(12, 0, 12, 16)
+            ? const EdgeInsets.fromLTRB(12, 0, 12, 20)
             : EdgeInsets.zero,
         child: MoonlightBottomNavBar(
           currentIndex: widget.navigationShell.currentIndex,

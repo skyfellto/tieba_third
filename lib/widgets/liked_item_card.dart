@@ -182,7 +182,7 @@ class LikedItemCard extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.favorite, size: 14, color: Colors.red[300]),
+                    Icon(Icons.favorite, size: 14, color: Colors.red),
                     const SizedBox(width: 2),
                     Text(
                       reply.agreeNum,

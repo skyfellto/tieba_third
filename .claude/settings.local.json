@@ -11,7 +11,9 @@
       "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/repository/source/network/**)",
       "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/impls/**)",
       "Read(//e/AndroidStudioProjects/tiebalite/app/src/main/java/com/huanchengfly/tieba/post/api/interfaces/**)",
-      "Bash(dart analyze *)"
+      "Bash(dart analyze *)",
+      "Bash(e:)",
+      "Bash(\"E:\\\\flutter\\\\flutter\\\\bin\\\\dart.bat\" analyze *)"
     ]
   }
 }

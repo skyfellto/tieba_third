@@ -210,20 +210,20 @@ class _UserDetailPageState extends State<UserDetailPage>
       );
     } else {
       // 查看其他用户：用 /c/f/forum/like API
-      debugPrint(
-        "【用户详情】_loadForums 调用 fetchUserLikeForums uid=${UserManager.userId} friendUid=${widget.uid}",
-      );
+      // debugPrint(
+      //   "【用户详情】_loadForums 调用 fetchUserLikeForums uid=${UserManager.userId} friendUid=${widget.uid}",
+      // );
       forums = await TiebaApi.fetchUserLikeForums(
         bduss: UserManager.bduss!,
         stoken: UserManager.stoken!,
         uid: UserManager.userId ?? '',
         friendUid: widget.uid,
       );
-      debugPrint(
-        "【用户详情】_loadForums fetchUserLikeForums 返回 ${forums.length} 个贴吧",
-      );
+      // debugPrint(
+      //   "【用户详情】_loadForums fetchUserLikeForums 返回 ${forums.length} 个贴吧",
+      // );
     }
-    debugPrint("【用户详情】_loadForums 最终 forums=${forums.length} mounted=$mounted");
+    // debugPrint("【用户详情】_loadForums 最终 forums=${forums.length} mounted=$mounted");
     if (mounted) {
       setState(() {
         _forums = forums;

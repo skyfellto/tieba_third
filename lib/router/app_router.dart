@@ -15,6 +15,8 @@ import '../pages/search_result_page.dart';
 import '../pages/forum_search_result_page.dart';
 import '../pages/settings_page.dart';
 import '../pages/account_management_page.dart';
+import '../pages/forum_info_page.dart';
+import '../models/forum_info_data.dart';
 import '../pages/personalization_page.dart';
 import '../utils/auth_notifier.dart';
 import '../widgets/main_screen.dart';
@@ -87,6 +89,14 @@ final GoRouter appRouter = GoRouter(
         forumName: state.uri.queryParameters['name'],
         forumAvatar: state.uri.queryParameters['avatar'],
       ),
+    ),
+    // 吧信息页（独立路由）
+    GoRoute(
+      path: '/forums/:fid/about',
+      builder: (context, state) {
+        final data = state.extra as ForumInfoData;
+        return ForumInfoPage(data: data);
+      },
     ),
     // 楼中楼回复详情页（独立路由）
     GoRoute(
