@@ -1020,10 +1020,18 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                   return PostCard(
                     post: p,
                     showForum: false,
-                    badge: p.isHelp ? "求助" : null,
-                    badgeTextColor: p.isHelp ? Colors.blue[700] : null,
-                    badgeBgColor: p.isHelp ? Colors.blue[50] : null,
-                    badgeBorderColor: p.isHelp ? Colors.blue[200] : null,
+                    badge: p.isHelp
+                        ? "求助"
+                        : (p.isPoll ? "投票" : null),
+                    badgeTextColor: p.isHelp
+                        ? Colors.blue[700]
+                        : (p.isPoll ? Colors.purple[700] : null),
+                    badgeBgColor: p.isHelp
+                        ? Colors.blue[50]
+                        : (p.isPoll ? Colors.purple[50] : null),
+                    badgeBorderColor: p.isHelp
+                        ? Colors.blue[200]
+                        : (p.isPoll ? Colors.purple[200] : null),
                     isLiked: _likeManager.isLiked(tid),
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),

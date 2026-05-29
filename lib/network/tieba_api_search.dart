@@ -1,7 +1,6 @@
 part of 'tieba_api.dart';
 
 class _SearchApi {
-
   /// 搜索贴吧 — GET
   static Future<Map<String, dynamic>?> searchForum(
     String keyword, {

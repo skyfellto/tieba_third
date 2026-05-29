@@ -292,7 +292,6 @@ class _ForumApi {
         _logger.w("【FrsPage】data为空");
         return null;
       }
-
       final d = pb.data;
       d.threadList.removeWhere((t) => t.hasAlaInfo());
       return d;

@@ -132,6 +132,7 @@ class _SearchThreadResultState extends State<SearchThreadResult>
     final content = raw['content']?.toString() ?? '';
     final time = raw['time'] is int ? raw['time'] : 0;
     final forumName = raw['forum_name']?.toString() ?? '';
+    final forumId = raw['forum_id'] is int ? '${raw['forum_id']}' : '';
     final forumInfo = raw['forum_info'] as Map<String, dynamic>?;
     final forumAvatar = forumInfo?['avatar']?.toString() ?? '';
     final user = raw['user'] as Map<String, dynamic>?;
@@ -156,6 +157,7 @@ class _SearchThreadResultState extends State<SearchThreadResult>
       authorName: userName,
       authorId: userId,
       authorPortrait: _extractPortraitHash(portrait),
+      forumId: forumId,
       forumName: forumName,
       forumAvatar: forumAvatar,
       replyNum: replyNum > 0 ? '$replyNum' : '',

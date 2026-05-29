@@ -163,7 +163,7 @@ class PostContentParser {
           spans.add(TextSpan(text: c.c, style: textStyle));
         }
       } else if (_isTextTypeForSpan(c.type) && c.text.isNotEmpty) {
-        var t = c.text.trim().replaceAll('\n', ' ');
+        var t = c.text.trim();
         // 如果第一个 span 以冒号开头，去掉（避免和手动添加的 ： 重复）
         if (spans.isEmpty && (t.startsWith('：') || t.startsWith(':'))) {
           t = t.substring(1).trimLeft();

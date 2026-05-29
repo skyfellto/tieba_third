@@ -21,6 +21,7 @@ class PostItem {
   bool isTop;
   bool isLiked;
   bool isHelp;
+  bool isPoll;
   String firstPostId;
 
   static String avatarUrlFor(String portrait) =>
@@ -44,6 +45,7 @@ class PostItem {
     this.isTop = false,
     this.isLiked = false,
     this.isHelp = false,
+    this.isPoll = false,
     this.firstPostId = '',
   });
 
@@ -133,6 +135,7 @@ class PostItem {
       isTop: t.isTop == 1,
       isLiked: t.hasAgree() && t.agree.hasAgree == 1,
       isHelp: t.threadType == 71,
+      isPoll: t.hasPollInfo(),
       firstPostId: _s(t.firstPostId),
     );
   }

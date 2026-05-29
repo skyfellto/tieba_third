@@ -54,6 +54,6 @@ class PostContentText extends StatelessWidget {
   }
 
   static String _cleanText(String text) {
-    return text.trim().replaceAll('\n', ' ');
+    return text.trim();
   }
 }
