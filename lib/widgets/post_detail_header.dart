@@ -99,93 +99,122 @@ class PostDetailHeader extends StatelessWidget {
 
   Widget _buildAuthorInfo(usermodel.User author, String timeStr) {
     return GestureDetector(
-      onTap: onUserTap != null ? () => onUserTap!(author.id.toInt().toString(), author) : null,
+      onTap: onUserTap != null
+          ? () => onUserTap!(author.id.toInt().toString(), author)
+          : null,
       child: Row(
-      children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundColor: Colors.grey[300],
-          backgroundImage: author.portrait.isNotEmpty
-              ? NetworkImage(
-                  'http://tb.himg.baidu.com/sys/portrait/item/${author.portrait}',
-                  headers: UserManager.avatarHeaders,
-                )
-              : null,
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    PostContentParser.getAuthorName(author),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  if (author.levelId > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: levelColor(author),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${author.levelId}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.levelNumber,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(width: 4),
-                  if (showLouZhuBadge)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        '楼主',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    timeStr,
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                  ),
-                  if (showIpLocation && author.ipAddress.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      'IP属地：${author.ipAddress}',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 11),
-                    ),
-                  ],
-                ],
-              ),
-            ],
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: author.portrait.isNotEmpty
+                ? NetworkImage(
+                    'http://tb.himg.baidu.com/sys/portrait/item/${author.portrait}',
+                    headers: UserManager.avatarHeaders,
+                  )
+                : null,
           ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      PostContentParser.getAuthorName(author),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    if (author.levelId > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: levelColor(author),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${author.levelId}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.levelNumber,
+                          ),
+                        ),
+                      ),
+                    if (author.isBawu == 1 &&
+                        (author.bawuType == 'manager' ||
+                            author.bawuType == 'assist')) ...[
+                      const SizedBox(width: 4),
+                      _buildBawuBadge(author.bawuType),
+                    ],
+                    if (showLouZhuBadge) ...[
+                      const SizedBox(width: 4),
+                      _buildBadge('楼主'),
+                    ],
+                  ],
+                ),
+                Row(
+                  children: [
+                    Text(
+                      timeStr,
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    ),
+                    if (showIpLocation && author.ipAddress.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        'IP属地：${author.ipAddress}',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadge(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 11,
+          color: Colors.red,
+          fontWeight: FontWeight.w600,
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildBawuBadge(String bawuType) {
+    final isManager = bawuType == 'manager';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.purple[50],
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        isManager ? '吧主' : '小吧主',
+        style: TextStyle(
+          fontSize: 11,
+          color: Colors.purple,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

@@ -156,57 +156,88 @@ class PostReplyCard extends StatelessWidget {
     int aid,
   ) {
     return GestureDetector(
-      onTap: onUserTap != null ? () => onUserTap!(author.id.toInt().toString()) : null,
+      onTap: onUserTap != null
+          ? () => onUserTap!(author.id.toInt().toString())
+          : null,
       child: Row(
-      children: [
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: Colors.grey[300],
-          backgroundImage: author.portrait.isNotEmpty
-              ? NetworkImage(
-                  'http://tb.himg.baidu.com/sys/portrait/item/${author.portrait}',
-                  headers: UserManager.avatarHeaders,
-                )
-              : null,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          PostContentParser.getAuthorName(author),
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-        ),
-        if (author.levelId > 0) ...[
-          const SizedBox(width: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-            decoration: BoxDecoration(
-              color: AppColors.levelColor(author.levelId),
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: Text(
-              '${author.levelId}',
-              style: TextStyle(fontSize: 10, color: AppColors.levelNumber),
-            ),
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: author.portrait.isNotEmpty
+                ? NetworkImage(
+                    'http://tb.himg.baidu.com/sys/portrait/item/${author.portrait}',
+                    headers: UserManager.avatarHeaders,
+                  )
+                : null,
           ),
-        ],
-        if (opAuthor != null && aid == opAuthor.id.toInt()) ...[
-          const SizedBox(width: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-            decoration: BoxDecoration(
-              color: Colors.red[50],
-              borderRadius: BorderRadius.circular(3),
-            ),
-            child: const Text(
-              '楼主',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.red,
-                fontWeight: FontWeight.w600,
+          const SizedBox(width: 6),
+          Text(
+            PostContentParser.getAuthorName(author),
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          ),
+          if (author.levelId > 0) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              decoration: BoxDecoration(
+                color: AppColors.levelColor(author.levelId),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                '${author.levelId}',
+                style: TextStyle(fontSize: 10, color: AppColors.levelNumber),
               ),
             ),
-          ),
+          ],
+          if (author.isBawu == 1 &&
+              (author.bawuType == 'manager' ||
+                  author.bawuType == 'assist')) ...[
+            const SizedBox(width: 4),
+            _buildBawuBadge(author.bawuType, fontSize: 10),
+          ],
+          if (opAuthor != null && aid == opAuthor.id.toInt()) ...[
+            const SizedBox(width: 4),
+            _buildLouZhuBadge(fontSize: 10),
+          ],
         ],
-      ],
+      ),
+    );
+  }
+
+  Widget _buildLouZhuBadge({double fontSize = 11}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        '楼主',
+        style: TextStyle(
+          fontSize: fontSize,
+          color: Colors.red,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBawuBadge(String bawuType, {double fontSize = 11}) {
+    final isManager = bawuType == 'manager';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      decoration: BoxDecoration(
+        color: Colors.purple[50],
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        isManager ? '吧主' : '小吧主',
+        style: TextStyle(
+          fontSize: fontSize,
+          color: Colors.purple,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -291,10 +322,27 @@ class PostReplyCard extends StatelessWidget {
       TextSpan(
         text: authorName,
         style: const TextStyle(
-          fontWeight: FontWeight.w500, fontSize: 12, color: Colors.blue,
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+          color: Colors.blue,
         ),
       ),
     );
+
+    // 吧务标识
+    if (author != null &&
+        author.isBawu == 1 &&
+        (author.bawuType == 'manager' || author.bawuType == 'assist')) {
+      contentSpans.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: _buildBawuBadge(author.bawuType, fontSize: 10),
+          ),
+        ),
+      );
+    }
 
     // 楼主标识
     if (opAuthor != null && author?.id == opAuthor.id) {
@@ -303,15 +351,7 @@ class PostReplyCard extends StatelessWidget {
           alignment: PlaceholderAlignment.middle,
           child: Padding(
             padding: const EdgeInsets.only(left: 4),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-              decoration: BoxDecoration(
-                color: Colors.red[50], borderRadius: BorderRadius.circular(3),
-              ),
-              child: const Text('楼主',
-                style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.w600),
-              ),
-            ),
+            child: _buildLouZhuBadge(fontSize: 10),
           ),
         ),
       );
@@ -320,10 +360,17 @@ class PostReplyCard extends StatelessWidget {
     // 回复目标
     if (replyTarget != null && replyTarget.isNotEmpty) {
       contentSpans.addAll([
-        const TextSpan(text: ' 回复 ', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const TextSpan(
+          text: ' 回复 ',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         TextSpan(
           text: replyTarget,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, color: Colors.blueGrey),
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            color: Colors.blueGrey,
+          ),
         ),
       ]);
     }

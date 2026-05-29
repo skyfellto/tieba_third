@@ -373,7 +373,13 @@ class _ForumDetailPageState extends State<ForumDetailPage>
               )
               .toList();
           final logger = Logger();
-          logger.i("userlist :: ${frsData.userList}");
+          frsData.threadList.forEach((thread) {
+            logger.i(
+              "title :: ${thread.title}  threadtypes :: ${thread.threadTypes}",
+            );
+          });
+          // logger.i("title :: ${frsData.threadIdList}");
+          // logger.i("userlist :: ${frsData.userList}");
           // logger.i(
           //   "islike :: ${fi.isLike} id :: ${fi.id}  manager :: ${fi.managers}  slogan :: ${fi.slogan}  contSignNum :: ${fi.signInInfo.userInfo.contSignNum}  issignin :: ${fi.signInInfo.userInfo.isSignIn}  avatar :: ${fi.avatar}  memberNum :: ${fi.memberNum}}",
           // );
@@ -526,7 +532,12 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         sortType: _selectedSort,
         page: _threadPage,
       );
-
+      // final logger = Logger();
+      // data?.threadList.forEach((thread) {
+      //   logger.i(
+      //     "title :: ${thread.title}   threadtypes :: ${thread.threadTypes}",
+      //   );
+      // });
       if (mounted) {
         setState(() {
           _loadingMoreThreads = false;
