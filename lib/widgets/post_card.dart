@@ -17,6 +17,9 @@ class PostCard extends StatelessWidget {
   final bool isLiked;
   final bool showForum;
   final String? badge;
+  final Color? badgeTextColor;
+  final Color? badgeBgColor;
+  final Color? badgeBorderColor;
 
   const PostCard({
     super.key,
@@ -24,6 +27,9 @@ class PostCard extends StatelessWidget {
     this.isPlaceholder = false,
     this.showForum = true,
     this.badge,
+    this.badgeTextColor,
+    this.badgeBgColor,
+    this.badgeBorderColor,
     this.onForumTap,
     this.onImageTap,
     this.onReplyTap,
@@ -101,15 +107,17 @@ class PostCard extends StatelessWidget {
                                 vertical: 1,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.red[50],
+                                color: badgeBgColor ?? Colors.red[50],
                                 borderRadius: BorderRadius.circular(3),
-                                border: Border.all(color: Colors.red[200]!),
+                                border: Border.all(
+                                  color: badgeBorderColor ?? Colors.red[200]!,
+                                ),
                               ),
                               child: Text(
                                 badge!,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.red[700],
+                                  color: badgeTextColor ?? Colors.red[700],
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

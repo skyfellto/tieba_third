@@ -20,6 +20,7 @@ class PostItem {
   final bool isAd;
   bool isTop;
   bool isLiked;
+  bool isHelp;
   String firstPostId;
 
   static String avatarUrlFor(String portrait) =>
@@ -42,6 +43,7 @@ class PostItem {
     this.isAd = false,
     this.isTop = false,
     this.isLiked = false,
+    this.isHelp = false,
     this.firstPostId = '',
   });
 
@@ -130,6 +132,7 @@ class PostItem {
       isAd: t.hasAlaInfo(),
       isTop: t.isTop == 1,
       isLiked: t.hasAgree() && t.agree.hasAgree == 1,
+      isHelp: t.threadType == 71,
       firstPostId: _s(t.firstPostId),
     );
   }

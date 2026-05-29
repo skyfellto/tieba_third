@@ -32,11 +32,19 @@ message ThreadInfo {
   int32 threadTypes = 8;
   int32 isTop = 9;
   int32 isGood = 10;
+  int32 is_vote = 11;
+  int32 is_bakan = 12;
+  int32 is_protal = 13;
+  int32 is_meizhi = 14;
+  int32 is_voice_thread = 15;
+  int32 is_activity = 16;
+  int32 is_notice = 17;
   User author = 18;
   User lastReplyer = 19;
   int32 commentNum = 20;
   repeated Abstract _abstract = 21;
   repeated Media media = 22;
+  int32 thread_type = 26;
   int64 forumId = 27;
   string forumName = 28;
   int32 isNoTitle = 38;
@@ -70,4 +78,5 @@ message ThreadInfo {
   string tabName = 176;
   int32 isDeleted = 181;
   int32 hotNum = 182;
+  int32 poll_style = 256;
 }

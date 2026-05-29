@@ -101,7 +101,9 @@ class _PostDetailApi {
 
       final pb = PbPageResponse.fromBuffer(response.bodyBytes);
       if (pb.hasError() && pb.error.errorCode != 0) {
-        _logger.w("【调试】PbPage API错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        _logger.w(
+          "【调试】PbPage API错误：${pb.error.errorCode} ${pb.error.errorMsg}",
+        );
         return null;
       }
 
@@ -109,7 +111,6 @@ class _PostDetailApi {
         _logger.w("【调试】PbPage data为空");
         return null;
       }
-
       return pb.data;
     } catch (e) {
       _logger.w("【调试】PbPage 请求异常：$e");

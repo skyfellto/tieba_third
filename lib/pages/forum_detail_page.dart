@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/toast_utils.dart';
 import '../generated/RecommendForumInfo.pb.dart';
@@ -372,12 +371,12 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                 ),
               )
               .toList();
-          final logger = Logger();
-          frsData.threadList.forEach((thread) {
-            logger.i(
-              "title :: ${thread.title}  threadtypes :: ${thread.threadTypes}",
-            );
-          });
+          // final logger = Logger();
+          // frsData.threadList.forEach((thread) {
+          //   logger.i(
+          //     "title :: ${thread.title}  threadtypes :: ${thread.threadType} PollStyle :: ${thread.pollStyle}",
+          //   );
+          // });
           // logger.i("title :: ${frsData.threadIdList}");
           // logger.i("userlist :: ${frsData.userList}");
           // logger.i(
@@ -535,7 +534,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
       // final logger = Logger();
       // data?.threadList.forEach((thread) {
       //   logger.i(
-      //     "title :: ${thread.title}   threadtypes :: ${thread.threadTypes}",
+      //     "title :: ${thread.title}   threadtypes :: ${thread.threadType}",
       //   );
       // });
       if (mounted) {
@@ -1021,6 +1020,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                   return PostCard(
                     post: p,
                     showForum: false,
+                    badge: p.isHelp ? "求助" : null,
+                    badgeTextColor: p.isHelp ? Colors.blue[700] : null,
+                    badgeBgColor: p.isHelp ? Colors.blue[50] : null,
+                    badgeBorderColor: p.isHelp ? Colors.blue[200] : null,
                     isLiked: _likeManager.isLiked(tid),
                     onImageTap: (images, i) =>
                         ImageViewer.show(context, images, index: i),
