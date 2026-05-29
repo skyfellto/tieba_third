@@ -488,6 +488,8 @@ class _ForumApi {
         _logger.w("【签到失败】user_info 为空");
         return null;
       }
+      // _logger.i("json :: $json");
+      // _logger.i("result :: ${json["result"]}");
       return json;
     } catch (e) {
       _logger.w("【签到异常】$e");

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/toast_utils.dart';
 import '../generated/RecommendForumInfo.pb.dart';
@@ -371,7 +372,8 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                 ),
               )
               .toList();
-          // final logger = Logger();
+          final logger = Logger();
+          logger.i("userlist :: ${frsData.userList}");
           // logger.i(
           //   "islike :: ${fi.isLike} id :: ${fi.id}  manager :: ${fi.managers}  slogan :: ${fi.slogan}  contSignNum :: ${fi.signInInfo.userInfo.contSignNum}  issignin :: ${fi.signInInfo.userInfo.isSignIn}  avatar :: ${fi.avatar}  memberNum :: ${fi.memberNum}}",
           // );
@@ -855,8 +857,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
         if (userInfo is Map) {
           setState(() {
             _isSignedIn = true;
-            _contSignNum =
-                (userInfo['cont_sign_num'] as num?)?.toInt() ?? _contSignNum;
+            final raw = userInfo['cont_sign_num'];
+            _contSignNum = (raw is num)
+                ? raw.toInt()
+                : int.tryParse('$raw') ?? _contSignNum;
           });
         }
       } else if (mounted) {
