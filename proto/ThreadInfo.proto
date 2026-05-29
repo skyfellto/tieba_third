@@ -13,6 +13,7 @@ import "HotTWThreadInfo.proto";
 import "Media.proto";
 import "OriginThreadInfo.proto";
 import "PbContent.proto";
+import "PollInfo.proto";
 import "SimpleForum.proto";
 import "TiebaPlusAd.proto";
 import "User.proto";
@@ -57,6 +58,7 @@ message ThreadInfo {
   int64 authorId = 56;
   string pids = 61;
   ZhiBoInfoTW twzhibo_info = 72;
+  PollInfo poll_info = 74;
   optional VideoInfo videoInfo = 79;
   repeated PbContent richTitle = 111;
   repeated PbContent richAbstract = 112;
