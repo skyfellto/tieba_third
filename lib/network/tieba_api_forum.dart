@@ -74,11 +74,8 @@ class _ForumApi {
       }
 
       final pb = GetForumDetailResponse.fromBuffer(response.bodyBytes);
-      if (pb.hasError()) {
-        _logger.w(
-          "【论坛详情】error子消息存在: code=${pb.error.errorCode} msg='${pb.error.errorMsg}' userMsg='${pb.error.userMsg}'",
-        );
-        if (pb.error.errorCode != 0) return null;
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        return null;
       }
 
       if (!pb.hasData()) {

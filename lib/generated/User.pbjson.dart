@@ -220,6 +220,14 @@ const User$json = {
       '5': 9,
       '10': 'editingNickname'
     },
+    {
+      '1': 'user_growth',
+      '3': 137,
+      '4': 1,
+      '5': 11,
+      '6': '.UserGrowth',
+      '10': 'userGrowth'
+    },
     {'1': 'display_intro', '3': 138, '4': 1, '5': 9, '10': 'displayIntro'},
     {'1': 'new_icon_url', '3': 139, '4': 3, '5': 9, '10': 'newIconUrl'},
     {'1': 'dynamic_url', '3': 140, '4': 1, '5': 9, '10': 'dynamicUrl'},
@@ -280,6 +288,7 @@ final $typed_data.Uint8List userDescriptor = $convert.base64Decode(
     'GHggASgJUgh0aWViYVVpZBIdCgpsZXZlbF9uYW1lGH0gASgJUglsZXZlbE5hbWUSHQoKaXBfYW'
     'RkcmVzcxh/IAEoCVIJaXBBZGRyZXNzEi8KE2lzX25pY2tuYW1lX2VkaXRpbmcYgAEgASgFUhFp'
     'c05pY2tuYW1lRWRpdGluZxIqChBlZGl0aW5nX25pY2tuYW1lGIEBIAEoCVIPZWRpdGluZ05pY2'
-    'tuYW1lEiQKDWRpc3BsYXlfaW50cm8YigEgASgJUgxkaXNwbGF5SW50cm8SIQoMbmV3X2ljb25f'
-    'dXJsGIsBIAMoCVIKbmV3SWNvblVybBIgCgtkeW5hbWljX3VybBiMASABKAlSCmR5bmFtaWNVcm'
-    'xCDwoNX25ld19nb2RfZGF0YQ==');
+    'tuYW1lEi0KC3VzZXJfZ3Jvd3RoGIkBIAEoCzILLlVzZXJHcm93dGhSCnVzZXJHcm93dGgSJAoN'
+    'ZGlzcGxheV9pbnRybxiKASABKAlSDGRpc3BsYXlJbnRybxIhCgxuZXdfaWNvbl91cmwYiwEgAy'
+    'gJUgpuZXdJY29uVXJsEiAKC2R5bmFtaWNfdXJsGIwBIAEoCVIKZHluYW1pY1VybEIPCg1fbmV3'
+    'X2dvZF9kYXRh');

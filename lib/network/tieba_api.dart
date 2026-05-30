@@ -46,6 +46,7 @@ import '../generated/Profile/ProfileResponse.pb.dart';
 import '../generated/UserPost/UserPostRequest.pb.dart';
 import '../generated/UserPost/UserPostRequestData.pb.dart';
 import '../generated/UserPost/UserPostResponse.pb.dart';
+import '../generated/PostInfoList.pb.dart';
 import '../generated/SearchSug/SearchSugRequest.pb.dart';
 import '../generated/SearchSug/SearchSugRequestData.pb.dart';
 import '../generated/SearchSug/SearchSugResponse.pb.dart';
@@ -471,6 +472,20 @@ class TiebaApi {
     rn: rn,
     isThread: isThread,
     forumAvatarMap: forumAvatarMap,
+  );
+
+  static Future<List<PostInfoList>> fetchUserRepliesPb({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int page = 1,
+    int rn = 20,
+  }) => _UserApi.fetchUserRepliesPb(
+    bduss: bduss,
+    stoken: stoken,
+    uid: uid,
+    page: page,
+    rn: rn,
   );
 
   static Future<List<ForumItem>> fetchUserLikeForums({

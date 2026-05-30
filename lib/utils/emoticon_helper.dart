@@ -21,4 +21,17 @@ class EmoticonHelper {
   /// 判断是否有对应图片
   static bool hasImage(String emojiName) =>
       _emoticonMap?.containsKey(emojiName) ?? false;
+
+  /// 从文本中提取表情名称，支持半角 (啊) 和全角（啊）格式
+  static String? extractEmojiName(String text) {
+    // 尝试匹配 (xxx) 格式
+    if (text.length > 2 && text.startsWith('(') && text.endsWith(')')) {
+      return text.substring(1, text.length - 1);
+    }
+    // 尝试匹配（xxx）格式
+    if (text.length > 2 && text.startsWith('（') && text.endsWith('）')) {
+      return text.substring(1, text.length - 1);
+    }
+    return null;
+  }
 }

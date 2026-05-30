@@ -9,6 +9,7 @@ import '../pages/forum_detail_page.dart';
 import '../pages/floor_reply_page.dart';
 import '../pages/browse_history_page.dart';
 import '../pages/favorites_page.dart';
+import '../pages/my_replies_page.dart';
 import '../pages/my_likes_page.dart';
 import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
@@ -19,6 +20,7 @@ import '../pages/forum_info_page.dart';
 import '../models/forum_info_data.dart';
 import '../pages/personalization_page.dart';
 import '../utils/auth_notifier.dart';
+import '../models/user_profile_data.dart';
 import '../widgets/main_screen.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
@@ -72,8 +74,10 @@ final GoRouter appRouter = GoRouter(
     // 用户详情页（独立路由，不显示底部导航）
     GoRoute(
       path: '/wode/detail',
-      pageBuilder: (context, state) =>
-          const NoTransitionPage(child: UserDetailPage()),
+      pageBuilder: (context, state) {
+        final profile = state.extra as UserProfileData?;
+        return NoTransitionPage(child: UserDetailPage(profile: profile));
+      },
     ),
     // 帖子详情页（独立路由，不显示底部导航）
     GoRoute(
@@ -123,6 +127,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/wode/favorites',
       builder: (context, state) => const FavoritesPage(),
+    ),
+    // 我的回帖页（独立路由）
+    GoRoute(
+      path: '/wode/my-replies',
+      builder: (context, state) => const MyRepliesPage(),
     ),
     // 我的点赞页（独立路由）
     GoRoute(

@@ -673,6 +673,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
           data.hasThread() && data.thread.replyNum > 0
               ? data.thread.replyNum
               : data.postList.length,
+          context,
         ),
         const SizedBox(height: 4),
         // 回复列表
@@ -743,14 +744,15 @@ class _PostDetailPageState extends State<PostDetailPage> {
 
   // ========== 回复 Tab 栏 ==========
 
-  Widget _buildReplyTabBar(int totalReplies) {
+  Widget _buildReplyTabBar(int totalReplies, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         // "回复 N"
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+            // color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
@@ -775,14 +777,17 @@ class _PostDetailPageState extends State<PostDetailPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: _seeLz ? Colors.orange[50] : Colors.grey[50],
+              // color: _seeLz ? Colors.orange[50] : Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               '只看楼主',
               style: TextStyle(
-                color: _seeLz ? Colors.orange[700] : Colors.grey[600],
+                color: _seeLz
+                    ? Colors.orange[700]
+                    : (isDark ? Colors.white : Colors.black87),
                 fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -797,13 +802,13 @@ class _PostDetailPageState extends State<PostDetailPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: _sortType == 0 ? Colors.blue[50] : Colors.grey[50],
+              // color: _sortType == 0 ? Colors.blue[50] : Colors.grey[50],
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               _sortType == 0 ? '正序' : '倒序',
               style: TextStyle(
-                color: _sortType == 0 ? Colors.blue[700] : Colors.grey[600],
+                color: Colors.grey[600],
                 fontSize: 13,
                 fontWeight: _sortType == 0 ? FontWeight.w600 : null,
               ),

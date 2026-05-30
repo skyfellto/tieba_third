@@ -24,6 +24,7 @@ import 'LikeForumInfo.pb.dart' as $3;
 import 'NewGodInfo.pb.dart' as $7;
 import 'PrivSets.pb.dart' as $2;
 import 'SimpleUser.pb.dart' as $4;
+import 'UserGrowth.pb.dart' as $10;
 import 'UserPics.pb.dart' as $1;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -111,6 +112,7 @@ class User extends $pb.GeneratedMessage {
     $core.String? ipAddress,
     $core.int? isNicknameEditing,
     $core.String? editingNickname,
+    $10.UserGrowth? userGrowth,
     $core.String? displayIntro,
     $core.Iterable<$core.String>? newIconUrl,
     $core.String? dynamicUrl,
@@ -198,6 +200,7 @@ class User extends $pb.GeneratedMessage {
     if (ipAddress != null) result.ipAddress = ipAddress;
     if (isNicknameEditing != null) result.isNicknameEditing = isNicknameEditing;
     if (editingNickname != null) result.editingNickname = editingNickname;
+    if (userGrowth != null) result.userGrowth = userGrowth;
     if (displayIntro != null) result.displayIntro = displayIntro;
     if (newIconUrl != null) result.newIconUrl.addAll(newIconUrl);
     if (dynamicUrl != null) result.dynamicUrl = dynamicUrl;
@@ -310,6 +313,8 @@ class User extends $pb.GeneratedMessage {
     ..aOS(127, _omitFieldNames ? '' : 'ipAddress')
     ..aI(128, _omitFieldNames ? '' : 'isNicknameEditing')
     ..aOS(129, _omitFieldNames ? '' : 'editingNickname')
+    ..aOM<$10.UserGrowth>(137, _omitFieldNames ? '' : 'userGrowth',
+        subBuilder: $10.UserGrowth.create)
     ..aOS(138, _omitFieldNames ? '' : 'displayIntro')
     ..pPS(139, _omitFieldNames ? '' : 'newIconUrl')
     ..aOS(140, _omitFieldNames ? '' : 'dynamicUrl')
@@ -1050,24 +1055,35 @@ class User extends $pb.GeneratedMessage {
   @$pb.TagNumber(129)
   void clearEditingNickname() => $_clearField(129);
 
+  @$pb.TagNumber(137)
+  $10.UserGrowth get userGrowth => $_getN(81);
+  @$pb.TagNumber(137)
+  set userGrowth($10.UserGrowth value) => $_setField(137, value);
+  @$pb.TagNumber(137)
+  $core.bool hasUserGrowth() => $_has(81);
+  @$pb.TagNumber(137)
+  void clearUserGrowth() => $_clearField(137);
+  @$pb.TagNumber(137)
+  $10.UserGrowth ensureUserGrowth() => $_ensure(81);
+
   @$pb.TagNumber(138)
-  $core.String get displayIntro => $_getSZ(81);
+  $core.String get displayIntro => $_getSZ(82);
   @$pb.TagNumber(138)
-  set displayIntro($core.String value) => $_setString(81, value);
+  set displayIntro($core.String value) => $_setString(82, value);
   @$pb.TagNumber(138)
-  $core.bool hasDisplayIntro() => $_has(81);
+  $core.bool hasDisplayIntro() => $_has(82);
   @$pb.TagNumber(138)
   void clearDisplayIntro() => $_clearField(138);
 
   @$pb.TagNumber(139)
-  $pb.PbList<$core.String> get newIconUrl => $_getList(82);
+  $pb.PbList<$core.String> get newIconUrl => $_getList(83);
 
   @$pb.TagNumber(140)
-  $core.String get dynamicUrl => $_getSZ(83);
+  $core.String get dynamicUrl => $_getSZ(84);
   @$pb.TagNumber(140)
-  set dynamicUrl($core.String value) => $_setString(83, value);
+  set dynamicUrl($core.String value) => $_setString(84, value);
   @$pb.TagNumber(140)
-  $core.bool hasDynamicUrl() => $_has(83);
+  $core.bool hasDynamicUrl() => $_has(84);
   @$pb.TagNumber(140)
   void clearDynamicUrl() => $_clearField(140);
 }

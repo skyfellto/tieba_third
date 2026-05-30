@@ -491,7 +491,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
           _threadPage = 1;
           _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
           _threadIdList = data.threadIdList.map((e) => e.toInt()).toList();
-          debugPrint("【刷新】threadIdList=${_threadIdList.length}条");
+          // debugPrint("【刷新】threadIdList=${_threadIdList.length}条");
         }
       });
     }
@@ -514,12 +514,12 @@ class _ForumDetailPageState extends State<ForumDetailPage>
       final threadIdStr = batch.join(',');
       final forumId = info?.forumId.toInt().toString() ?? widget.fid;
 
-      debugPrint(
-        "【触底加载→threadlist】forumName=$forumName forumId=$forumId "
-        "threadIdCount=${batch.length} threadIds=$threadIdStr "
-        "sortType=$_selectedSort page=$_threadPage "
-        "剩余threadId=${_threadIdList.length}",
-      );
+      // debugPrint(
+      //   "【触底加载→threadlist】forumName=$forumName forumId=$forumId "
+      //   "threadIdCount=${batch.length} threadIds=$threadIdStr "
+      //   "sortType=$_selectedSort page=$_threadPage "
+      //   "剩余threadId=${_threadIdList.length}",
+      // );
 
       final data = await TiebaApi.fetchThreadList(
         bduss: UserManager.bduss!,
@@ -546,10 +546,10 @@ class _ForumDetailPageState extends State<ForumDetailPage>
             _threads.addAll(newPosts);
             _threadIdList.removeWhere((id) => batch.contains(id));
             _hasMoreThreads = newPosts.isNotEmpty || _threadIdList.isNotEmpty;
-            debugPrint(
-              "【触底加载→threadlist】返回新帖${newPosts.length}条，"
-              "剩余threadId=${_threadIdList.length} hasMore=$_hasMoreThreads",
-            );
+            // debugPrint(
+            //   "【触底加载→threadlist】返回新帖${newPosts.length}条，"
+            //   "剩余threadId=${_threadIdList.length} hasMore=$_hasMoreThreads",
+            // );
           } else {
             debugPrint("【触底加载→threadlist】返回null，接口异常");
           }
@@ -558,11 +558,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
     } else {
       // threadIdList 用完，回退到 frs/page
       final nextPage = _threadPage + 1;
-      debugPrint(
-        "【触底加载→frs/page】forumName=$forumName "
-        "sortType=$_selectedSort page=$nextPage "
-        "_threadIdList为空，走frs/page翻页",
-      );
+      // debugPrint(
+      //   "【触底加载→frs/page】forumName=$forumName "
+      //   "sortType=$_selectedSort page=$nextPage "
+      //   "_threadIdList为空，走frs/page翻页",
+      // );
 
       final data = await TiebaApi.fetchFrsPage(
         bduss: UserManager.bduss!,
@@ -584,11 +584,11 @@ class _ForumDetailPageState extends State<ForumDetailPage>
             _threadPage = nextPage;
             _hasMoreThreads = data.hasPage() && data.page.hasMore == 1;
             _threadIdList = data.threadIdList.map((e) => e.toInt()).toList();
-            debugPrint(
-              "【触底加载→frs/page】返回新帖${newPosts.length}条，"
-              "新threadId=${_threadIdList.length}条 hasMore=$_hasMoreThreads "
-              "currentPage=$_threadPage",
-            );
+            // debugPrint(
+            //   "【触底加载→frs/page】返回新帖${newPosts.length}条，"
+            //   "新threadId=${_threadIdList.length}条 hasMore=$_hasMoreThreads "
+            //   "currentPage=$_threadPage",
+            // );
           } else {
             debugPrint("【触底加载→frs/page】返回null，接口异常");
           }
@@ -1020,9 +1020,7 @@ class _ForumDetailPageState extends State<ForumDetailPage>
                   return PostCard(
                     post: p,
                     showForum: false,
-                    badge: p.isHelp
-                        ? "求助"
-                        : (p.isPoll ? "投票" : null),
+                    badge: p.isHelp ? "求助" : (p.isPoll ? "投票" : null),
                     badgeTextColor: p.isHelp
                         ? Colors.blue[700]
                         : (p.isPoll ? Colors.purple[700] : null),

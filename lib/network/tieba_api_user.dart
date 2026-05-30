@@ -341,6 +341,9 @@ class _UserApi {
       if (response.statusCode != 200) return [];
 
       final pb = UserPostResponse.fromBuffer(response.bodyBytes);
+      // pb.data.postList.forEach((post) {
+      //   _logger.i("postinfoContent :: ${post.content}");
+      // });
       if (pb.hasError() && pb.error.errorCode != 0) {
         _logger.w("【用户帖子Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
         return [];
@@ -430,6 +433,86 @@ class _UserApi {
       return posts;
     } catch (e) {
       _logger.w("【用户帖子Pb异常】$e");
+      return [];
+    } finally {
+      client.close();
+    }
+  }
+
+  static Future<List<PostInfoList>> fetchUserRepliesPb({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int page = 1,
+    int rn = 20,
+  }) async {
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final common = CommonRequest(
+      clientType: 2,
+      clientVersion: _clientVersion,
+      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      phoneImei: phoneImei,
+      cuid: cuid,
+      cuidGalaxy2: cuid,
+      timestamp: Int64(timestamp),
+      netType: 1,
+      bDUSS: bduss,
+      stoken: stoken,
+      model: DeviceInfo().model,
+      brand: DeviceInfo().brand,
+      osVersion: "12",
+      from: "1020031h",
+      phoneNewimei: phoneImei,
+      scrW: DeviceInfo().scrW,
+      scrH: DeviceInfo().scrH,
+      scrDip: DeviceInfo().scrDip,
+      qType: 2,
+    );
+
+    final reqData = UserPostRequestData(
+      common: common,
+      uid: Int64.parseInt(uid),
+      pn: page,
+      rn: rn,
+      isThread: 0,
+      needContent: 1,
+    );
+    final request = UserPostRequest(data: reqData);
+    final bodyBytes = request.writeToBuffer();
+
+    final uri = Uri.parse(
+      "$_baseHost/c/u/feed/userpost?cmd=303002&format=protobuf",
+    );
+
+    final client = http.Client();
+    try {
+      final multipart = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          "x_bd_data_type": "protobuf",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+        })
+        ..files.add(
+          http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
+        );
+
+      final streamedResponse = await client.send(multipart);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) return [];
+
+      final pb = UserPostResponse.fromBuffer(response.bodyBytes);
+      if (pb.hasError() && pb.error.errorCode != 0) {
+        _logger.w("【用户回帖Pb】错误：${pb.error.errorCode} ${pb.error.errorMsg}");
+        return [];
+      }
+      if (!pb.hasData()) return [];
+
+      return pb.data.postList.toList();
+    } catch (e) {
+      _logger.w("【用户回帖Pb异常】$e");
       return [];
     } finally {
       client.close();

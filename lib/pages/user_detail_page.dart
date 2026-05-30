@@ -17,8 +17,9 @@ import '../widgets/image_viewer.dart';
 
 class UserDetailPage extends StatefulWidget {
   final String? uid;
+  final UserProfileData? profile;
 
-  const UserDetailPage({super.key, this.uid});
+  const UserDetailPage({super.key, this.uid, this.profile});
 
   @override
   State<UserDetailPage> createState() => _UserDetailPageState();
@@ -53,17 +54,26 @@ class _UserDetailPageState extends State<UserDetailPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // 查看自己时，用 UserManager 数据预填防止闪动
+    // 查看自己时，用传入的 profile 或 UserManager 数据预填防止闪动
     if (widget.uid == null && UserManager.isLogin) {
-      _profile = UserProfileData(
-        uid: UserManager.userId ?? '',
-        name: UserManager.userName ?? '',
-        nameShow: UserManager.nameShow ?? UserManager.userName ?? '',
-        portrait: UserManager.portrait,
-      );
+      if (widget.profile != null) {
+        _profile = widget.profile;
+      } else {
+        _profile = UserProfileData(
+          uid: UserManager.userId ?? '',
+          name: UserManager.userName ?? '',
+          nameShow: UserManager.nameShow ?? UserManager.userName ?? '',
+          portrait: UserManager.portrait,
+        );
+      }
     }
     _loadingProfile = true;
-    _loadProfile();
+    if (widget.uid == null && widget.profile != null) {
+      // 从 WodePage 已获取到完整资料，无需再调 API
+      _loadingProfile = false;
+    } else {
+      _loadProfile();
+    }
     _loadPosts(refresh: true);
     _loadForums();
   }
@@ -89,9 +99,9 @@ class _UserDetailPageState extends State<UserDetailPage>
       stoken: UserManager.stoken!,
       uid: uid,
     );
-    debugPrint(
-      "【用户详情】_loadProfile uid=$uid profile=${profile != null} widget.uid=${widget.uid}",
-    );
+    // debugPrint(
+    //   "【用户详情】_loadProfile uid=$uid profile=${profile != null} widget.uid=${widget.uid}",
+    // );
     if (mounted && profile != null) {
       // 查看自己时，同步 nameShow 到 UserManager
       if (widget.uid == null && profile.nameShow.isNotEmpty) {

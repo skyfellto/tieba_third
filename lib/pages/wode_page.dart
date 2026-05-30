@@ -4,6 +4,8 @@ import '../utils/user_manager.dart';
 import '../utils/auth_notifier.dart';
 import '../constants/app_colors.dart';
 import '../main.dart' show themeNotifier;
+import '../models/user_profile_data.dart';
+import '../network/tieba_api.dart';
 import 'webview_login_page.dart';
 
 class WodePage extends StatefulWidget {
@@ -14,20 +16,62 @@ class WodePage extends StatefulWidget {
 }
 
 class _WodePageState extends State<WodePage> {
+  UserProfileData? _profile;
+  Future<void>? _profileFuture;
+
   @override
   void initState() {
     super.initState();
     UserManager.init();
+    _profileFuture = _loadProfile();
+    AuthNotifier().addListener(_onAuthChanged);
   }
 
-  void _onAvatarTap() {
+  @override
+  void dispose() {
+    AuthNotifier().removeListener(_onAuthChanged);
+    super.dispose();
+  }
+
+  void _onAuthChanged() {
     if (UserManager.isLogin) {
-      context.push('/wode/detail');
+      setState(() => _profile = null);
+      _profileFuture = _loadProfile();
+    } else {
+      setState(() => _profile = null);
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    if (!UserManager.isLogin) return;
+    final uid = UserManager.userId;
+    if (uid == null || uid.isEmpty) return;
+    if (!mounted) return;
+    final result = await TiebaApi.fetchUserProfilePb(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      uid: uid,
+    );
+    if (mounted) {
+      setState(() => _profile = result.$1);
+    }
+  }
+
+  void _onAvatarTap() async {
+    if (UserManager.isLogin) {
+      if (_profile == null && _profileFuture != null) {
+        await _profileFuture;
+      }
+      if (!mounted) return;
+      context.push('/wode/detail', extra: _profile);
     } else {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const WebViewLoginPage()),
-      ).then((_) => setState(() {}));
+      ).then((_) {
+        setState(() {});
+        _profileFuture = _loadProfile();
+      });
     }
   }
 
@@ -70,28 +114,47 @@ class _WodePageState extends State<WodePage> {
                   ),
                   child: GestureDetector(
                     onTap: _onAvatarTap,
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor: Colors.white,
-                          backgroundImage:
-                              isLogin && UserManager.portrait != null
-                              ? NetworkImage(
-                                  UserManager.avatarUrl,
-                                  headers: UserManager.avatarHeaders,
-                                )
-                              : null,
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 30,
+                              backgroundColor: Colors.white,
+                              backgroundImage:
+                                  isLogin && UserManager.portrait != null
+                                  ? NetworkImage(
+                                      UserManager.avatarUrl,
+                                      headers: UserManager.avatarHeaders,
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 15),
+                            Text(
+                              isLogin ? (UserManager.nameShow ?? UserManager.userName ?? "百度用户") : "登录",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 15),
-                        Text(
-                          isLogin ? (UserManager.nameShow ?? UserManager.userName ?? "百度用户") : "登录",
-                          style: const TextStyle(
-                            fontSize: 22,
-                            // color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        if (isLogin) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => context.push('/wode/my-replies'),
+                                  child: _buildStat(_profile?.postNum ?? 0, '回帖'),
+                                ),
+                              ),
+                              Expanded(child: _buildStat(_profile?.fansNum ?? 0, '粉丝')),
+                              Expanded(child: _buildStat(_profile?.concernNum ?? 0, '关注')),
+                            ],
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -163,6 +226,31 @@ class _WodePageState extends State<WodePage> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildStat(int count, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final numColor = isDark ? Colors.white : Colors.black87;
+    return Column(
+      children: [
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: numColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: numColor.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     );
   }
 

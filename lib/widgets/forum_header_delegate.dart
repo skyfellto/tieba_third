@@ -276,32 +276,31 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
         color: Colors.transparent,
         child: Row(
           children: [
-            // "最早" 排序下拉框
+            // "最早" tab 按钮 + 排序下拉
             Expanded(
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton2<int>(
-                  valueListenable: sortListenable,
-                  isDense: true,
-                  dropdownStyleData: DropdownStyleData(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[800] : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    offset: const Offset(-16, 4),
-                    useRootNavigator: true,
-                    width: 140,
-                  ),
-                  buttonStyleData: const ButtonStyleData(
-                    height: 36,
-                    width: null,
-                    padding: EdgeInsets.zero,
-                  ),
-                  customButton: Padding(
-                    padding: EdgeInsets.zero,
-                    child: Container(
-                      height: 48,
-                      alignment: Alignment.center,
-                      child: Row(
+              child: GestureDetector(
+                onTap: () => tabController.animateTo(0),
+                behavior: HitTestBehavior.translucent,
+                child: Center(
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton2<int>(
+                      valueListenable: sortListenable,
+                      isDense: true,
+                      dropdownStyleData: DropdownStyleData(
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.grey[800] : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        offset: const Offset(-16, 4),
+                        useRootNavigator: true,
+                        width: 140,
+                      ),
+                      buttonStyleData: const ButtonStyleData(
+                        height: 36,
+                        width: null,
+                        padding: EdgeInsets.zero,
+                      ),
+                      customButton: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
@@ -324,24 +323,24 @@ class ForumHeaderDelegate extends SliverPersistentHeaderDelegate {
                           ),
                         ],
                       ),
+                      items: List.generate(sortOptions.length, (i) {
+                        return DropdownItem<int>(
+                          value: i,
+                          child: Text(
+                            sortOptions[i],
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        );
+                      }),
+                      onChanged: (v) {
+                        if (v == null || v == selectedSort) return;
+                        onSortChanged(v);
+                      },
                     ),
                   ),
-                  items: List.generate(sortOptions.length, (i) {
-                    return DropdownItem<int>(
-                      value: i,
-                      child: Text(
-                        sortOptions[i],
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                      ),
-                    );
-                  }),
-                  onChanged: (v) {
-                    if (v == null || v == selectedSort) return;
-                    onSortChanged(v);
-                  },
                 ),
               ),
             ),

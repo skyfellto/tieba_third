@@ -9,6 +9,7 @@ import "GodInfo.proto";
 import "Icon.proto";
 import "LikeForumInfo.proto";
 import "NewGodInfo.proto";
+import "UserGrowth.proto";
 import "UserPics.proto";
 import "PrivSets.proto";
 import "SimpleUser.proto";
@@ -97,6 +98,7 @@ message User {
   string ip_address = 127;
   int32 is_nickname_editing = 128;
   string editing_nickname = 129;
+  UserGrowth user_growth = 137;
   string display_intro = 138;
   repeated string new_icon_url = 139;
   string dynamic_url = 140;
