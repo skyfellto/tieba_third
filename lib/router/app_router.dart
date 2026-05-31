@@ -10,6 +10,7 @@ import '../pages/floor_reply_page.dart';
 import '../pages/browse_history_page.dart';
 import '../pages/favorites_page.dart';
 import '../pages/my_replies_page.dart';
+import '../pages/fans_page.dart';
 import '../pages/my_likes_page.dart';
 import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
@@ -132,6 +133,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/wode/my-replies',
       builder: (context, state) => const MyRepliesPage(),
+    ),
+    // 用户粉丝页（独立路由）
+    GoRoute(
+      path: '/user/:uid/fans',
+      builder: (context, state) => FansPage(
+        uid: state.pathParameters['uid']!,
+        userName: state.uri.queryParameters['name'],
+      ),
     ),
     // 我的点赞页（独立路由）
     GoRoute(

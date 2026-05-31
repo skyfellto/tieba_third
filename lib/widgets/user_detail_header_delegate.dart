@@ -8,6 +8,7 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double topPadding;
   final TabBar tabBar;
   final VoidCallback? onPop;
+  final VoidCallback? onFansTap;
   final UserProfileData? profile;
   final bool isSkeleton;
   final String? skeletonName;
@@ -17,6 +18,7 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.topPadding,
     required this.tabBar,
     this.onPop,
+    this.onFansTap,
     this.profile,
     this.isSkeleton = false,
     this.skeletonName,
@@ -103,7 +105,10 @@ class UserDetailHeaderDelegate extends SliverPersistentHeaderDelegate {
           : [
               _statItem(_fmt(profile?.concernNum), "关注"),
               _divider(),
-              _statItem(_fmt(profile?.fansNum), "粉丝"),
+              GestureDetector(
+                onTap: onFansTap,
+                child: _statItem(_fmt(profile?.fansNum), "粉丝"),
+              ),
               _divider(),
               _statItem(_fmt(profile?.totalAgreeNum), "获赞"),
               _divider(),

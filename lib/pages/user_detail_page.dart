@@ -297,6 +297,12 @@ class _UserDetailPageState extends State<UserDetailPage>
                   topPadding: topPad,
                   tabBar: _buildTabBar(context: context),
                   onPop: () => context.pop(),
+                  onFansTap: () {
+                    final uid = _targetUid;
+                    if (uid.isNotEmpty) {
+                      context.push('/user/$uid/fans');
+                    }
+                  },
                   profile: _profile,
                   isSkeleton: _loadingProfile && _profile == null,
                 ),

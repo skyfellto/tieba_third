@@ -521,4 +521,18 @@ class TiebaApi {
     page: page,
     rn: rn,
   );
+
+  static Future<Map<String, dynamic>?> fetchFansList({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String uid,
+    int pn = 1,
+  }) => _UserApi.fetchFansList(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    uid: uid,
+    pn: pn,
+  );
 }
