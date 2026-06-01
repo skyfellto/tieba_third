@@ -11,6 +11,7 @@ import '../pages/browse_history_page.dart';
 import '../pages/favorites_page.dart';
 import '../pages/my_replies_page.dart';
 import '../pages/fans_page.dart';
+import '../pages/follow_page.dart';
 import '../pages/my_likes_page.dart';
 import '../pages/search_page.dart';
 import '../pages/search_result_page.dart';
@@ -138,6 +139,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/user/:uid/fans',
       builder: (context, state) => FansPage(
+        uid: state.pathParameters['uid']!,
+        userName: state.uri.queryParameters['name'],
+      ),
+    ),
+    // 用户关注页（独立路由）
+    GoRoute(
+      path: '/user/:uid/follow',
+      builder: (context, state) => FollowPage(
         uid: state.pathParameters['uid']!,
         userName: state.uri.queryParameters['name'],
       ),

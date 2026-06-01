@@ -631,6 +631,7 @@ class _UserApi {
     required String uid,
     int pn = 1,
   }) async {
+    final refTimestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final cuid = DeviceInfo().cuid;
     final phoneImei = DeviceInfo().phoneImei;
@@ -772,6 +773,8 @@ class _UserApi {
               "Sec-Fetch-Site": "same-origin",
               "Sec-Fetch-Mode": "cors",
               "Sec-Fetch-Dest": "empty",
+              "Referer":
+                  "https://tieba.baidu.com/mo/q/hybrid-main-usercenter/userFans/hybrid?customfullscreen=1&nonavigationbar=1&loadingSignal=1&cuid=$cuid&cuid_galaxy2=$cuid&cuid_gid=&timestamp=$refTimestamp&_client_version=$_clientVersion&_client_type=2&nohead=1&skin=default",
             })
             ..body = bodyStr;
 
@@ -791,6 +794,155 @@ class _UserApi {
       return json;
     } catch (e) {
       _logger.w("【粉丝列表异常】$e");
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// 获取用户关注列表 — GET（签名）
+  static Future<Map<String, dynamic>?> fetchFollowList({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String uid,
+    int pn = 1,
+  }) async {
+    final refTimestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
+    final cuid = DeviceInfo().cuid;
+    final phoneImei = DeviceInfo().phoneImei;
+    final c3Aid = DeviceInfo().c3Aid;
+    final brand = DeviceInfo().brand;
+    final model = DeviceInfo().model;
+    final androidId = DeviceInfo().androidId;
+    final di = DeviceInfo();
+    final now = DateTime.now();
+    final eventDay = "${now.year}${now.month}${now.day}";
+
+    final params = <List<String>>[
+      ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", _syncClientId ?? ""],
+      ["_client_type", "2"],
+      ["_client_version", _clientVersion],
+      ["_timestamp", timestamp],
+      ["active_timestamp", "${di.activeTimestamp}"],
+      ["applist", ""],
+      ["c3_aid", c3Aid],
+      ["cam", ""],
+      ["cmode", "1"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["device_score", "0.5"],
+      ["diao", ""],
+      [
+        "di_diordna",
+        base64Url
+            .encode(utf8.encode(androidId.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      [
+        "dnarb",
+        base64Url
+            .encode(utf8.encode(brand.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      ["event_day", eventDay],
+      ["extra", ""],
+      ["first_install_time", "${di.firstInstallTime}"],
+      ["follow_list_switch", "1"],
+      ["framework_ver", "4220001"],
+      ["from", "1015363f"],
+      [
+        "iemi",
+        base64Url
+            .encode(utf8.encode(phoneImei.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      ["is_teenager", "0"],
+      ["last_update_time", "${di.lastUpdateTime}"],
+      [
+        "ledom",
+        base64Url
+            .encode(utf8.encode(model.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      ["lego_lib_version", "3.0.0"],
+      ["naws_game_ver", "2035000"],
+      ["need_cam_decrypt", "1"],
+      ["need_decrypt", "1"],
+      ["net_type", "1"],
+      [
+        "noisrev_so",
+        base64Url
+            .encode(utf8.encode(di.osVersion.split('').reversed.join()))
+            .replaceAll('=', ''),
+      ],
+      ["package_version", "hybrid-main-pb_1.0.302.1"],
+      ["personalized_rec_switch", "1"],
+      ["pn", "$pn"],
+      ["pversion", "1.0.3"],
+      ["q_type", "0"],
+      ["sample_id", _syncSampleId ?? ''],
+      ["sdk_ver", "3.36.0"],
+      ["scr_dip", "${di.scrDip}"],
+      ["scr_h", "${di.scrH}"],
+      ["scr_w", "${di.scrW}"],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["subapp_type", "client_fe"],
+      ["tab", "0"],
+      ["tbs", tbs],
+      ["uid", uid],
+      ["user_agent", DeviceInfo().userAgent(_clientVersion)],
+    ];
+    // 需要 z_id 时添加
+    final zId = await getCachedZid();
+    if (zId != null && zId.isNotEmpty) {
+      params.add(["z_id", zId]);
+    }
+
+    final sign = _computeSign(params);
+    params.add(["sign", sign]);
+
+    final uri = Uri.parse(
+      "https://tieba.baidu.com/c/u/follow/followList?${params.map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}").join("&")}",
+    );
+
+    final client = http.Client();
+    try {
+      final request = http.Request('GET', uri)
+        ..followRedirects = false
+        ..headers.addAll({
+          "Accept": "application/json, text/plain, */*",
+          "User-Agent": DeviceInfo().userAgent(_clientVersion),
+          "x-requested-with": "XMLHttpRequest",
+          "Sec-Fetch-Site": "same-origin",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Dest": "empty",
+          "Referer":
+              "https://tieba.baidu.com/mo/q/hybrid-main-usercenter/userFollow/hybrid?customfullscreen=1&nonavigationbar=1&loadingSignal=1&cuid=$cuid&cuid_galaxy2=$cuid&cuid_gid=&timestamp=$refTimestamp&_client_version=$_clientVersion&_client_type=2&nohead=1&skin=default",
+          "Accept-Encoding": "gzip, deflate",
+          "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Cookie":
+              "CUID=$cuid; TBBRAND=; BAIDUID=${UserManager.baiduId ?? ''}; cuid_galaxy2=$cuid; cuid_gid=; BDUSS=$bduss; BDUSS_BFESS=$bduss; STOKEN=$stoken; need_cookie_decrypt=1",
+        });
+      final response = await http.Response.fromStream(
+        await client.send(request),
+      );
+      if (response.statusCode != 200) return null;
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      if (json["error_code"] != null &&
+          json["error_code"] != "0" &&
+          json["error_code"] != 0) {
+        _logger.w("【关注列表失败】error_code=${json["error_code"]}");
+        return null;
+      }
+      return json;
+    } catch (e) {
+      _logger.w("【关注列表异常】$e");
       return null;
     } finally {
       client.close();

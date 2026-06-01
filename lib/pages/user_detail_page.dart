@@ -303,6 +303,12 @@ class _UserDetailPageState extends State<UserDetailPage>
                       context.push('/user/$uid/fans');
                     }
                   },
+                  onFollowTap: () {
+                    final uid = _targetUid;
+                    if (uid.isNotEmpty) {
+                      context.push('/user/$uid/follow');
+                    }
+                  },
                   profile: _profile,
                   isSkeleton: _loadingProfile && _profile == null,
                 ),

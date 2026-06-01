@@ -535,4 +535,18 @@ class TiebaApi {
     uid: uid,
     pn: pn,
   );
+
+  static Future<Map<String, dynamic>?> fetchFollowList({
+    required String bduss,
+    required String stoken,
+    required String tbs,
+    required String uid,
+    int pn = 1,
+  }) => _UserApi.fetchFollowList(
+    bduss: bduss,
+    stoken: stoken,
+    tbs: tbs,
+    uid: uid,
+    pn: pn,
+  );
 }

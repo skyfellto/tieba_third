@@ -161,7 +161,17 @@ class _WodePageState extends State<WodePage> {
                                   child: _buildStat(_profile?.fansNum ?? 0, '粉丝'),
                                 ),
                               ),
-                              Expanded(child: _buildStat(_profile?.concernNum ?? 0, '关注')),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    final uid = UserManager.userId;
+                                    if (uid != null && uid.isNotEmpty) {
+                                      context.push('/user/$uid/follow');
+                                    }
+                                  },
+                                  child: _buildStat(_profile?.concernNum ?? 0, '关注'),
+                                ),
+                              ),
                             ],
                           ),
                         ],
