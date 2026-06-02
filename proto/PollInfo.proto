@@ -2,9 +2,8 @@ syntax = "proto3";
 
 package tieba;
 
-option java_package = "com.huanchengfly.tieba.post.api.models.protos";
-
 import "PollOption.proto";
+import "FeedKV.proto";
 
 message PollInfo {
   int32 type = 1;
@@ -20,4 +19,5 @@ message PollInfo {
   int64 total_poll = 11;
   string title = 12;
   uint32 last_time = 13;
+  repeated FeedKV business_info = 14;
 }

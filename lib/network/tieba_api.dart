@@ -53,6 +53,10 @@ import '../generated/SearchSug/SearchSugResponse.pb.dart';
 import '../generated/SearchSug/SearchSugResponseData.pb.dart';
 import '../generated/VoteRequest.pb.dart';
 import '../generated/VoteResponse.pb.dart';
+import '../generated/AgreeMe/AgreeMeReqIdl.pb.dart';
+import '../generated/AgreeMe/AgreeMeResIdl.pb.dart';
+import '../generated/AgreeMe/DataReq.pb.dart';
+import '../generated/AgreeMe/DataRes.pb.dart';
 
 part 'tieba_api_shared.dart';
 part 'tieba_api_auth.dart';
@@ -62,6 +66,7 @@ part 'tieba_api_forum.dart';
 part 'tieba_api_search.dart';
 part 'tieba_api_interact.dart';
 part 'tieba_api_user.dart';
+part 'tieba_api_agreeme.dart';
 
 class TiebaApi {
   static String get clientVersion => _clientVersion;
@@ -548,5 +553,20 @@ class TiebaApi {
     tbs: tbs,
     uid: uid,
     pn: pn,
+  );
+
+  /// 获取点赞消息列表
+  static Future<DataRes?> fetchAgreeMe({
+    required String bduss,
+    required String stoken,
+    required String userId,
+    Int64 id = Int64.ZERO,
+    int rn = 20,
+  }) => _AgreeMeApi.fetchAgreeMe(
+    bduss: bduss,
+    stoken: stoken,
+    userId: userId,
+    id: id,
+    rn: rn,
   );
 }

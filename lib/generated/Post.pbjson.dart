@@ -255,6 +255,55 @@ const Post$json = {
       '6': '.tieba.NovelInfo',
       '10': 'novelInfo'
     },
+    {'1': 'dynamic_url', '3': 63, '4': 1, '5': 9, '10': 'dynamicUrl'},
+    {'1': 'rumor_source_img', '3': 65, '4': 1, '5': 9, '10': 'rumorSourceImg'},
+    {'1': 'shield_icon', '3': 68, '4': 1, '5': 5, '10': 'shieldIcon'},
+    {'1': 'icon_url', '3': 69, '4': 1, '5': 9, '10': 'iconUrl'},
+    {'1': 'toutiao_card_tag', '3': 70, '4': 1, '5': 9, '10': 'toutiaoCardTag'},
+    {
+      '1': 'toutiao_card_tag_color',
+      '3': 71,
+      '4': 1,
+      '5': 9,
+      '10': 'toutiaoCardTagColor'
+    },
+    {'1': 'is_bot_reply', '3': 73, '4': 1, '5': 5, '10': 'isBotReply'},
+    {
+      '1': 'bot_reply_content',
+      '3': 74,
+      '4': 1,
+      '5': 9,
+      '10': 'botReplyContent'
+    },
+    {
+      '1': 'pic_content',
+      '3': 84,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.PbContent',
+      '10': 'picContent'
+    },
+    {
+      '1': 'no_pic_content',
+      '3': 85,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.PbContent',
+      '10': 'noPicContent'
+    },
+    {'1': 'ios_b_url', '3': 87, '4': 1, '5': 9, '10': 'iosBUrl'},
+    {'1': 'footer', '3': 89, '4': 1, '5': 9, '10': 'footer'},
+    {'1': 'bdt_user_adopt', '3': 91, '4': 1, '5': 5, '10': 'bdtUserAdopt'},
+    {'1': 'tmoney', '3': 92, '4': 1, '5': 9, '10': 'tmoney'},
+    {'1': 'adopt_status', '3': 93, '4': 1, '5': 5, '10': 'adoptStatus'},
+    {'1': 'is_ad_thread_post', '3': 96, '4': 1, '5': 5, '10': 'isAdThreadPost'},
+    {
+      '1': 'content_statement',
+      '3': 97,
+      '4': 1,
+      '5': 9,
+      '10': 'contentStatement'
+    },
   ],
 };
 
@@ -299,4 +348,15 @@ final $typed_data.Uint8List postDescriptor = $convert.base64Decode(
     'aXNlbWVudFINYWR2ZXJ0aXNlbWVudBIuChNmb2xkX2NvbW1lbnRfc3RhdHVzGDggASgFUhFmb2'
     'xkQ29tbWVudFN0YXR1cxIzChZmb2xkX2NvbW1lbnRfYXBwbHlfdXJsGDkgASgJUhNmb2xkQ29t'
     'bWVudEFwcGx5VXJsEi8KCm5vdmVsX2luZm8YOiABKAsyEC50aWViYS5Ob3ZlbEluZm9SCW5vdm'
-    'VsSW5mbw==');
+    'VsSW5mbxIfCgtkeW5hbWljX3VybBg/IAEoCVIKZHluYW1pY1VybBIoChBydW1vcl9zb3VyY2Vf'
+    'aW1nGEEgASgJUg5ydW1vclNvdXJjZUltZxIfCgtzaGllbGRfaWNvbhhEIAEoBVIKc2hpZWxkSW'
+    'NvbhIZCghpY29uX3VybBhFIAEoCVIHaWNvblVybBIoChB0b3V0aWFvX2NhcmRfdGFnGEYgASgJ'
+    'Ug50b3V0aWFvQ2FyZFRhZxIzChZ0b3V0aWFvX2NhcmRfdGFnX2NvbG9yGEcgASgJUhN0b3V0aW'
+    'FvQ2FyZFRhZ0NvbG9yEiAKDGlzX2JvdF9yZXBseRhJIAEoBVIKaXNCb3RSZXBseRIqChFib3Rf'
+    'cmVwbHlfY29udGVudBhKIAEoCVIPYm90UmVwbHlDb250ZW50EjEKC3BpY19jb250ZW50GFQgAy'
+    'gLMhAudGllYmEuUGJDb250ZW50UgpwaWNDb250ZW50EjYKDm5vX3BpY19jb250ZW50GFUgAygL'
+    'MhAudGllYmEuUGJDb250ZW50Ugxub1BpY0NvbnRlbnQSGgoJaW9zX2JfdXJsGFcgASgJUgdpb3'
+    'NCVXJsEhYKBmZvb3RlchhZIAEoCVIGZm9vdGVyEiQKDmJkdF91c2VyX2Fkb3B0GFsgASgFUgxi'
+    'ZHRVc2VyQWRvcHQSFgoGdG1vbmV5GFwgASgJUgZ0bW9uZXkSIQoMYWRvcHRfc3RhdHVzGF0gAS'
+    'gFUgthZG9wdFN0YXR1cxIpChFpc19hZF90aHJlYWRfcG9zdBhgIAEoBVIOaXNBZFRocmVhZFBv'
+    'c3QSKwoRY29udGVudF9zdGF0ZW1lbnQYYSABKAlSEGNvbnRlbnRTdGF0ZW1lbnQ=');

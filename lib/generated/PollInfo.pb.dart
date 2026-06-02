@@ -15,6 +15,7 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
+import 'FeedKV.pb.dart' as $1;
 import 'PollOption.pb.dart' as $0;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -34,6 +35,7 @@ class PollInfo extends $pb.GeneratedMessage {
     $fixnum.Int64? totalPoll,
     $core.String? title,
     $core.int? lastTime,
+    $core.Iterable<$1.FeedKV>? businessInfo,
   }) {
     final result = create();
     if (type != null) result.type = type;
@@ -49,6 +51,7 @@ class PollInfo extends $pb.GeneratedMessage {
     if (totalPoll != null) result.totalPoll = totalPoll;
     if (title != null) result.title = title;
     if (lastTime != null) result.lastTime = lastTime;
+    if (businessInfo != null) result.businessInfo.addAll(businessInfo);
     return result;
   }
 
@@ -79,6 +82,8 @@ class PollInfo extends $pb.GeneratedMessage {
     ..aInt64(11, _omitFieldNames ? '' : 'totalPoll')
     ..aOS(12, _omitFieldNames ? '' : 'title')
     ..aI(13, _omitFieldNames ? '' : 'lastTime', fieldType: $pb.PbFieldType.OU3)
+    ..pPM<$1.FeedKV>(14, _omitFieldNames ? '' : 'businessInfo',
+        subBuilder: $1.FeedKV.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -209,6 +214,9 @@ class PollInfo extends $pb.GeneratedMessage {
   $core.bool hasLastTime() => $_has(12);
   @$pb.TagNumber(13)
   void clearLastTime() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $pb.PbList<$1.FeedKV> get businessInfo => $_getList(13);
 }
 
 const $core.bool _omitFieldNames =

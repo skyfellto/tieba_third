@@ -39,6 +39,14 @@ const PollInfo$json = {
     {'1': 'total_poll', '3': 11, '4': 1, '5': 3, '10': 'totalPoll'},
     {'1': 'title', '3': 12, '4': 1, '5': 9, '10': 'title'},
     {'1': 'last_time', '3': 13, '4': 1, '5': 13, '10': 'lastTime'},
+    {
+      '1': 'business_info',
+      '3': 14,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.FeedKV',
+      '10': 'businessInfo'
+    },
   ],
 };
 
@@ -50,4 +58,5 @@ final $typed_data.Uint8List pollInfoDescriptor = $convert.base64Decode(
     'VlGAYgASgJUgtwb2xsZWRWYWx1ZRISCgR0aXBzGAcgASgJUgR0aXBzEhkKCGVuZF90aW1lGAgg'
     'ASgFUgdlbmRUaW1lEisKB29wdGlvbnMYCSADKAsyES50aWViYS5Qb2xsT3B0aW9uUgdvcHRpb2'
     '5zEhYKBnN0YXR1cxgKIAEoBVIGc3RhdHVzEh0KCnRvdGFsX3BvbGwYCyABKANSCXRvdGFsUG9s'
-    'bBIUCgV0aXRsZRgMIAEoCVIFdGl0bGUSGwoJbGFzdF90aW1lGA0gASgNUghsYXN0VGltZQ==');
+    'bBIUCgV0aXRsZRgMIAEoCVIFdGl0bGUSGwoJbGFzdF90aW1lGA0gASgNUghsYXN0VGltZRIyCg'
+    '1idXNpbmVzc19pbmZvGA4gAygLMg0udGllYmEuRmVlZEtWUgxidXNpbmVzc0luZm8=');

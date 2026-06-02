@@ -13,6 +13,7 @@
 migrate_working_dir/
 docs/
 proto/
+CLAUDE.md
 
 # IntelliJ related
 *.iml

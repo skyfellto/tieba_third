@@ -110,6 +110,12 @@ const CommonReq$json = {
     {'1': 'pid_rcs', '3': 80, '4': 1, '5': 9, '10': 'pidRcs'},
     {'1': 'need_decrypt', '3': 81, '4': 1, '5': 5, '10': 'needDecrypt'},
     {'1': 'need_cam_decrypt', '3': 82, '4': 1, '5': 5, '10': 'needCamDecrypt'},
+    {'1': 'shoubai_version', '3': 83, '4': 1, '5': 9, '10': 'shoubaiVersion'},
+    {'1': 'hm_acuid', '3': 84, '4': 1, '5': 9, '10': 'hmAcuid'},
+    {'1': 'hm_oid', '3': 85, '4': 1, '5': 9, '10': 'hmOid'},
+    {'1': 'hm_needmp', '3': 86, '4': 1, '5': 9, '10': 'hmNeedmp'},
+    {'1': 'support_image', '3': 87, '4': 1, '5': 9, '10': 'supportImage'},
+    {'1': 'package_version', '3': 88, '4': 1, '5': 9, '10': 'packageVersion'},
   ],
 };
 
@@ -154,4 +160,8 @@ final $typed_data.Uint8List commonReqDescriptor = $convert.base64Decode(
     'cmIYTCABKAlSBWRuYXJiEh0KCmVweXRfZG5hcmIYTSABKAlSCWVweXREbmFyYhITCgV3X3Jjcx'
     'hOIAEoCVIEd1JjcxITCgVoX3JjcxhPIAEoCVIEaFJjcxIXCgdwaWRfcmNzGFAgASgJUgZwaWRS'
     'Y3MSIQoMbmVlZF9kZWNyeXB0GFEgASgFUgtuZWVkRGVjcnlwdBIoChBuZWVkX2NhbV9kZWNyeX'
-    'B0GFIgASgFUg5uZWVkQ2FtRGVjcnlwdA==');
+    'B0GFIgASgFUg5uZWVkQ2FtRGVjcnlwdBInCg9zaG91YmFpX3ZlcnNpb24YUyABKAlSDnNob3Vi'
+    'YWlWZXJzaW9uEhkKCGhtX2FjdWlkGFQgASgJUgdobUFjdWlkEhUKBmhtX29pZBhVIAEoCVIFaG'
+    '1PaWQSGwoJaG1fbmVlZG1wGFYgASgJUghobU5lZWRtcBIjCg1zdXBwb3J0X2ltYWdlGFcgASgJ'
+    'UgxzdXBwb3J0SW1hZ2USJwoPcGFja2FnZV92ZXJzaW9uGFggASgJUg5wYWNrYWdlVmVyc2lvbg'
+    '==');

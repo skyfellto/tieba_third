@@ -100,6 +100,23 @@ class Post extends $pb.GeneratedMessage {
     $core.int? foldCommentStatus,
     $core.String? foldCommentApplyUrl,
     $22.NovelInfo? novelInfo,
+    $core.String? dynamicUrl,
+    $core.String? rumorSourceImg,
+    $core.int? shieldIcon,
+    $core.String? iconUrl,
+    $core.String? toutiaoCardTag,
+    $core.String? toutiaoCardTagColor,
+    $core.int? isBotReply,
+    $core.String? botReplyContent,
+    $core.Iterable<$0.PbContent>? picContent,
+    $core.Iterable<$0.PbContent>? noPicContent,
+    $core.String? iosBUrl,
+    $core.String? footer,
+    $core.int? bdtUserAdopt,
+    $core.String? tmoney,
+    $core.int? adoptStatus,
+    $core.int? isAdThreadPost,
+    $core.String? contentStatement,
   }) {
     final result = create();
     if (id != null) result.id = id;
@@ -160,6 +177,24 @@ class Post extends $pb.GeneratedMessage {
     if (foldCommentApplyUrl != null)
       result.foldCommentApplyUrl = foldCommentApplyUrl;
     if (novelInfo != null) result.novelInfo = novelInfo;
+    if (dynamicUrl != null) result.dynamicUrl = dynamicUrl;
+    if (rumorSourceImg != null) result.rumorSourceImg = rumorSourceImg;
+    if (shieldIcon != null) result.shieldIcon = shieldIcon;
+    if (iconUrl != null) result.iconUrl = iconUrl;
+    if (toutiaoCardTag != null) result.toutiaoCardTag = toutiaoCardTag;
+    if (toutiaoCardTagColor != null)
+      result.toutiaoCardTagColor = toutiaoCardTagColor;
+    if (isBotReply != null) result.isBotReply = isBotReply;
+    if (botReplyContent != null) result.botReplyContent = botReplyContent;
+    if (picContent != null) result.picContent.addAll(picContent);
+    if (noPicContent != null) result.noPicContent.addAll(noPicContent);
+    if (iosBUrl != null) result.iosBUrl = iosBUrl;
+    if (footer != null) result.footer = footer;
+    if (bdtUserAdopt != null) result.bdtUserAdopt = bdtUserAdopt;
+    if (tmoney != null) result.tmoney = tmoney;
+    if (adoptStatus != null) result.adoptStatus = adoptStatus;
+    if (isAdThreadPost != null) result.isAdThreadPost = isAdThreadPost;
+    if (contentStatement != null) result.contentStatement = contentStatement;
     return result;
   }
 
@@ -260,6 +295,25 @@ class Post extends $pb.GeneratedMessage {
     ..aOS(57, _omitFieldNames ? '' : 'foldCommentApplyUrl')
     ..aOM<$22.NovelInfo>(58, _omitFieldNames ? '' : 'novelInfo',
         subBuilder: $22.NovelInfo.create)
+    ..aOS(63, _omitFieldNames ? '' : 'dynamicUrl')
+    ..aOS(65, _omitFieldNames ? '' : 'rumorSourceImg')
+    ..aI(68, _omitFieldNames ? '' : 'shieldIcon')
+    ..aOS(69, _omitFieldNames ? '' : 'iconUrl')
+    ..aOS(70, _omitFieldNames ? '' : 'toutiaoCardTag')
+    ..aOS(71, _omitFieldNames ? '' : 'toutiaoCardTagColor')
+    ..aI(73, _omitFieldNames ? '' : 'isBotReply')
+    ..aOS(74, _omitFieldNames ? '' : 'botReplyContent')
+    ..pPM<$0.PbContent>(84, _omitFieldNames ? '' : 'picContent',
+        subBuilder: $0.PbContent.create)
+    ..pPM<$0.PbContent>(85, _omitFieldNames ? '' : 'noPicContent',
+        subBuilder: $0.PbContent.create)
+    ..aOS(87, _omitFieldNames ? '' : 'iosBUrl')
+    ..aOS(89, _omitFieldNames ? '' : 'footer')
+    ..aI(91, _omitFieldNames ? '' : 'bdtUserAdopt')
+    ..aOS(92, _omitFieldNames ? '' : 'tmoney')
+    ..aI(93, _omitFieldNames ? '' : 'adoptStatus')
+    ..aI(96, _omitFieldNames ? '' : 'isAdThreadPost')
+    ..aOS(97, _omitFieldNames ? '' : 'contentStatement')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -812,6 +866,147 @@ class Post extends $pb.GeneratedMessage {
   void clearNovelInfo() => $_clearField(58);
   @$pb.TagNumber(58)
   $22.NovelInfo ensureNovelInfo() => $_ensure(56);
+
+  @$pb.TagNumber(63)
+  $core.String get dynamicUrl => $_getSZ(57);
+  @$pb.TagNumber(63)
+  set dynamicUrl($core.String value) => $_setString(57, value);
+  @$pb.TagNumber(63)
+  $core.bool hasDynamicUrl() => $_has(57);
+  @$pb.TagNumber(63)
+  void clearDynamicUrl() => $_clearField(63);
+
+  @$pb.TagNumber(65)
+  $core.String get rumorSourceImg => $_getSZ(58);
+  @$pb.TagNumber(65)
+  set rumorSourceImg($core.String value) => $_setString(58, value);
+  @$pb.TagNumber(65)
+  $core.bool hasRumorSourceImg() => $_has(58);
+  @$pb.TagNumber(65)
+  void clearRumorSourceImg() => $_clearField(65);
+
+  @$pb.TagNumber(68)
+  $core.int get shieldIcon => $_getIZ(59);
+  @$pb.TagNumber(68)
+  set shieldIcon($core.int value) => $_setSignedInt32(59, value);
+  @$pb.TagNumber(68)
+  $core.bool hasShieldIcon() => $_has(59);
+  @$pb.TagNumber(68)
+  void clearShieldIcon() => $_clearField(68);
+
+  @$pb.TagNumber(69)
+  $core.String get iconUrl => $_getSZ(60);
+  @$pb.TagNumber(69)
+  set iconUrl($core.String value) => $_setString(60, value);
+  @$pb.TagNumber(69)
+  $core.bool hasIconUrl() => $_has(60);
+  @$pb.TagNumber(69)
+  void clearIconUrl() => $_clearField(69);
+
+  @$pb.TagNumber(70)
+  $core.String get toutiaoCardTag => $_getSZ(61);
+  @$pb.TagNumber(70)
+  set toutiaoCardTag($core.String value) => $_setString(61, value);
+  @$pb.TagNumber(70)
+  $core.bool hasToutiaoCardTag() => $_has(61);
+  @$pb.TagNumber(70)
+  void clearToutiaoCardTag() => $_clearField(70);
+
+  @$pb.TagNumber(71)
+  $core.String get toutiaoCardTagColor => $_getSZ(62);
+  @$pb.TagNumber(71)
+  set toutiaoCardTagColor($core.String value) => $_setString(62, value);
+  @$pb.TagNumber(71)
+  $core.bool hasToutiaoCardTagColor() => $_has(62);
+  @$pb.TagNumber(71)
+  void clearToutiaoCardTagColor() => $_clearField(71);
+
+  @$pb.TagNumber(73)
+  $core.int get isBotReply => $_getIZ(63);
+  @$pb.TagNumber(73)
+  set isBotReply($core.int value) => $_setSignedInt32(63, value);
+  @$pb.TagNumber(73)
+  $core.bool hasIsBotReply() => $_has(63);
+  @$pb.TagNumber(73)
+  void clearIsBotReply() => $_clearField(73);
+
+  @$pb.TagNumber(74)
+  $core.String get botReplyContent => $_getSZ(64);
+  @$pb.TagNumber(74)
+  set botReplyContent($core.String value) => $_setString(64, value);
+  @$pb.TagNumber(74)
+  $core.bool hasBotReplyContent() => $_has(64);
+  @$pb.TagNumber(74)
+  void clearBotReplyContent() => $_clearField(74);
+
+  @$pb.TagNumber(84)
+  $pb.PbList<$0.PbContent> get picContent => $_getList(65);
+
+  @$pb.TagNumber(85)
+  $pb.PbList<$0.PbContent> get noPicContent => $_getList(66);
+
+  @$pb.TagNumber(87)
+  $core.String get iosBUrl => $_getSZ(67);
+  @$pb.TagNumber(87)
+  set iosBUrl($core.String value) => $_setString(67, value);
+  @$pb.TagNumber(87)
+  $core.bool hasIosBUrl() => $_has(67);
+  @$pb.TagNumber(87)
+  void clearIosBUrl() => $_clearField(87);
+
+  @$pb.TagNumber(89)
+  $core.String get footer => $_getSZ(68);
+  @$pb.TagNumber(89)
+  set footer($core.String value) => $_setString(68, value);
+  @$pb.TagNumber(89)
+  $core.bool hasFooter() => $_has(68);
+  @$pb.TagNumber(89)
+  void clearFooter() => $_clearField(89);
+
+  @$pb.TagNumber(91)
+  $core.int get bdtUserAdopt => $_getIZ(69);
+  @$pb.TagNumber(91)
+  set bdtUserAdopt($core.int value) => $_setSignedInt32(69, value);
+  @$pb.TagNumber(91)
+  $core.bool hasBdtUserAdopt() => $_has(69);
+  @$pb.TagNumber(91)
+  void clearBdtUserAdopt() => $_clearField(91);
+
+  @$pb.TagNumber(92)
+  $core.String get tmoney => $_getSZ(70);
+  @$pb.TagNumber(92)
+  set tmoney($core.String value) => $_setString(70, value);
+  @$pb.TagNumber(92)
+  $core.bool hasTmoney() => $_has(70);
+  @$pb.TagNumber(92)
+  void clearTmoney() => $_clearField(92);
+
+  @$pb.TagNumber(93)
+  $core.int get adoptStatus => $_getIZ(71);
+  @$pb.TagNumber(93)
+  set adoptStatus($core.int value) => $_setSignedInt32(71, value);
+  @$pb.TagNumber(93)
+  $core.bool hasAdoptStatus() => $_has(71);
+  @$pb.TagNumber(93)
+  void clearAdoptStatus() => $_clearField(93);
+
+  @$pb.TagNumber(96)
+  $core.int get isAdThreadPost => $_getIZ(72);
+  @$pb.TagNumber(96)
+  set isAdThreadPost($core.int value) => $_setSignedInt32(72, value);
+  @$pb.TagNumber(96)
+  $core.bool hasIsAdThreadPost() => $_has(72);
+  @$pb.TagNumber(96)
+  void clearIsAdThreadPost() => $_clearField(96);
+
+  @$pb.TagNumber(97)
+  $core.String get contentStatement => $_getSZ(73);
+  @$pb.TagNumber(97)
+  set contentStatement($core.String value) => $_setString(73, value);
+  @$pb.TagNumber(97)
+  $core.bool hasContentStatement() => $_has(73);
+  @$pb.TagNumber(97)
+  void clearContentStatement() => $_clearField(97);
 }
 
 const $core.bool _omitFieldNames =

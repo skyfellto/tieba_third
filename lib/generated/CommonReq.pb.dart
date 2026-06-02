@@ -98,6 +98,12 @@ class CommonReq extends $pb.GeneratedMessage {
     $core.String? pidRcs,
     $core.int? needDecrypt,
     $core.int? needCamDecrypt,
+    $core.String? shoubaiVersion,
+    $core.String? hmAcuid,
+    $core.String? hmOid,
+    $core.String? hmNeedmp,
+    $core.String? supportImage,
+    $core.String? packageVersion,
   }) {
     final result = create();
     if (clientType != null) result.clientType = clientType;
@@ -180,6 +186,12 @@ class CommonReq extends $pb.GeneratedMessage {
     if (pidRcs != null) result.pidRcs = pidRcs;
     if (needDecrypt != null) result.needDecrypt = needDecrypt;
     if (needCamDecrypt != null) result.needCamDecrypt = needCamDecrypt;
+    if (shoubaiVersion != null) result.shoubaiVersion = shoubaiVersion;
+    if (hmAcuid != null) result.hmAcuid = hmAcuid;
+    if (hmOid != null) result.hmOid = hmOid;
+    if (hmNeedmp != null) result.hmNeedmp = hmNeedmp;
+    if (supportImage != null) result.supportImage = supportImage;
+    if (packageVersion != null) result.packageVersion = packageVersion;
     return result;
   }
 
@@ -275,6 +287,12 @@ class CommonReq extends $pb.GeneratedMessage {
     ..aOS(80, _omitFieldNames ? '' : 'pidRcs')
     ..aI(81, _omitFieldNames ? '' : 'needDecrypt')
     ..aI(82, _omitFieldNames ? '' : 'needCamDecrypt')
+    ..aOS(83, _omitFieldNames ? '' : 'shoubaiVersion')
+    ..aOS(84, _omitFieldNames ? '' : 'hmAcuid')
+    ..aOS(85, _omitFieldNames ? '' : 'hmOid')
+    ..aOS(86, _omitFieldNames ? '' : 'hmNeedmp')
+    ..aOS(87, _omitFieldNames ? '' : 'supportImage')
+    ..aOS(88, _omitFieldNames ? '' : 'packageVersion')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1005,6 +1023,60 @@ class CommonReq extends $pb.GeneratedMessage {
   $core.bool hasNeedCamDecrypt() => $_has(78);
   @$pb.TagNumber(82)
   void clearNeedCamDecrypt() => $_clearField(82);
+
+  @$pb.TagNumber(83)
+  $core.String get shoubaiVersion => $_getSZ(79);
+  @$pb.TagNumber(83)
+  set shoubaiVersion($core.String value) => $_setString(79, value);
+  @$pb.TagNumber(83)
+  $core.bool hasShoubaiVersion() => $_has(79);
+  @$pb.TagNumber(83)
+  void clearShoubaiVersion() => $_clearField(83);
+
+  @$pb.TagNumber(84)
+  $core.String get hmAcuid => $_getSZ(80);
+  @$pb.TagNumber(84)
+  set hmAcuid($core.String value) => $_setString(80, value);
+  @$pb.TagNumber(84)
+  $core.bool hasHmAcuid() => $_has(80);
+  @$pb.TagNumber(84)
+  void clearHmAcuid() => $_clearField(84);
+
+  @$pb.TagNumber(85)
+  $core.String get hmOid => $_getSZ(81);
+  @$pb.TagNumber(85)
+  set hmOid($core.String value) => $_setString(81, value);
+  @$pb.TagNumber(85)
+  $core.bool hasHmOid() => $_has(81);
+  @$pb.TagNumber(85)
+  void clearHmOid() => $_clearField(85);
+
+  @$pb.TagNumber(86)
+  $core.String get hmNeedmp => $_getSZ(82);
+  @$pb.TagNumber(86)
+  set hmNeedmp($core.String value) => $_setString(82, value);
+  @$pb.TagNumber(86)
+  $core.bool hasHmNeedmp() => $_has(82);
+  @$pb.TagNumber(86)
+  void clearHmNeedmp() => $_clearField(86);
+
+  @$pb.TagNumber(87)
+  $core.String get supportImage => $_getSZ(83);
+  @$pb.TagNumber(87)
+  set supportImage($core.String value) => $_setString(83, value);
+  @$pb.TagNumber(87)
+  $core.bool hasSupportImage() => $_has(83);
+  @$pb.TagNumber(87)
+  void clearSupportImage() => $_clearField(87);
+
+  @$pb.TagNumber(88)
+  $core.String get packageVersion => $_getSZ(84);
+  @$pb.TagNumber(88)
+  set packageVersion($core.String value) => $_setString(84, value);
+  @$pb.TagNumber(88)
+  $core.bool hasPackageVersion() => $_has(84);
+  @$pb.TagNumber(88)
+  void clearPackageVersion() => $_clearField(88);
 }
 
 const $core.bool _omitFieldNames =

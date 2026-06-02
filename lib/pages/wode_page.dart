@@ -138,6 +138,17 @@ class _WodePageState extends State<WodePage> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const Spacer(),
+                            if (isLogin)
+                              IconButton(
+                                icon: const Icon(Icons.mail_outline),
+                                iconSize: 24,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white70
+                                    : Colors.black54,
+                                onPressed: () => context.push('/messages'),
+                                splashRadius: 20,
+                              ),
                           ],
                         ),
                         if (isLogin) ...[
