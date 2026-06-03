@@ -323,14 +323,59 @@ class _UserApi {
       "$_baseHost/c/u/feed/userpost?cmd=303002&format=protobuf",
     );
 
+    // ST 反垃圾参数
+    final stNum = Random().nextInt(750) + 100;
+    final stTimeVal = stNum.toString();
+    final stSizeVal = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
+    const stMethod = "1";
+    const stMode = "1";
+    const stTimesNum = "1";
+    const stErrorNums = "1";
+
+    final signParams = [
+      ["BDUSS", bduss],
+      ["stErrorNums", stErrorNums],
+      ["stMethod", stMethod],
+      ["stMode", stMode],
+      ["stSize", stSizeVal],
+      ["stTime", stTimeVal],
+      ["stTimesNum", stTimesNum],
+      ["stoken", stoken],
+    ];
+    final sign = _computeSign(signParams);
+
     final client = http.Client();
     try {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
           "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+          // "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+          "cuid": cuid,
+          "Connection": "Keep-Alive",
+          "c3_aid": DeviceInfo().c3Aid,
+          "cuid_gid": '',
+          "Charset": "UTF-8",
+          "cuid_galaxy2": cuid,
+          "Accept-Encoding": "gzip",
+          "client_user_token": uid,
+          "client_logid": "${DeviceInfo.initTime}",
+          "X-Bd-Traceid":
+              "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Host": "tiebac.baidu.com",
         })
+        ..fields['BDUSS'] = bduss
+        ..fields['sign'] = sign
+        ..fields['stErrorNums'] = stErrorNums
+        ..fields['stMethod'] = stMethod
+        ..fields['stMode'] = stMode
+        ..fields['stSize'] = stSizeVal
+        ..fields['stTime'] = stTimeVal
+        ..fields['stTimesNum'] = stTimesNum
+        ..fields['STOKEN'] = stoken
         ..files.add(
           http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
         );
@@ -486,14 +531,59 @@ class _UserApi {
       "$_baseHost/c/u/feed/userpost?cmd=303002&format=protobuf",
     );
 
+    // ST 反垃圾参数
+    final stNum = Random().nextInt(750) + 100;
+    final stTimeVal = stNum.toString();
+    final stSizeVal = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
+    const stMethod = "1";
+    const stMode = "1";
+    const stTimesNum = "1";
+    const stErrorNums = "1";
+
+    final signParams = [
+      ["BDUSS", bduss],
+      ["stErrorNums", stErrorNums],
+      ["stMethod", stMethod],
+      ["stMode", stMode],
+      ["stSize", stSizeVal],
+      ["stTime", stTimeVal],
+      ["stTimesNum", stTimesNum],
+      ["stoken", stoken],
+    ];
+    final sign = _computeSign(signParams);
+
     final client = http.Client();
     try {
       final multipart = http.MultipartRequest('POST', uri)
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
           "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+          // "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+          "cuid": cuid,
+          "Connection": "Keep-Alive",
+          "c3_aid": DeviceInfo().c3Aid,
+          "cuid_gid": '',
+          "Charset": "UTF-8",
+          "cuid_galaxy2": cuid,
+          "Accept-Encoding": "gzip",
+          "client_user_token": uid,
+          "client_logid": "${DeviceInfo.initTime}",
+          "X-Bd-Traceid":
+              "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Host": "tiebac.baidu.com",
         })
+        ..fields['BDUSS'] = bduss
+        ..fields['sign'] = sign
+        ..fields['stErrorNums'] = stErrorNums
+        ..fields['stMethod'] = stMethod
+        ..fields['stMode'] = stMode
+        ..fields['stSize'] = stSizeVal
+        ..fields['stTime'] = stTimeVal
+        ..fields['stTimesNum'] = stTimesNum
+        ..fields['STOKEN'] = stoken
         ..files.add(
           http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
         );

@@ -14,7 +14,8 @@ class _ForumApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      // clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      clientId: _syncClientId,
       phoneImei: phoneImei,
       cuid: cuid,
       cuidGalaxy2: cuid,
@@ -105,7 +106,8 @@ class _ForumApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      // clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      clientId: _syncClientId,
       phoneImei: phoneImei,
       cuid: cuid,
       cuidGalaxy2: cuid,
@@ -200,7 +202,8 @@ class _ForumApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      // clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      clientId: _syncClientId,
       phoneImei: phoneImei,
       cuid: cuid,
       cuidGalaxy2: cuid,
@@ -317,7 +320,8 @@ class _ForumApi {
     final common = CommonRequest(
       clientType: 2,
       clientVersion: _clientVersion,
-      clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      // clientId: "wappc_${timestamp}_${Random().nextInt(1000)}",
+      clientId: _syncClientId,
       phoneImei: phoneImei,
       cuid: cuid,
       cuidGalaxy2: cuid,

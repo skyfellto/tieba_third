@@ -39,14 +39,32 @@ class PbContent extends $pb.GeneratedMessage {
     $core.String? static,
     $core.int? width,
     $core.int? height,
+    $core.String? packetName,
+    $core.String? phonetype,
+    $core.int? isNativeApp,
+    $core.int? eType,
     $core.String? originSrc,
+    $core.int? btnType,
     $core.int? originSize,
+    $core.int? count,
     $core.String? mediaSubtitle,
     $core.int? urlType,
     $0.MemeInfo? memeInfo,
     $core.int? isLongPic,
     $core.int? showOriginalBtn,
     $core.String? cdnSrcActive,
+    $core.String? topicSpecialIcon,
+    $fixnum.Int64? itemId,
+    $core.String? itemForumName,
+    $fixnum.Int64? picId,
+    $core.int? linkType,
+    $core.String? targetScheme,
+    $core.String? queryText,
+    $core.String? queryPrefix,
+    $core.String? icon,
+    $core.String? portrait,
+    $core.int? searchType,
+    $core.int? isBot,
   }) {
     final result = create();
     if (type != null) result.type = type;
@@ -67,14 +85,32 @@ class PbContent extends $pb.GeneratedMessage {
     if (static != null) result.static = static;
     if (width != null) result.width = width;
     if (height != null) result.height = height;
+    if (packetName != null) result.packetName = packetName;
+    if (phonetype != null) result.phonetype = phonetype;
+    if (isNativeApp != null) result.isNativeApp = isNativeApp;
+    if (eType != null) result.eType = eType;
     if (originSrc != null) result.originSrc = originSrc;
+    if (btnType != null) result.btnType = btnType;
     if (originSize != null) result.originSize = originSize;
+    if (count != null) result.count = count;
     if (mediaSubtitle != null) result.mediaSubtitle = mediaSubtitle;
     if (urlType != null) result.urlType = urlType;
     if (memeInfo != null) result.memeInfo = memeInfo;
     if (isLongPic != null) result.isLongPic = isLongPic;
     if (showOriginalBtn != null) result.showOriginalBtn = showOriginalBtn;
     if (cdnSrcActive != null) result.cdnSrcActive = cdnSrcActive;
+    if (topicSpecialIcon != null) result.topicSpecialIcon = topicSpecialIcon;
+    if (itemId != null) result.itemId = itemId;
+    if (itemForumName != null) result.itemForumName = itemForumName;
+    if (picId != null) result.picId = picId;
+    if (linkType != null) result.linkType = linkType;
+    if (targetScheme != null) result.targetScheme = targetScheme;
+    if (queryText != null) result.queryText = queryText;
+    if (queryPrefix != null) result.queryPrefix = queryPrefix;
+    if (icon != null) result.icon = icon;
+    if (portrait != null) result.portrait = portrait;
+    if (searchType != null) result.searchType = searchType;
+    if (isBot != null) result.isBot = isBot;
     return result;
   }
 
@@ -110,9 +146,16 @@ class PbContent extends $pb.GeneratedMessage {
     ..aOS(17, _omitFieldNames ? '' : 'Static')
     ..aI(18, _omitFieldNames ? '' : 'width', fieldType: $pb.PbFieldType.OU3)
     ..aI(19, _omitFieldNames ? '' : 'height', fieldType: $pb.PbFieldType.OU3)
+    ..aOS(20, _omitFieldNames ? '' : 'packetName')
+    ..aOS(21, _omitFieldNames ? '' : 'phonetype')
+    ..aI(22, _omitFieldNames ? '' : 'isNativeApp',
+        fieldType: $pb.PbFieldType.OU3)
+    ..aI(24, _omitFieldNames ? '' : 'eType', fieldType: $pb.PbFieldType.OU3)
     ..aOS(25, _omitFieldNames ? '' : 'originSrc', protoName: 'originSrc')
+    ..aI(26, _omitFieldNames ? '' : 'btnType', fieldType: $pb.PbFieldType.OU3)
     ..aI(27, _omitFieldNames ? '' : 'originSize',
         protoName: 'originSize', fieldType: $pb.PbFieldType.OU3)
+    ..aI(28, _omitFieldNames ? '' : 'count')
     ..aOS(31, _omitFieldNames ? '' : 'mediaSubtitle',
         protoName: 'mediaSubtitle')
     ..aI(32, _omitFieldNames ? '' : 'urlType', protoName: 'urlType')
@@ -123,6 +166,19 @@ class PbContent extends $pb.GeneratedMessage {
     ..aI(35, _omitFieldNames ? '' : 'showOriginalBtn',
         protoName: 'showOriginalBtn', fieldType: $pb.PbFieldType.OU3)
     ..aOS(36, _omitFieldNames ? '' : 'cdnSrcActive', protoName: 'cdnSrcActive')
+    ..aOS(37, _omitFieldNames ? '' : 'topicSpecialIcon')
+    ..a<$fixnum.Int64>(38, _omitFieldNames ? '' : 'itemId', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOS(39, _omitFieldNames ? '' : 'itemForumName')
+    ..aInt64(42, _omitFieldNames ? '' : 'picId')
+    ..aI(43, _omitFieldNames ? '' : 'linkType')
+    ..aOS(44, _omitFieldNames ? '' : 'targetScheme')
+    ..aOS(46, _omitFieldNames ? '' : 'queryText')
+    ..aOS(47, _omitFieldNames ? '' : 'queryPrefix')
+    ..aOS(48, _omitFieldNames ? '' : 'icon')
+    ..aOS(49, _omitFieldNames ? '' : 'portrait')
+    ..aI(51, _omitFieldNames ? '' : 'searchType')
+    ..aI(52, _omitFieldNames ? '' : 'isBot')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -305,79 +361,241 @@ class PbContent extends $pb.GeneratedMessage {
   @$pb.TagNumber(19)
   void clearHeight() => $_clearField(19);
 
+  @$pb.TagNumber(20)
+  $core.String get packetName => $_getSZ(18);
+  @$pb.TagNumber(20)
+  set packetName($core.String value) => $_setString(18, value);
+  @$pb.TagNumber(20)
+  $core.bool hasPacketName() => $_has(18);
+  @$pb.TagNumber(20)
+  void clearPacketName() => $_clearField(20);
+
+  @$pb.TagNumber(21)
+  $core.String get phonetype => $_getSZ(19);
+  @$pb.TagNumber(21)
+  set phonetype($core.String value) => $_setString(19, value);
+  @$pb.TagNumber(21)
+  $core.bool hasPhonetype() => $_has(19);
+  @$pb.TagNumber(21)
+  void clearPhonetype() => $_clearField(21);
+
+  @$pb.TagNumber(22)
+  $core.int get isNativeApp => $_getIZ(20);
+  @$pb.TagNumber(22)
+  set isNativeApp($core.int value) => $_setUnsignedInt32(20, value);
+  @$pb.TagNumber(22)
+  $core.bool hasIsNativeApp() => $_has(20);
+  @$pb.TagNumber(22)
+  void clearIsNativeApp() => $_clearField(22);
+
+  @$pb.TagNumber(24)
+  $core.int get eType => $_getIZ(21);
+  @$pb.TagNumber(24)
+  set eType($core.int value) => $_setUnsignedInt32(21, value);
+  @$pb.TagNumber(24)
+  $core.bool hasEType() => $_has(21);
+  @$pb.TagNumber(24)
+  void clearEType() => $_clearField(24);
+
   @$pb.TagNumber(25)
-  $core.String get originSrc => $_getSZ(18);
+  $core.String get originSrc => $_getSZ(22);
   @$pb.TagNumber(25)
-  set originSrc($core.String value) => $_setString(18, value);
+  set originSrc($core.String value) => $_setString(22, value);
   @$pb.TagNumber(25)
-  $core.bool hasOriginSrc() => $_has(18);
+  $core.bool hasOriginSrc() => $_has(22);
   @$pb.TagNumber(25)
   void clearOriginSrc() => $_clearField(25);
 
+  @$pb.TagNumber(26)
+  $core.int get btnType => $_getIZ(23);
+  @$pb.TagNumber(26)
+  set btnType($core.int value) => $_setUnsignedInt32(23, value);
+  @$pb.TagNumber(26)
+  $core.bool hasBtnType() => $_has(23);
+  @$pb.TagNumber(26)
+  void clearBtnType() => $_clearField(26);
+
   @$pb.TagNumber(27)
-  $core.int get originSize => $_getIZ(19);
+  $core.int get originSize => $_getIZ(24);
   @$pb.TagNumber(27)
-  set originSize($core.int value) => $_setUnsignedInt32(19, value);
+  set originSize($core.int value) => $_setUnsignedInt32(24, value);
   @$pb.TagNumber(27)
-  $core.bool hasOriginSize() => $_has(19);
+  $core.bool hasOriginSize() => $_has(24);
   @$pb.TagNumber(27)
   void clearOriginSize() => $_clearField(27);
 
+  @$pb.TagNumber(28)
+  $core.int get count => $_getIZ(25);
+  @$pb.TagNumber(28)
+  set count($core.int value) => $_setSignedInt32(25, value);
+  @$pb.TagNumber(28)
+  $core.bool hasCount() => $_has(25);
+  @$pb.TagNumber(28)
+  void clearCount() => $_clearField(28);
+
   @$pb.TagNumber(31)
-  $core.String get mediaSubtitle => $_getSZ(20);
+  $core.String get mediaSubtitle => $_getSZ(26);
   @$pb.TagNumber(31)
-  set mediaSubtitle($core.String value) => $_setString(20, value);
+  set mediaSubtitle($core.String value) => $_setString(26, value);
   @$pb.TagNumber(31)
-  $core.bool hasMediaSubtitle() => $_has(20);
+  $core.bool hasMediaSubtitle() => $_has(26);
   @$pb.TagNumber(31)
   void clearMediaSubtitle() => $_clearField(31);
 
   @$pb.TagNumber(32)
-  $core.int get urlType => $_getIZ(21);
+  $core.int get urlType => $_getIZ(27);
   @$pb.TagNumber(32)
-  set urlType($core.int value) => $_setSignedInt32(21, value);
+  set urlType($core.int value) => $_setSignedInt32(27, value);
   @$pb.TagNumber(32)
-  $core.bool hasUrlType() => $_has(21);
+  $core.bool hasUrlType() => $_has(27);
   @$pb.TagNumber(32)
   void clearUrlType() => $_clearField(32);
 
   @$pb.TagNumber(33)
-  $0.MemeInfo get memeInfo => $_getN(22);
+  $0.MemeInfo get memeInfo => $_getN(28);
   @$pb.TagNumber(33)
   set memeInfo($0.MemeInfo value) => $_setField(33, value);
   @$pb.TagNumber(33)
-  $core.bool hasMemeInfo() => $_has(22);
+  $core.bool hasMemeInfo() => $_has(28);
   @$pb.TagNumber(33)
   void clearMemeInfo() => $_clearField(33);
   @$pb.TagNumber(33)
-  $0.MemeInfo ensureMemeInfo() => $_ensure(22);
+  $0.MemeInfo ensureMemeInfo() => $_ensure(28);
 
   @$pb.TagNumber(34)
-  $core.int get isLongPic => $_getIZ(23);
+  $core.int get isLongPic => $_getIZ(29);
   @$pb.TagNumber(34)
-  set isLongPic($core.int value) => $_setUnsignedInt32(23, value);
+  set isLongPic($core.int value) => $_setUnsignedInt32(29, value);
   @$pb.TagNumber(34)
-  $core.bool hasIsLongPic() => $_has(23);
+  $core.bool hasIsLongPic() => $_has(29);
   @$pb.TagNumber(34)
   void clearIsLongPic() => $_clearField(34);
 
   @$pb.TagNumber(35)
-  $core.int get showOriginalBtn => $_getIZ(24);
+  $core.int get showOriginalBtn => $_getIZ(30);
   @$pb.TagNumber(35)
-  set showOriginalBtn($core.int value) => $_setUnsignedInt32(24, value);
+  set showOriginalBtn($core.int value) => $_setUnsignedInt32(30, value);
   @$pb.TagNumber(35)
-  $core.bool hasShowOriginalBtn() => $_has(24);
+  $core.bool hasShowOriginalBtn() => $_has(30);
   @$pb.TagNumber(35)
   void clearShowOriginalBtn() => $_clearField(35);
 
   @$pb.TagNumber(36)
-  $core.String get cdnSrcActive => $_getSZ(25);
+  $core.String get cdnSrcActive => $_getSZ(31);
   @$pb.TagNumber(36)
-  set cdnSrcActive($core.String value) => $_setString(25, value);
+  set cdnSrcActive($core.String value) => $_setString(31, value);
   @$pb.TagNumber(36)
-  $core.bool hasCdnSrcActive() => $_has(25);
+  $core.bool hasCdnSrcActive() => $_has(31);
   @$pb.TagNumber(36)
   void clearCdnSrcActive() => $_clearField(36);
+
+  @$pb.TagNumber(37)
+  $core.String get topicSpecialIcon => $_getSZ(32);
+  @$pb.TagNumber(37)
+  set topicSpecialIcon($core.String value) => $_setString(32, value);
+  @$pb.TagNumber(37)
+  $core.bool hasTopicSpecialIcon() => $_has(32);
+  @$pb.TagNumber(37)
+  void clearTopicSpecialIcon() => $_clearField(37);
+
+  @$pb.TagNumber(38)
+  $fixnum.Int64 get itemId => $_getI64(33);
+  @$pb.TagNumber(38)
+  set itemId($fixnum.Int64 value) => $_setInt64(33, value);
+  @$pb.TagNumber(38)
+  $core.bool hasItemId() => $_has(33);
+  @$pb.TagNumber(38)
+  void clearItemId() => $_clearField(38);
+
+  @$pb.TagNumber(39)
+  $core.String get itemForumName => $_getSZ(34);
+  @$pb.TagNumber(39)
+  set itemForumName($core.String value) => $_setString(34, value);
+  @$pb.TagNumber(39)
+  $core.bool hasItemForumName() => $_has(34);
+  @$pb.TagNumber(39)
+  void clearItemForumName() => $_clearField(39);
+
+  @$pb.TagNumber(42)
+  $fixnum.Int64 get picId => $_getI64(35);
+  @$pb.TagNumber(42)
+  set picId($fixnum.Int64 value) => $_setInt64(35, value);
+  @$pb.TagNumber(42)
+  $core.bool hasPicId() => $_has(35);
+  @$pb.TagNumber(42)
+  void clearPicId() => $_clearField(42);
+
+  @$pb.TagNumber(43)
+  $core.int get linkType => $_getIZ(36);
+  @$pb.TagNumber(43)
+  set linkType($core.int value) => $_setSignedInt32(36, value);
+  @$pb.TagNumber(43)
+  $core.bool hasLinkType() => $_has(36);
+  @$pb.TagNumber(43)
+  void clearLinkType() => $_clearField(43);
+
+  @$pb.TagNumber(44)
+  $core.String get targetScheme => $_getSZ(37);
+  @$pb.TagNumber(44)
+  set targetScheme($core.String value) => $_setString(37, value);
+  @$pb.TagNumber(44)
+  $core.bool hasTargetScheme() => $_has(37);
+  @$pb.TagNumber(44)
+  void clearTargetScheme() => $_clearField(44);
+
+  @$pb.TagNumber(46)
+  $core.String get queryText => $_getSZ(38);
+  @$pb.TagNumber(46)
+  set queryText($core.String value) => $_setString(38, value);
+  @$pb.TagNumber(46)
+  $core.bool hasQueryText() => $_has(38);
+  @$pb.TagNumber(46)
+  void clearQueryText() => $_clearField(46);
+
+  @$pb.TagNumber(47)
+  $core.String get queryPrefix => $_getSZ(39);
+  @$pb.TagNumber(47)
+  set queryPrefix($core.String value) => $_setString(39, value);
+  @$pb.TagNumber(47)
+  $core.bool hasQueryPrefix() => $_has(39);
+  @$pb.TagNumber(47)
+  void clearQueryPrefix() => $_clearField(47);
+
+  @$pb.TagNumber(48)
+  $core.String get icon => $_getSZ(40);
+  @$pb.TagNumber(48)
+  set icon($core.String value) => $_setString(40, value);
+  @$pb.TagNumber(48)
+  $core.bool hasIcon() => $_has(40);
+  @$pb.TagNumber(48)
+  void clearIcon() => $_clearField(48);
+
+  @$pb.TagNumber(49)
+  $core.String get portrait => $_getSZ(41);
+  @$pb.TagNumber(49)
+  set portrait($core.String value) => $_setString(41, value);
+  @$pb.TagNumber(49)
+  $core.bool hasPortrait() => $_has(41);
+  @$pb.TagNumber(49)
+  void clearPortrait() => $_clearField(49);
+
+  @$pb.TagNumber(51)
+  $core.int get searchType => $_getIZ(42);
+  @$pb.TagNumber(51)
+  set searchType($core.int value) => $_setSignedInt32(42, value);
+  @$pb.TagNumber(51)
+  $core.bool hasSearchType() => $_has(42);
+  @$pb.TagNumber(51)
+  void clearSearchType() => $_clearField(51);
+
+  @$pb.TagNumber(52)
+  $core.int get isBot => $_getIZ(43);
+  @$pb.TagNumber(52)
+  set isBot($core.int value) => $_setSignedInt32(43, value);
+  @$pb.TagNumber(52)
+  $core.bool hasIsBot() => $_has(43);
+  @$pb.TagNumber(52)
+  void clearIsBot() => $_clearField(52);
 }
 
 const $core.bool _omitFieldNames =

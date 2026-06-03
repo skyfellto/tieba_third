@@ -37,8 +37,14 @@ const PbContent$json = {
     {'1': '_static', '3': 17, '4': 1, '5': 9, '10': 'Static'},
     {'1': 'width', '3': 18, '4': 1, '5': 13, '10': 'width'},
     {'1': 'height', '3': 19, '4': 1, '5': 13, '10': 'height'},
+    {'1': 'packet_name', '3': 20, '4': 1, '5': 9, '10': 'packetName'},
+    {'1': 'phonetype', '3': 21, '4': 1, '5': 9, '10': 'phonetype'},
+    {'1': 'is_native_app', '3': 22, '4': 1, '5': 13, '10': 'isNativeApp'},
+    {'1': 'e_type', '3': 24, '4': 1, '5': 13, '10': 'eType'},
     {'1': 'originSrc', '3': 25, '4': 1, '5': 9, '10': 'originSrc'},
+    {'1': 'btn_type', '3': 26, '4': 1, '5': 13, '10': 'btnType'},
     {'1': 'originSize', '3': 27, '4': 1, '5': 13, '10': 'originSize'},
+    {'1': 'count', '3': 28, '4': 1, '5': 5, '10': 'count'},
     {'1': 'mediaSubtitle', '3': 31, '4': 1, '5': 9, '10': 'mediaSubtitle'},
     {'1': 'urlType', '3': 32, '4': 1, '5': 5, '10': 'urlType'},
     {
@@ -52,6 +58,24 @@ const PbContent$json = {
     {'1': 'isLongPic', '3': 34, '4': 1, '5': 13, '10': 'isLongPic'},
     {'1': 'showOriginalBtn', '3': 35, '4': 1, '5': 13, '10': 'showOriginalBtn'},
     {'1': 'cdnSrcActive', '3': 36, '4': 1, '5': 9, '10': 'cdnSrcActive'},
+    {
+      '1': 'topic_special_icon',
+      '3': 37,
+      '4': 1,
+      '5': 9,
+      '10': 'topicSpecialIcon'
+    },
+    {'1': 'item_id', '3': 38, '4': 1, '5': 4, '10': 'itemId'},
+    {'1': 'item_forum_name', '3': 39, '4': 1, '5': 9, '10': 'itemForumName'},
+    {'1': 'pic_id', '3': 42, '4': 1, '5': 3, '10': 'picId'},
+    {'1': 'link_type', '3': 43, '4': 1, '5': 5, '10': 'linkType'},
+    {'1': 'target_scheme', '3': 44, '4': 1, '5': 9, '10': 'targetScheme'},
+    {'1': 'query_text', '3': 46, '4': 1, '5': 9, '10': 'queryText'},
+    {'1': 'query_prefix', '3': 47, '4': 1, '5': 9, '10': 'queryPrefix'},
+    {'1': 'icon', '3': 48, '4': 1, '5': 9, '10': 'icon'},
+    {'1': 'portrait', '3': 49, '4': 1, '5': 9, '10': 'portrait'},
+    {'1': 'search_type', '3': 51, '4': 1, '5': 5, '10': 'searchType'},
+    {'1': 'is_bot', '3': 52, '4': 1, '5': 5, '10': 'isBot'},
   ],
 };
 
@@ -64,9 +88,19 @@ final $typed_data.Uint8List pbContentDescriptor = $convert.base64Decode(
     'VHlwZRgKIAEoCVIHaW1nVHlwZRIMCgFjGAsgASgJUgFjEhoKCHZvaWNlTUQ1GAwgASgJUgh2b2'
     'ljZU1ENRIeCgpkdXJpbmdUaW1lGA0gASgNUgpkdXJpbmdUaW1lEhAKA3VpZBgPIAEoA1IDdWlk'
     'EhgKB2R5bmFtaWMYECABKAlSB2R5bmFtaWMSFwoHX3N0YXRpYxgRIAEoCVIGU3RhdGljEhQKBX'
-    'dpZHRoGBIgASgNUgV3aWR0aBIWCgZoZWlnaHQYEyABKA1SBmhlaWdodBIcCglvcmlnaW5TcmMY'
-    'GSABKAlSCW9yaWdpblNyYxIeCgpvcmlnaW5TaXplGBsgASgNUgpvcmlnaW5TaXplEiQKDW1lZG'
-    'lhU3VidGl0bGUYHyABKAlSDW1lZGlhU3VidGl0bGUSGAoHdXJsVHlwZRggIAEoBVIHdXJsVHlw'
-    'ZRIrCghtZW1lSW5mbxghIAEoCzIPLnRpZWJhLk1lbWVJbmZvUghtZW1lSW5mbxIcCglpc0xvbm'
-    'dQaWMYIiABKA1SCWlzTG9uZ1BpYxIoCg9zaG93T3JpZ2luYWxCdG4YIyABKA1SD3Nob3dPcmln'
-    'aW5hbEJ0bhIiCgxjZG5TcmNBY3RpdmUYJCABKAlSDGNkblNyY0FjdGl2ZQ==');
+    'dpZHRoGBIgASgNUgV3aWR0aBIWCgZoZWlnaHQYEyABKA1SBmhlaWdodBIfCgtwYWNrZXRfbmFt'
+    'ZRgUIAEoCVIKcGFja2V0TmFtZRIcCglwaG9uZXR5cGUYFSABKAlSCXBob25ldHlwZRIiCg1pc1'
+    '9uYXRpdmVfYXBwGBYgASgNUgtpc05hdGl2ZUFwcBIVCgZlX3R5cGUYGCABKA1SBWVUeXBlEhwK'
+    'CW9yaWdpblNyYxgZIAEoCVIJb3JpZ2luU3JjEhkKCGJ0bl90eXBlGBogASgNUgdidG5UeXBlEh'
+    '4KCm9yaWdpblNpemUYGyABKA1SCm9yaWdpblNpemUSFAoFY291bnQYHCABKAVSBWNvdW50EiQK'
+    'DW1lZGlhU3VidGl0bGUYHyABKAlSDW1lZGlhU3VidGl0bGUSGAoHdXJsVHlwZRggIAEoBVIHdX'
+    'JsVHlwZRIrCghtZW1lSW5mbxghIAEoCzIPLnRpZWJhLk1lbWVJbmZvUghtZW1lSW5mbxIcCglp'
+    'c0xvbmdQaWMYIiABKA1SCWlzTG9uZ1BpYxIoCg9zaG93T3JpZ2luYWxCdG4YIyABKA1SD3Nob3'
+    'dPcmlnaW5hbEJ0bhIiCgxjZG5TcmNBY3RpdmUYJCABKAlSDGNkblNyY0FjdGl2ZRIsChJ0b3Bp'
+    'Y19zcGVjaWFsX2ljb24YJSABKAlSEHRvcGljU3BlY2lhbEljb24SFwoHaXRlbV9pZBgmIAEoBF'
+    'IGaXRlbUlkEiYKD2l0ZW1fZm9ydW1fbmFtZRgnIAEoCVINaXRlbUZvcnVtTmFtZRIVCgZwaWNf'
+    'aWQYKiABKANSBXBpY0lkEhsKCWxpbmtfdHlwZRgrIAEoBVIIbGlua1R5cGUSIwoNdGFyZ2V0X3'
+    'NjaGVtZRgsIAEoCVIMdGFyZ2V0U2NoZW1lEh0KCnF1ZXJ5X3RleHQYLiABKAlSCXF1ZXJ5VGV4'
+    'dBIhCgxxdWVyeV9wcmVmaXgYLyABKAlSC3F1ZXJ5UHJlZml4EhIKBGljb24YMCABKAlSBGljb2'
+    '4SGgoIcG9ydHJhaXQYMSABKAlSCHBvcnRyYWl0Eh8KC3NlYXJjaF90eXBlGDMgASgFUgpzZWFy'
+    'Y2hUeXBlEhUKBmlzX2JvdBg0IAEoBVIFaXNCb3Q=');

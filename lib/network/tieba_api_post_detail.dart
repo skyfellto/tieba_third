@@ -217,7 +217,8 @@ class _PostDetailApi {
     final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
     final phoneImei = DeviceInfo().phoneImei;
     final cuid = DeviceInfo().cuid;
-    final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
+    final clientId = _syncClientId ?? '';
 
     final params = [
       ["BDUSS", bduss],

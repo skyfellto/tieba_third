@@ -32,9 +32,7 @@ class MessagesPage extends StatelessWidget {
             context,
             icon: Icons.chat_bubble_outline,
             title: '回复',
-            onTap: () {
-              // TODO: 回复消息页面
-            },
+            onTap: () => context.push('/messages/replies'),
           ),
           _buildCategoryTile(
             context,

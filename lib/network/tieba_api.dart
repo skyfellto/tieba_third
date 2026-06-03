@@ -57,6 +57,10 @@ import '../generated/AgreeMe/AgreeMeReqIdl.pb.dart';
 import '../generated/AgreeMe/AgreeMeResIdl.pb.dart';
 import '../generated/AgreeMe/DataReq.pb.dart';
 import '../generated/AgreeMe/DataRes.pb.dart';
+import '../generated/ReplyMe/ReplyMeReqIdl.pb.dart';
+import '../generated/ReplyMe/ReplyMeResIdl.pb.dart';
+import '../generated/ReplyMe/DataReq.pb.dart' as reply_req;
+import '../generated/ReplyMe/DataRes.pb.dart' as reply;
 
 part 'tieba_api_shared.dart';
 part 'tieba_api_auth.dart';
@@ -67,6 +71,7 @@ part 'tieba_api_search.dart';
 part 'tieba_api_interact.dart';
 part 'tieba_api_user.dart';
 part 'tieba_api_agreeme.dart';
+part 'tieba_api_replyme.dart';
 
 class TiebaApi {
   static String get clientVersion => _clientVersion;
@@ -568,5 +573,22 @@ class TiebaApi {
     userId: userId,
     id: id,
     rn: rn,
+  );
+
+  /// 获取回复消息列表
+  static Future<reply.DataRes?> fetchReplyMe({
+    required String bduss,
+    required String stoken,
+    required String userId,
+    int pn = 1,
+    String ids = '0',
+    int isFirst = 1,
+  }) => _ReplyMeApi.fetchReplyMe(
+    bduss: bduss,
+    stoken: stoken,
+    userId: userId,
+    pn: pn,
+    ids: ids,
+    isFirst: isFirst,
   );
 }
