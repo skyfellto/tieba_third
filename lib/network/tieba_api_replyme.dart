@@ -180,9 +180,9 @@ class _ReplyMeApi {
         _logger.w("【ReplyMe】响应中data字段为空");
         return null;
       }
-      pb.data.replyList.forEach((reply) {
-        _logger.i("agree :: ${reply.zan}");
-      });
+      // pb.data.replyList.forEach((reply) {
+      //   _logger.i("agree :: ${reply.zan}");
+      // });
       return pb.data;
     } catch (e) {
       _logger.w("【ReplyMe】请求异常: $e");
