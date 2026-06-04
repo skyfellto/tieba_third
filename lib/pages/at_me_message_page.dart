@@ -491,22 +491,26 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
         final uidStr = map['uid'] as String? ?? '0';
         if (text.isNotEmpty) {
           final uid = int.tryParse(uidStr) ?? 0;
+          // 仅以 @ 开头的才是真正 @提及，需要高亮+可点击
+          final isAtMention = text.startsWith('@') && uid > 0;
           spans.add(
             TextSpan(
               text: text,
-              style: highlightMentions
+              style: isAtMention && highlightMentions
                   ? defaultStyle.copyWith(
                       color: Theme.of(context).brightness == Brightness.dark
                           ? Colors.lightBlue.shade200
                           : Colors.blue,
                     )
                   : defaultStyle,
-              recognizer: TapGestureRecognizer()
-                ..onTap = () {
-                  if (uid > 0 && context.mounted) {
-                    context.push('/user/$uid');
-                  }
-                },
+              recognizer: isAtMention
+                  ? (TapGestureRecognizer()
+                      ..onTap = () {
+                        if (uid > 0 && context.mounted) {
+                          context.push('/user/$uid');
+                        }
+                      })
+                  : null,
             ),
           );
         }
