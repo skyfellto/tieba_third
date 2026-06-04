@@ -2,9 +2,8 @@ syntax = "proto3";
 
 package tieba.pbFloor;
 
-option java_package = "com.huanchengfly.tieba.post.api.models.protos.pbFloor";
-
 import "Anti.proto";
+import "FeedKV.proto";
 import "Page.proto";
 import "Post.proto";
 import "SimpleForum.proto";
@@ -21,4 +20,5 @@ message PbFloorResponseData {
   int32 server_time = 7;
   SimpleForum display_forum = 8;
   int32 is_black_white = 9;
+  repeated FeedKV log_param = 10;
 }

@@ -38,9 +38,7 @@ class MessagesPage extends StatelessWidget {
             context,
             icon: Icons.alternate_email,
             title: '@我的',
-            onTap: () {
-              // TODO: @我的消息页面
-            },
+            onTap: () => context.push('/messages/mentions'),
           ),
         ],
       ),

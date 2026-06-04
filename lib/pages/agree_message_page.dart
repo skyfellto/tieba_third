@@ -218,7 +218,7 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _messages.length + (_loadingMore || _hasMore ? 1 : 0),
+        itemCount: _messages.length + (_loadingMore || !_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _messages.length) {
             if (_loadingMore) {

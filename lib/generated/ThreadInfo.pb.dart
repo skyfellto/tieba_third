@@ -16,23 +16,24 @@ import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'Abstract.pb.dart' as $1;
-import 'AdInfo.pb.dart' as $11;
-import 'Agree.pb.dart' as $15;
-import 'AlaLiveInfo.pb.dart' as $13;
-import 'DislikeInfo.pb.dart' as $14;
+import 'AdInfo.pb.dart' as $12;
+import 'Agree.pb.dart' as $16;
+import 'AlaLiveInfo.pb.dart' as $14;
+import 'DislikeInfo.pb.dart' as $15;
 import 'HotTWThreadInfo.pb.dart' as $7;
 import 'Media.pb.dart' as $2;
-import 'OriginThreadInfo.pb.dart' as $16;
-import 'PbContent.pb.dart' as $12;
+import 'OriginThreadInfo.pb.dart' as $17;
+import 'PbContent.pb.dart' as $13;
 import 'PollInfo.pb.dart' as $9;
 import 'PostList.pb.dart' as $5;
-import 'SimpleForum.pb.dart' as $17;
-import 'TiebaPlusAd.pb.dart' as $19;
+import 'SimpleForum.pb.dart' as $18;
+import 'TaskInfo.pb.dart' as $11;
+import 'TiebaPlusAd.pb.dart' as $20;
 import 'Topic.pb.dart' as $6;
 import 'User.pb.dart' as $0;
 import 'VideoInfo.pb.dart' as $10;
 import 'Voice.pb.dart' as $3;
-import 'VoiceRoom.pb.dart' as $18;
+import 'VoiceRoom.pb.dart' as $19;
 import 'Zan.pb.dart' as $4;
 import 'ZhiBoInfoTW.pb.dart' as $8;
 
@@ -112,31 +113,32 @@ class ThreadInfo extends $pb.GeneratedMessage {
     $core.int? pushEndTime,
     $core.int? isCopythread,
     $core.int? operatorFlag,
+    $11.TaskInfo? taskInfo,
     $core.int? picNum,
     $core.int? isGodthreadRecommend,
-    $11.AdInfo? videoAdInfo,
-    $core.Iterable<$12.PbContent>? richTitle,
-    $core.Iterable<$12.PbContent>? richAbstract,
-    $13.AlaLiveInfo? alaInfo,
-    $core.Iterable<$14.DislikeInfo>? dislikeInfo,
+    $12.AdInfo? videoAdInfo,
+    $core.Iterable<$13.PbContent>? richTitle,
+    $core.Iterable<$13.PbContent>? richAbstract,
+    $14.AlaLiveInfo? alaInfo,
+    $core.Iterable<$15.DislikeInfo>? dislikeInfo,
     $core.int? agreeNum,
-    $15.Agree? agree,
+    $16.Agree? agree,
     $fixnum.Int64? shareNum,
-    $16.OriginThreadInfo? originThreadInfo,
-    $core.Iterable<$12.PbContent>? firstPostContent,
+    $17.OriginThreadInfo? originThreadInfo,
+    $core.Iterable<$13.PbContent>? firstPostContent,
     $core.int? isShareThread,
     $core.int? isTopic,
     $core.String? topicUserName,
     $core.String? topicH5Url,
-    $17.SimpleForum? forumInfo,
+    $18.SimpleForum? forumInfo,
     $core.String? tShareImg,
     $core.String? nid,
     $core.int? tabId,
     $core.String? tabName,
     $core.int? isDeleted,
     $core.int? hotNum,
-    $18.VoiceRoom? voiceRoom,
-    $19.TiebaPlusAd? tiebaplusAd,
+    $19.VoiceRoom? voiceRoom,
+    $20.TiebaPlusAd? tiebaplusAd,
     $core.int? pollStyle,
   }) {
     final result = create();
@@ -212,6 +214,7 @@ class ThreadInfo extends $pb.GeneratedMessage {
     if (pushEndTime != null) result.pushEndTime = pushEndTime;
     if (isCopythread != null) result.isCopythread = isCopythread;
     if (operatorFlag != null) result.operatorFlag = operatorFlag;
+    if (taskInfo != null) result.taskInfo = taskInfo;
     if (picNum != null) result.picNum = picNum;
     if (isGodthreadRecommend != null)
       result.isGodthreadRecommend = isGodthreadRecommend;
@@ -342,43 +345,45 @@ class ThreadInfo extends $pb.GeneratedMessage {
         fieldType: $pb.PbFieldType.OU3)
     ..aI(82, _omitFieldNames ? '' : 'operatorFlag',
         fieldType: $pb.PbFieldType.OU3)
+    ..aOM<$11.TaskInfo>(83, _omitFieldNames ? '' : 'taskInfo',
+        subBuilder: $11.TaskInfo.create)
     ..aI(84, _omitFieldNames ? '' : 'picNum', fieldType: $pb.PbFieldType.OU3)
     ..aI(85, _omitFieldNames ? '' : 'isGodthreadRecommend')
-    ..aOM<$11.AdInfo>(110, _omitFieldNames ? '' : 'videoAdInfo',
-        subBuilder: $11.AdInfo.create)
-    ..pPM<$12.PbContent>(111, _omitFieldNames ? '' : 'richTitle',
-        protoName: 'richTitle', subBuilder: $12.PbContent.create)
-    ..pPM<$12.PbContent>(112, _omitFieldNames ? '' : 'richAbstract',
-        protoName: 'richAbstract', subBuilder: $12.PbContent.create)
-    ..aOM<$13.AlaLiveInfo>(113, _omitFieldNames ? '' : 'alaInfo',
-        subBuilder: $13.AlaLiveInfo.create)
-    ..pPM<$14.DislikeInfo>(120, _omitFieldNames ? '' : 'dislikeInfo',
-        protoName: 'dislikeInfo', subBuilder: $14.DislikeInfo.create)
+    ..aOM<$12.AdInfo>(110, _omitFieldNames ? '' : 'videoAdInfo',
+        subBuilder: $12.AdInfo.create)
+    ..pPM<$13.PbContent>(111, _omitFieldNames ? '' : 'richTitle',
+        protoName: 'richTitle', subBuilder: $13.PbContent.create)
+    ..pPM<$13.PbContent>(112, _omitFieldNames ? '' : 'richAbstract',
+        protoName: 'richAbstract', subBuilder: $13.PbContent.create)
+    ..aOM<$14.AlaLiveInfo>(113, _omitFieldNames ? '' : 'alaInfo',
+        subBuilder: $14.AlaLiveInfo.create)
+    ..pPM<$15.DislikeInfo>(120, _omitFieldNames ? '' : 'dislikeInfo',
+        protoName: 'dislikeInfo', subBuilder: $15.DislikeInfo.create)
     ..aI(124, _omitFieldNames ? '' : 'agreeNum', protoName: 'agreeNum')
-    ..aOM<$15.Agree>(126, _omitFieldNames ? '' : 'agree',
-        subBuilder: $15.Agree.create)
+    ..aOM<$16.Agree>(126, _omitFieldNames ? '' : 'agree',
+        subBuilder: $16.Agree.create)
     ..aInt64(135, _omitFieldNames ? '' : 'shareNum', protoName: 'shareNum')
-    ..aOM<$16.OriginThreadInfo>(141, _omitFieldNames ? '' : 'originThreadInfo',
-        subBuilder: $16.OriginThreadInfo.create)
-    ..pPM<$12.PbContent>(142, _omitFieldNames ? '' : 'firstPostContent',
-        protoName: 'firstPostContent', subBuilder: $12.PbContent.create)
+    ..aOM<$17.OriginThreadInfo>(141, _omitFieldNames ? '' : 'originThreadInfo',
+        subBuilder: $17.OriginThreadInfo.create)
+    ..pPM<$13.PbContent>(142, _omitFieldNames ? '' : 'firstPostContent',
+        protoName: 'firstPostContent', subBuilder: $13.PbContent.create)
     ..aI(143, _omitFieldNames ? '' : 'isShareThread')
     ..aI(148, _omitFieldNames ? '' : 'isTopic', protoName: 'isTopic')
     ..aOS(149, _omitFieldNames ? '' : 'topicUserName',
         protoName: 'topicUserName')
     ..aOS(150, _omitFieldNames ? '' : 'topicH5Url', protoName: 'topicH5Url')
-    ..aOM<$17.SimpleForum>(155, _omitFieldNames ? '' : 'forumInfo',
-        protoName: 'forumInfo', subBuilder: $17.SimpleForum.create)
+    ..aOM<$18.SimpleForum>(155, _omitFieldNames ? '' : 'forumInfo',
+        protoName: 'forumInfo', subBuilder: $18.SimpleForum.create)
     ..aOS(159, _omitFieldNames ? '' : 'tShareImg', protoName: 'tShareImg')
     ..aOS(164, _omitFieldNames ? '' : 'nid')
     ..aI(175, _omitFieldNames ? '' : 'tabId', protoName: 'tabId')
     ..aOS(176, _omitFieldNames ? '' : 'tabName', protoName: 'tabName')
     ..aI(181, _omitFieldNames ? '' : 'isDeleted', protoName: 'isDeleted')
     ..aI(182, _omitFieldNames ? '' : 'hotNum', protoName: 'hotNum')
-    ..aOM<$18.VoiceRoom>(199, _omitFieldNames ? '' : 'voiceRoom',
-        subBuilder: $18.VoiceRoom.create)
-    ..aOM<$19.TiebaPlusAd>(201, _omitFieldNames ? '' : 'tiebaplusAd',
-        subBuilder: $19.TiebaPlusAd.create)
+    ..aOM<$19.VoiceRoom>(199, _omitFieldNames ? '' : 'voiceRoom',
+        subBuilder: $19.VoiceRoom.create)
+    ..aOM<$20.TiebaPlusAd>(201, _omitFieldNames ? '' : 'tiebaplusAd',
+        subBuilder: $20.TiebaPlusAd.create)
     ..aI(256, _omitFieldNames ? '' : 'pollStyle')
     ..hasRequiredFields = false;
 
@@ -1040,227 +1045,238 @@ class ThreadInfo extends $pb.GeneratedMessage {
   @$pb.TagNumber(82)
   void clearOperatorFlag() => $_clearField(82);
 
+  @$pb.TagNumber(83)
+  $11.TaskInfo get taskInfo => $_getN(72);
+  @$pb.TagNumber(83)
+  set taskInfo($11.TaskInfo value) => $_setField(83, value);
+  @$pb.TagNumber(83)
+  $core.bool hasTaskInfo() => $_has(72);
+  @$pb.TagNumber(83)
+  void clearTaskInfo() => $_clearField(83);
+  @$pb.TagNumber(83)
+  $11.TaskInfo ensureTaskInfo() => $_ensure(72);
+
   @$pb.TagNumber(84)
-  $core.int get picNum => $_getIZ(72);
+  $core.int get picNum => $_getIZ(73);
   @$pb.TagNumber(84)
-  set picNum($core.int value) => $_setUnsignedInt32(72, value);
+  set picNum($core.int value) => $_setUnsignedInt32(73, value);
   @$pb.TagNumber(84)
-  $core.bool hasPicNum() => $_has(72);
+  $core.bool hasPicNum() => $_has(73);
   @$pb.TagNumber(84)
   void clearPicNum() => $_clearField(84);
 
   @$pb.TagNumber(85)
-  $core.int get isGodthreadRecommend => $_getIZ(73);
+  $core.int get isGodthreadRecommend => $_getIZ(74);
   @$pb.TagNumber(85)
-  set isGodthreadRecommend($core.int value) => $_setSignedInt32(73, value);
+  set isGodthreadRecommend($core.int value) => $_setSignedInt32(74, value);
   @$pb.TagNumber(85)
-  $core.bool hasIsGodthreadRecommend() => $_has(73);
+  $core.bool hasIsGodthreadRecommend() => $_has(74);
   @$pb.TagNumber(85)
   void clearIsGodthreadRecommend() => $_clearField(85);
 
   @$pb.TagNumber(110)
-  $11.AdInfo get videoAdInfo => $_getN(74);
+  $12.AdInfo get videoAdInfo => $_getN(75);
   @$pb.TagNumber(110)
-  set videoAdInfo($11.AdInfo value) => $_setField(110, value);
+  set videoAdInfo($12.AdInfo value) => $_setField(110, value);
   @$pb.TagNumber(110)
-  $core.bool hasVideoAdInfo() => $_has(74);
+  $core.bool hasVideoAdInfo() => $_has(75);
   @$pb.TagNumber(110)
   void clearVideoAdInfo() => $_clearField(110);
   @$pb.TagNumber(110)
-  $11.AdInfo ensureVideoAdInfo() => $_ensure(74);
+  $12.AdInfo ensureVideoAdInfo() => $_ensure(75);
 
   @$pb.TagNumber(111)
-  $pb.PbList<$12.PbContent> get richTitle => $_getList(75);
+  $pb.PbList<$13.PbContent> get richTitle => $_getList(76);
 
   @$pb.TagNumber(112)
-  $pb.PbList<$12.PbContent> get richAbstract => $_getList(76);
+  $pb.PbList<$13.PbContent> get richAbstract => $_getList(77);
 
   @$pb.TagNumber(113)
-  $13.AlaLiveInfo get alaInfo => $_getN(77);
+  $14.AlaLiveInfo get alaInfo => $_getN(78);
   @$pb.TagNumber(113)
-  set alaInfo($13.AlaLiveInfo value) => $_setField(113, value);
+  set alaInfo($14.AlaLiveInfo value) => $_setField(113, value);
   @$pb.TagNumber(113)
-  $core.bool hasAlaInfo() => $_has(77);
+  $core.bool hasAlaInfo() => $_has(78);
   @$pb.TagNumber(113)
   void clearAlaInfo() => $_clearField(113);
   @$pb.TagNumber(113)
-  $13.AlaLiveInfo ensureAlaInfo() => $_ensure(77);
+  $14.AlaLiveInfo ensureAlaInfo() => $_ensure(78);
 
   @$pb.TagNumber(120)
-  $pb.PbList<$14.DislikeInfo> get dislikeInfo => $_getList(78);
+  $pb.PbList<$15.DislikeInfo> get dislikeInfo => $_getList(79);
 
   @$pb.TagNumber(124)
-  $core.int get agreeNum => $_getIZ(79);
+  $core.int get agreeNum => $_getIZ(80);
   @$pb.TagNumber(124)
-  set agreeNum($core.int value) => $_setSignedInt32(79, value);
+  set agreeNum($core.int value) => $_setSignedInt32(80, value);
   @$pb.TagNumber(124)
-  $core.bool hasAgreeNum() => $_has(79);
+  $core.bool hasAgreeNum() => $_has(80);
   @$pb.TagNumber(124)
   void clearAgreeNum() => $_clearField(124);
 
   @$pb.TagNumber(126)
-  $15.Agree get agree => $_getN(80);
+  $16.Agree get agree => $_getN(81);
   @$pb.TagNumber(126)
-  set agree($15.Agree value) => $_setField(126, value);
+  set agree($16.Agree value) => $_setField(126, value);
   @$pb.TagNumber(126)
-  $core.bool hasAgree() => $_has(80);
+  $core.bool hasAgree() => $_has(81);
   @$pb.TagNumber(126)
   void clearAgree() => $_clearField(126);
   @$pb.TagNumber(126)
-  $15.Agree ensureAgree() => $_ensure(80);
+  $16.Agree ensureAgree() => $_ensure(81);
 
   @$pb.TagNumber(135)
-  $fixnum.Int64 get shareNum => $_getI64(81);
+  $fixnum.Int64 get shareNum => $_getI64(82);
   @$pb.TagNumber(135)
-  set shareNum($fixnum.Int64 value) => $_setInt64(81, value);
+  set shareNum($fixnum.Int64 value) => $_setInt64(82, value);
   @$pb.TagNumber(135)
-  $core.bool hasShareNum() => $_has(81);
+  $core.bool hasShareNum() => $_has(82);
   @$pb.TagNumber(135)
   void clearShareNum() => $_clearField(135);
 
   @$pb.TagNumber(141)
-  $16.OriginThreadInfo get originThreadInfo => $_getN(82);
+  $17.OriginThreadInfo get originThreadInfo => $_getN(83);
   @$pb.TagNumber(141)
-  set originThreadInfo($16.OriginThreadInfo value) => $_setField(141, value);
+  set originThreadInfo($17.OriginThreadInfo value) => $_setField(141, value);
   @$pb.TagNumber(141)
-  $core.bool hasOriginThreadInfo() => $_has(82);
+  $core.bool hasOriginThreadInfo() => $_has(83);
   @$pb.TagNumber(141)
   void clearOriginThreadInfo() => $_clearField(141);
   @$pb.TagNumber(141)
-  $16.OriginThreadInfo ensureOriginThreadInfo() => $_ensure(82);
+  $17.OriginThreadInfo ensureOriginThreadInfo() => $_ensure(83);
 
   @$pb.TagNumber(142)
-  $pb.PbList<$12.PbContent> get firstPostContent => $_getList(83);
+  $pb.PbList<$13.PbContent> get firstPostContent => $_getList(84);
 
   @$pb.TagNumber(143)
-  $core.int get isShareThread => $_getIZ(84);
+  $core.int get isShareThread => $_getIZ(85);
   @$pb.TagNumber(143)
-  set isShareThread($core.int value) => $_setSignedInt32(84, value);
+  set isShareThread($core.int value) => $_setSignedInt32(85, value);
   @$pb.TagNumber(143)
-  $core.bool hasIsShareThread() => $_has(84);
+  $core.bool hasIsShareThread() => $_has(85);
   @$pb.TagNumber(143)
   void clearIsShareThread() => $_clearField(143);
 
   @$pb.TagNumber(148)
-  $core.int get isTopic => $_getIZ(85);
+  $core.int get isTopic => $_getIZ(86);
   @$pb.TagNumber(148)
-  set isTopic($core.int value) => $_setSignedInt32(85, value);
+  set isTopic($core.int value) => $_setSignedInt32(86, value);
   @$pb.TagNumber(148)
-  $core.bool hasIsTopic() => $_has(85);
+  $core.bool hasIsTopic() => $_has(86);
   @$pb.TagNumber(148)
   void clearIsTopic() => $_clearField(148);
 
   @$pb.TagNumber(149)
-  $core.String get topicUserName => $_getSZ(86);
+  $core.String get topicUserName => $_getSZ(87);
   @$pb.TagNumber(149)
-  set topicUserName($core.String value) => $_setString(86, value);
+  set topicUserName($core.String value) => $_setString(87, value);
   @$pb.TagNumber(149)
-  $core.bool hasTopicUserName() => $_has(86);
+  $core.bool hasTopicUserName() => $_has(87);
   @$pb.TagNumber(149)
   void clearTopicUserName() => $_clearField(149);
 
   @$pb.TagNumber(150)
-  $core.String get topicH5Url => $_getSZ(87);
+  $core.String get topicH5Url => $_getSZ(88);
   @$pb.TagNumber(150)
-  set topicH5Url($core.String value) => $_setString(87, value);
+  set topicH5Url($core.String value) => $_setString(88, value);
   @$pb.TagNumber(150)
-  $core.bool hasTopicH5Url() => $_has(87);
+  $core.bool hasTopicH5Url() => $_has(88);
   @$pb.TagNumber(150)
   void clearTopicH5Url() => $_clearField(150);
 
   @$pb.TagNumber(155)
-  $17.SimpleForum get forumInfo => $_getN(88);
+  $18.SimpleForum get forumInfo => $_getN(89);
   @$pb.TagNumber(155)
-  set forumInfo($17.SimpleForum value) => $_setField(155, value);
+  set forumInfo($18.SimpleForum value) => $_setField(155, value);
   @$pb.TagNumber(155)
-  $core.bool hasForumInfo() => $_has(88);
+  $core.bool hasForumInfo() => $_has(89);
   @$pb.TagNumber(155)
   void clearForumInfo() => $_clearField(155);
   @$pb.TagNumber(155)
-  $17.SimpleForum ensureForumInfo() => $_ensure(88);
+  $18.SimpleForum ensureForumInfo() => $_ensure(89);
 
   @$pb.TagNumber(159)
-  $core.String get tShareImg => $_getSZ(89);
+  $core.String get tShareImg => $_getSZ(90);
   @$pb.TagNumber(159)
-  set tShareImg($core.String value) => $_setString(89, value);
+  set tShareImg($core.String value) => $_setString(90, value);
   @$pb.TagNumber(159)
-  $core.bool hasTShareImg() => $_has(89);
+  $core.bool hasTShareImg() => $_has(90);
   @$pb.TagNumber(159)
   void clearTShareImg() => $_clearField(159);
 
   @$pb.TagNumber(164)
-  $core.String get nid => $_getSZ(90);
+  $core.String get nid => $_getSZ(91);
   @$pb.TagNumber(164)
-  set nid($core.String value) => $_setString(90, value);
+  set nid($core.String value) => $_setString(91, value);
   @$pb.TagNumber(164)
-  $core.bool hasNid() => $_has(90);
+  $core.bool hasNid() => $_has(91);
   @$pb.TagNumber(164)
   void clearNid() => $_clearField(164);
 
   @$pb.TagNumber(175)
-  $core.int get tabId => $_getIZ(91);
+  $core.int get tabId => $_getIZ(92);
   @$pb.TagNumber(175)
-  set tabId($core.int value) => $_setSignedInt32(91, value);
+  set tabId($core.int value) => $_setSignedInt32(92, value);
   @$pb.TagNumber(175)
-  $core.bool hasTabId() => $_has(91);
+  $core.bool hasTabId() => $_has(92);
   @$pb.TagNumber(175)
   void clearTabId() => $_clearField(175);
 
   @$pb.TagNumber(176)
-  $core.String get tabName => $_getSZ(92);
+  $core.String get tabName => $_getSZ(93);
   @$pb.TagNumber(176)
-  set tabName($core.String value) => $_setString(92, value);
+  set tabName($core.String value) => $_setString(93, value);
   @$pb.TagNumber(176)
-  $core.bool hasTabName() => $_has(92);
+  $core.bool hasTabName() => $_has(93);
   @$pb.TagNumber(176)
   void clearTabName() => $_clearField(176);
 
   @$pb.TagNumber(181)
-  $core.int get isDeleted => $_getIZ(93);
+  $core.int get isDeleted => $_getIZ(94);
   @$pb.TagNumber(181)
-  set isDeleted($core.int value) => $_setSignedInt32(93, value);
+  set isDeleted($core.int value) => $_setSignedInt32(94, value);
   @$pb.TagNumber(181)
-  $core.bool hasIsDeleted() => $_has(93);
+  $core.bool hasIsDeleted() => $_has(94);
   @$pb.TagNumber(181)
   void clearIsDeleted() => $_clearField(181);
 
   @$pb.TagNumber(182)
-  $core.int get hotNum => $_getIZ(94);
+  $core.int get hotNum => $_getIZ(95);
   @$pb.TagNumber(182)
-  set hotNum($core.int value) => $_setSignedInt32(94, value);
+  set hotNum($core.int value) => $_setSignedInt32(95, value);
   @$pb.TagNumber(182)
-  $core.bool hasHotNum() => $_has(94);
+  $core.bool hasHotNum() => $_has(95);
   @$pb.TagNumber(182)
   void clearHotNum() => $_clearField(182);
 
   @$pb.TagNumber(199)
-  $18.VoiceRoom get voiceRoom => $_getN(95);
+  $19.VoiceRoom get voiceRoom => $_getN(96);
   @$pb.TagNumber(199)
-  set voiceRoom($18.VoiceRoom value) => $_setField(199, value);
+  set voiceRoom($19.VoiceRoom value) => $_setField(199, value);
   @$pb.TagNumber(199)
-  $core.bool hasVoiceRoom() => $_has(95);
+  $core.bool hasVoiceRoom() => $_has(96);
   @$pb.TagNumber(199)
   void clearVoiceRoom() => $_clearField(199);
   @$pb.TagNumber(199)
-  $18.VoiceRoom ensureVoiceRoom() => $_ensure(95);
+  $19.VoiceRoom ensureVoiceRoom() => $_ensure(96);
 
   @$pb.TagNumber(201)
-  $19.TiebaPlusAd get tiebaplusAd => $_getN(96);
+  $20.TiebaPlusAd get tiebaplusAd => $_getN(97);
   @$pb.TagNumber(201)
-  set tiebaplusAd($19.TiebaPlusAd value) => $_setField(201, value);
+  set tiebaplusAd($20.TiebaPlusAd value) => $_setField(201, value);
   @$pb.TagNumber(201)
-  $core.bool hasTiebaplusAd() => $_has(96);
+  $core.bool hasTiebaplusAd() => $_has(97);
   @$pb.TagNumber(201)
   void clearTiebaplusAd() => $_clearField(201);
   @$pb.TagNumber(201)
-  $19.TiebaPlusAd ensureTiebaplusAd() => $_ensure(96);
+  $20.TiebaPlusAd ensureTiebaplusAd() => $_ensure(97);
 
   @$pb.TagNumber(256)
-  $core.int get pollStyle => $_getIZ(97);
+  $core.int get pollStyle => $_getIZ(98);
   @$pb.TagNumber(256)
-  set pollStyle($core.int value) => $_setSignedInt32(97, value);
+  set pollStyle($core.int value) => $_setSignedInt32(98, value);
   @$pb.TagNumber(256)
-  $core.bool hasPollStyle() => $_has(97);
+  $core.bool hasPollStyle() => $_has(98);
   @$pb.TagNumber(256)
   void clearPollStyle() => $_clearField(256);
 }

@@ -31,6 +31,8 @@ class BawuRoleInfoPub extends $pb.GeneratedMessage {
     $core.String? userName,
     $core.String? nameShow,
     $0.BaijiahaoInfo? baijiahaoInfo,
+    $core.String? avatarUrl,
+    $core.String? targetScheme,
   }) {
     final result = create();
     if (forumId != null) result.forumId = forumId;
@@ -43,6 +45,8 @@ class BawuRoleInfoPub extends $pb.GeneratedMessage {
     if (userName != null) result.userName = userName;
     if (nameShow != null) result.nameShow = nameShow;
     if (baijiahaoInfo != null) result.baijiahaoInfo = baijiahaoInfo;
+    if (avatarUrl != null) result.avatarUrl = avatarUrl;
+    if (targetScheme != null) result.targetScheme = targetScheme;
     return result;
   }
 
@@ -71,6 +75,8 @@ class BawuRoleInfoPub extends $pb.GeneratedMessage {
     ..aOS(9, _omitFieldNames ? '' : 'nameShow')
     ..aOM<$0.BaijiahaoInfo>(10, _omitFieldNames ? '' : 'baijiahaoInfo',
         subBuilder: $0.BaijiahaoInfo.create)
+    ..aOS(11, _omitFieldNames ? '' : 'avatarUrl')
+    ..aOS(12, _omitFieldNames ? '' : 'targetScheme')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -183,6 +189,24 @@ class BawuRoleInfoPub extends $pb.GeneratedMessage {
   void clearBaijiahaoInfo() => $_clearField(10);
   @$pb.TagNumber(10)
   $0.BaijiahaoInfo ensureBaijiahaoInfo() => $_ensure(9);
+
+  @$pb.TagNumber(11)
+  $core.String get avatarUrl => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set avatarUrl($core.String value) => $_setString(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasAvatarUrl() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearAvatarUrl() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.String get targetScheme => $_getSZ(11);
+  @$pb.TagNumber(12)
+  set targetScheme($core.String value) => $_setString(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasTargetScheme() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearTargetScheme() => $_clearField(12);
 }
 
 const $core.bool _omitFieldNames =

@@ -256,7 +256,13 @@ class _MyRepliesPageState extends State<MyRepliesPage> {
     final spans = <InlineSpan>[];
     final images = <String>[];
     for (final a in absList) {
-      if ((a.type == 0 || a.type == 2) && a.text.isNotEmpty) {
+      // 文字 / @提及（type 0, 1, 4, 9）
+      if ((a.type == 0 || a.type == 1 || a.type == 4 || a.type == 9) && a.text.isNotEmpty) {
+        spans.add(TextSpan(
+          text: a.text,
+          style: const TextStyle(fontSize: 14, height: 1.4),
+        ));
+      } else if (a.type == 2 && a.text.isNotEmpty) {
         // 尝试作为表情解析
         final emojiName = EmoticonHelper.extractEmojiName(a.text);
         final imgPath = emojiName != null ? EmoticonHelper.getImagePath(emojiName) : null;

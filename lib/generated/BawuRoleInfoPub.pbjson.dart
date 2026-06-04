@@ -36,6 +36,8 @@ const BawuRoleInfoPub$json = {
       '6': '.tieba.BaijiahaoInfo',
       '10': 'baijiahaoInfo'
     },
+    {'1': 'avatar_url', '3': 11, '4': 1, '5': 9, '10': 'avatarUrl'},
+    {'1': 'target_scheme', '3': 12, '4': 1, '5': 9, '10': 'targetScheme'},
   ],
 };
 
@@ -46,4 +48,6 @@ final $typed_data.Uint8List bawuRoleInfoPubDescriptor = $convert.base64Decode(
     'KAlSCHJvbGVOYW1lEhoKCHBvcnRyYWl0GAUgASgJUghwb3J0cmFpdBIdCgp1c2VyX2xldmVsGA'
     'YgASgFUgl1c2VyTGV2ZWwSHQoKbGV2ZWxfbmFtZRgHIAEoCVIJbGV2ZWxOYW1lEhsKCXVzZXJf'
     'bmFtZRgIIAEoCVIIdXNlck5hbWUSGwoJbmFtZV9zaG93GAkgASgJUghuYW1lU2hvdxI7Cg5iYW'
-    'lqaWFoYW9faW5mbxgKIAEoCzIULnRpZWJhLkJhaWppYWhhb0luZm9SDWJhaWppYWhhb0luZm8=');
+    'lqaWFoYW9faW5mbxgKIAEoCzIULnRpZWJhLkJhaWppYWhhb0luZm9SDWJhaWppYWhhb0luZm8S'
+    'HQoKYXZhdGFyX3VybBgLIAEoCVIJYXZhdGFyVXJsEiMKDXRhcmdldF9zY2hlbWUYDCABKAlSDH'
+    'RhcmdldFNjaGVtZQ==');

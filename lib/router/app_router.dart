@@ -24,6 +24,7 @@ import '../pages/personalization_page.dart';
 import '../pages/messages_page.dart';
 import '../pages/agree_message_page.dart';
 import '../pages/reply_message_page.dart';
+import '../pages/at_me_message_page.dart';
 import '../utils/auth_notifier.dart';
 import '../models/user_profile_data.dart';
 import '../widgets/main_screen.dart';
@@ -199,6 +200,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/messages/replies',
       pageBuilder: (context, state) => const NoTransitionPage(child: ReplyMessagePage()),
+    ),
+    // @我的消息页（独立路由）
+    GoRoute(
+      path: '/messages/mentions',
+      pageBuilder: (context, state) => const NoTransitionPage(child: AtMeMessagePage()),
     ),
     // 设置页（独立路由）
     GoRoute(

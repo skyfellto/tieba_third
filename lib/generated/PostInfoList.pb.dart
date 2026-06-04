@@ -21,6 +21,7 @@ import 'AlaLiveInfo.pb.dart' as $12;
 import 'AnchorInfo.pb.dart' as $6;
 import 'BaijiahaoInfo.pb.dart' as $16;
 import 'DealInfo.pb.dart' as $10;
+import 'FeedKV.pb.dart' as $22;
 import 'HeadItem.pb.dart' as $18;
 import 'Item.pb.dart' as $17;
 import 'LbsInfo.pb.dart' as $3;
@@ -104,6 +105,7 @@ class PostInfoList extends $pb.GeneratedMessage {
     $core.int? topTypes,
     $21.UserPostPerm? userPostPerm,
     $core.String? targetScheme,
+    $core.Iterable<$22.FeedKV>? logParam,
   }) {
     final result = create();
     if (forumId != null) result.forumId = forumId;
@@ -170,6 +172,7 @@ class PostInfoList extends $pb.GeneratedMessage {
     if (topTypes != null) result.topTypes = topTypes;
     if (userPostPerm != null) result.userPostPerm = userPostPerm;
     if (targetScheme != null) result.targetScheme = targetScheme;
+    if (logParam != null) result.logParam.addAll(logParam);
     return result;
   }
 
@@ -281,6 +284,8 @@ class PostInfoList extends $pb.GeneratedMessage {
     ..aOM<$21.UserPostPerm>(63, _omitFieldNames ? '' : 'userPostPerm',
         subBuilder: $21.UserPostPerm.create)
     ..aOS(66, _omitFieldNames ? '' : 'targetScheme')
+    ..pPM<$22.FeedKV>(68, _omitFieldNames ? '' : 'logParam',
+        subBuilder: $22.FeedKV.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -822,6 +827,9 @@ class PostInfoList extends $pb.GeneratedMessage {
   $core.bool hasTargetScheme() => $_has(61);
   @$pb.TagNumber(66)
   void clearTargetScheme() => $_clearField(66);
+
+  @$pb.TagNumber(68)
+  $pb.PbList<$22.FeedKV> get logParam => $_getList(62);
 }
 
 const $core.bool _omitFieldNames =

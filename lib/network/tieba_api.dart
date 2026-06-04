@@ -72,6 +72,7 @@ part 'tieba_api_interact.dart';
 part 'tieba_api_user.dart';
 part 'tieba_api_agreeme.dart';
 part 'tieba_api_replyme.dart';
+part 'tieba_api_atme.dart';
 
 class TiebaApi {
   static String get clientVersion => _clientVersion;
@@ -590,5 +591,20 @@ class TiebaApi {
     pn: pn,
     ids: ids,
     isFirst: isFirst,
+  );
+
+  /// 获取@我的消息列表
+  static Future<Map<String, dynamic>?> fetchAtMe({
+    required String bduss,
+    required String stoken,
+    required String uid,
+    int pn = 1,
+    String tid = '0',
+  }) => _AtMeApi.fetchAtMe(
+    bduss: bduss,
+    stoken: stoken,
+    uid: uid,
+    pn: pn,
+    tid: tid,
   );
 }

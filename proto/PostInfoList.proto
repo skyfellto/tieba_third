@@ -5,6 +5,7 @@ import "PrivSets.proto";
 import "PostInfoContent.proto";
 import "PbContent.proto";
 import "Abstract.proto";
+import "FeedKV.proto";
 import "Media.proto";
 import "PollInfo.proto";
 import "VideoInfo.proto";
@@ -93,4 +94,5 @@ message PostInfoList {
   UserPostPerm user_post_perm = 63;
   //  VoiceRoom voice_room = 64;
   string target_scheme = 66;
+  repeated FeedKV log_param = 68;
 }

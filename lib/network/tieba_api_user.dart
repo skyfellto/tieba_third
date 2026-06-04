@@ -599,6 +599,9 @@ class _UserApi {
         return [];
       }
       if (!pb.hasData()) return [];
+      // pb.data.postList.forEach((post) {
+      //   _logger.i("post :: $post");
+      // });
 
       return pb.data.postList.toList();
     } catch (e) {

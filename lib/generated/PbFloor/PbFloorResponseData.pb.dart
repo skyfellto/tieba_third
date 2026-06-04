@@ -15,6 +15,7 @@ import 'dart:core' as $core;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import '../Anti.pb.dart' as $1;
+import '../FeedKV.pb.dart' as $6;
 import '../Page.pb.dart' as $0;
 import '../Post.pb.dart' as $2;
 import '../SimpleForum.pb.dart' as $5;
@@ -34,6 +35,7 @@ class PbFloorResponseData extends $pb.GeneratedMessage {
     $core.int? serverTime,
     $5.SimpleForum? displayForum,
     $core.int? isBlackWhite,
+    $core.Iterable<$6.FeedKV>? logParam,
   }) {
     final result = create();
     if (page != null) result.page = page;
@@ -45,6 +47,7 @@ class PbFloorResponseData extends $pb.GeneratedMessage {
     if (serverTime != null) result.serverTime = serverTime;
     if (displayForum != null) result.displayForum = displayForum;
     if (isBlackWhite != null) result.isBlackWhite = isBlackWhite;
+    if (logParam != null) result.logParam.addAll(logParam);
     return result;
   }
 
@@ -74,6 +77,8 @@ class PbFloorResponseData extends $pb.GeneratedMessage {
     ..aOM<$5.SimpleForum>(8, _omitFieldNames ? '' : 'displayForum',
         subBuilder: $5.SimpleForum.create)
     ..aI(9, _omitFieldNames ? '' : 'isBlackWhite')
+    ..pPM<$6.FeedKV>(10, _omitFieldNames ? '' : 'logParam',
+        subBuilder: $6.FeedKV.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -181,6 +186,9 @@ class PbFloorResponseData extends $pb.GeneratedMessage {
   $core.bool hasIsBlackWhite() => $_has(8);
   @$pb.TagNumber(9)
   void clearIsBlackWhite() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $pb.PbList<$6.FeedKV> get logParam => $_getList(9);
 }
 
 const $core.bool _omitFieldNames =

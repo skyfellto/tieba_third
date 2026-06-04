@@ -16,6 +16,7 @@ import "PbContent.proto";
 import "PollInfo.proto";
 import "PostList.proto";
 import "SimpleForum.proto";
+import "TaskInfo.proto";
 import "TiebaPlusAd.proto";
 import "Topic.proto";
 import "User.proto";
@@ -98,6 +99,7 @@ message ThreadInfo {
   int32 push_end_time = 80;
   uint32 is_copythread = 81;
   uint32 operator_flag = 82;
+  TaskInfo task_info = 83;
   uint32 pic_num = 84;
   int32 is_godthread_recommend = 85;
   AdInfo video_ad_info = 110;

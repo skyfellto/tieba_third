@@ -110,17 +110,54 @@ class _ReplyMeApi {
     const stTimesNum = "1";
     const stErrorNums = "1";
 
-    final signParams = [
+    // 构建完整请求体参数字段（包含 device、auth、ST 反垃圾等）
+    final formParams = <List<String>>[
       ["BDUSS", bduss],
+      ["STOKEN", stoken],
+      ["_client_id", clientId ?? ''],
+      ["_client_type", "2"],
+      ["_client_version", _clientVersion],
+      ["active_timestamp", "${di.activeTimestamp}"],
+      ["baiduid", UserManager.baiduId ?? ''],
+      ["c3_aid", c3Aid],
+      ["cam", ''],
+      ["cmode", "1"],
+      ["cuid", cuid],
+      ["cuid_galaxy2", cuid],
+      ["cuid_gid", ""],
+      ["device_score", "0.5"],
+      ["di_diordna", diDiordna],
+      ["diao", ""],
+      ["dnarb", dnarb],
+      ["event_day", eventDay],
+      ["extra", ""],
+      ["first_install_time", "${di.firstInstallTime}"],
+      ["framework_ver", "3340042"],
+      ["from", "1015363f"],
+      ["iemi", iemi],
+      ["is_teenager", "0"],
+      ["last_update_time", "${di.lastUpdateTime}"],
+      ["ledom", ledom],
+      ["naws_game_ver", "1038000"],
+      ["need_cam_decrypt", "1"],
+      ["need_decrypt", "1"],
+      ["net_type", "1"],
+      ["os_version", DeviceInfo().osVersion],
+      ["personalized_rec_switch", "1"],
+      ["sample_id", _syncSampleId ?? ''],
+      ["sdk_ver", "2.34.0"],
       ["stErrorNums", stErrorNums],
       ["stMethod", stMethod],
       ["stMode", stMode],
       ["stSize", stSize],
       ["stTime", stTime],
       ["stTimesNum", stTimesNum],
-      ["stoken", stoken],
+      ["start_scheme", ""],
+      ["start_type", "1"],
+      ["timestamp", "$timestamp"],
+      ["z_id", zId ?? ''],
     ];
-    final sign = _computeSign(signParams);
+    final sign = _computeSign(formParams);
 
     final uri = Uri.parse(
       "$_baseHost/c/u/feed/replyme?cmd=303007&format=protobuf",
@@ -155,6 +192,42 @@ class _ReplyMeApi {
         ..fields['stTime'] = stTime
         ..fields['stTimesNum'] = stTimesNum
         ..fields['STOKEN'] = stoken
+        ..fields['_client_id'] = (clientId ?? '')
+        ..fields['_client_type'] = '2'
+        ..fields['_client_version'] = _clientVersion
+        ..fields['active_timestamp'] = '${di.activeTimestamp}'
+        ..fields['baiduid'] = (UserManager.baiduId ?? '')
+        ..fields['c3_aid'] = c3Aid
+        ..fields['cam'] = ''
+        ..fields['cmode'] = '1'
+        ..fields['cuid'] = cuid
+        ..fields['cuid_galaxy2'] = cuid
+        ..fields['cuid_gid'] = ''
+        ..fields['device_score'] = '0.5'
+        ..fields['di_diordna'] = diDiordna
+        ..fields['diao'] = ''
+        ..fields['dnarb'] = dnarb
+        ..fields['event_day'] = eventDay
+        ..fields['extra'] = ''
+        ..fields['first_install_time'] = '${di.firstInstallTime}'
+        ..fields['framework_ver'] = '3340042'
+        ..fields['from'] = '1015363f'
+        ..fields['iemi'] = iemi
+        ..fields['is_teenager'] = '0'
+        ..fields['last_update_time'] = '${di.lastUpdateTime}'
+        ..fields['ledom'] = ledom
+        ..fields['naws_game_ver'] = '1038000'
+        ..fields['need_cam_decrypt'] = '1'
+        ..fields['need_decrypt'] = '1'
+        ..fields['net_type'] = '1'
+        ..fields['os_version'] = DeviceInfo().osVersion
+        ..fields['personalized_rec_switch'] = '1'
+        ..fields['sample_id'] = (_syncSampleId ?? '')
+        ..fields['sdk_ver'] = '2.34.0'
+        ..fields['start_scheme'] = ''
+        ..fields['start_type'] = '1'
+        ..fields['timestamp'] = '$timestamp'
+        ..fields['z_id'] = (zId ?? '')
         ..files.add(
           http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
         );

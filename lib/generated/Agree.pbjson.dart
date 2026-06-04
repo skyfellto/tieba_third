@@ -24,6 +24,7 @@ const Agree$json = {
     {'1': 'agreeType', '3': 3, '4': 1, '5': 5, '10': 'agreeType'},
     {'1': 'disagreeNum', '3': 4, '4': 1, '5': 3, '10': 'disagreeNum'},
     {'1': 'diffAgreeNum', '3': 5, '4': 1, '5': 3, '10': 'diffAgreeNum'},
+    {'1': 'lz_agree', '3': 6, '4': 1, '5': 5, '10': 'lzAgree'},
   ],
 };
 
@@ -31,4 +32,5 @@ const Agree$json = {
 final $typed_data.Uint8List agreeDescriptor = $convert.base64Decode(
     'CgVBZ3JlZRIaCghhZ3JlZU51bRgBIAEoA1IIYWdyZWVOdW0SGgoIaGFzQWdyZWUYAiABKAVSCG'
     'hhc0FncmVlEhwKCWFncmVlVHlwZRgDIAEoBVIJYWdyZWVUeXBlEiAKC2Rpc2FncmVlTnVtGAQg'
-    'ASgDUgtkaXNhZ3JlZU51bRIiCgxkaWZmQWdyZWVOdW0YBSABKANSDGRpZmZBZ3JlZU51bQ==');
+    'ASgDUgtkaXNhZ3JlZU51bRIiCgxkaWZmQWdyZWVOdW0YBSABKANSDGRpZmZBZ3JlZU51bRIZCg'
+    'hsel9hZ3JlZRgGIAEoBVIHbHpBZ3JlZQ==');

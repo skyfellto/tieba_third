@@ -24,6 +24,7 @@ class Agree extends $pb.GeneratedMessage {
     $core.int? agreeType,
     $fixnum.Int64? disagreeNum,
     $fixnum.Int64? diffAgreeNum,
+    $core.int? lzAgree,
   }) {
     final result = create();
     if (agreeNum != null) result.agreeNum = agreeNum;
@@ -31,6 +32,7 @@ class Agree extends $pb.GeneratedMessage {
     if (agreeType != null) result.agreeType = agreeType;
     if (disagreeNum != null) result.disagreeNum = disagreeNum;
     if (diffAgreeNum != null) result.diffAgreeNum = diffAgreeNum;
+    if (lzAgree != null) result.lzAgree = lzAgree;
     return result;
   }
 
@@ -53,6 +55,7 @@ class Agree extends $pb.GeneratedMessage {
     ..aInt64(4, _omitFieldNames ? '' : 'disagreeNum', protoName: 'disagreeNum')
     ..aInt64(5, _omitFieldNames ? '' : 'diffAgreeNum',
         protoName: 'diffAgreeNum')
+    ..aI(6, _omitFieldNames ? '' : 'lzAgree')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -117,6 +120,15 @@ class Agree extends $pb.GeneratedMessage {
   $core.bool hasDiffAgreeNum() => $_has(4);
   @$pb.TagNumber(5)
   void clearDiffAgreeNum() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.int get lzAgree => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set lzAgree($core.int value) => $_setSignedInt32(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasLzAgree() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearLzAgree() => $_clearField(6);
 }
 
 const $core.bool _omitFieldNames =

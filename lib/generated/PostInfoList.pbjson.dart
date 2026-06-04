@@ -254,6 +254,14 @@ const PostInfoList$json = {
       '10': 'userPostPerm'
     },
     {'1': 'target_scheme', '3': 66, '4': 1, '5': 9, '10': 'targetScheme'},
+    {
+      '1': 'log_param',
+      '3': 68,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.FeedKV',
+      '10': 'logParam'
+    },
   ],
 };
 
@@ -302,4 +310,4 @@ final $typed_data.Uint8List postInfoListDescriptor = $convert.base64Decode(
     'ASgFUg9pc09yaWdpbk1hbmFnZXISHQoKZ29vZF90eXBlcxg9IAEoBVIJZ29vZFR5cGVzEhsKCX'
     'RvcF90eXBlcxg+IAEoBVIIdG9wVHlwZXMSOQoOdXNlcl9wb3N0X3Blcm0YPyABKAsyEy50aWVi'
     'YS5Vc2VyUG9zdFBlcm1SDHVzZXJQb3N0UGVybRIjCg10YXJnZXRfc2NoZW1lGEIgASgJUgx0YX'
-    'JnZXRTY2hlbWU=');
+    'JnZXRTY2hlbWUSKgoJbG9nX3BhcmFtGEQgAygLMg0udGllYmEuRmVlZEtWUghsb2dQYXJhbQ==');

@@ -30,6 +30,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
 
   /// 已点赞的回复 postId 集合（与 hasAgree 合并判断）
   final Set<String> _likedReplySet = {};
+
   /// 点赞数缓存（优先使用 API 的 hasAgree / zan.num，本地覆盖）
   final Map<String, int> _likedAgreeMap = {};
 
@@ -226,7 +227,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _messages.length + (_loadingMore || _hasMore ? 1 : 0),
+        itemCount: _messages.length + (_loadingMore || !_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _messages.length) {
             if (_loadingMore) {
@@ -419,16 +420,22 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _isReplyLiked(item) ? Icons.thumb_up : Icons.thumb_up_outlined,
+                          _isReplyLiked(item)
+                              ? Icons.thumb_up
+                              : Icons.thumb_up_outlined,
                           size: 18,
-                          color: _isReplyLiked(item) ? Colors.red : Colors.grey[400],
+                          color: _isReplyLiked(item)
+                              ? Colors.red
+                              : Colors.grey[400],
                         ),
                         const SizedBox(width: 4),
                         Text(
                           _isReplyLiked(item) ? '已赞' : '点赞',
                           style: TextStyle(
                             fontSize: 12,
-                            color: _isReplyLiked(item) ? Colors.red : Colors.grey[400],
+                            color: _isReplyLiked(item)
+                                ? Colors.red
+                                : Colors.grey[400],
                           ),
                         ),
                       ],
@@ -448,6 +455,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
   Widget _buildRichContent(
     List<pb_content.PbContent> contents, {
     bool isReply = false,
+    TextStyle? textStyle,
   }) {
     final images = <String>[];
     final spans = <InlineSpan>[];
@@ -531,7 +539,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
           TextSpan(children: spans),
           maxLines: isReply ? 4 : 2,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 13),
+          style: textStyle ?? const TextStyle(fontSize: 13),
         ),
       );
     }
@@ -543,31 +551,36 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
     );
   }
 
-  /// 被回复内容
+  /// 被回复内容（左侧竖线标识 + 富文本渲染）
   Widget _buildQuoteContent(
     List<pb_content.PbContent> contents,
     String quoteUserName,
   ) {
-    final texts = contents
-        .where(
-          (c) =>
-              (c.type == 0 || c.type == 1 || c.type == 2 || c.type == 4) &&
-              c.text.isNotEmpty,
-        )
-        .map((c) => c.text)
-        .join(' ');
-    return Row(
-      children: [
-        if (quoteUserName.isNotEmpty)
-          Expanded(
-            child: Text(
-              texts,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-            ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(left: 10),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white38
+                : Colors.blue.withValues(alpha: 0.4),
+            width: 3,
           ),
-      ],
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (quoteUserName.isNotEmpty)
+            Expanded(
+              child: _buildRichContent(
+                contents,
+                textStyle: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -717,7 +730,9 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
     // 暂存原始状态用于回滚
     final wasLiked = _isReplyLiked(item);
     final oldCount = _getReplyLikeCount(item);
-    final newCount = wasLiked ? (oldCount > 0 ? oldCount - 1 : 0) : oldCount + 1;
+    final newCount = wasLiked
+        ? (oldCount > 0 ? oldCount - 1 : 0)
+        : oldCount + 1;
 
     // 乐观更新
     setState(() {

@@ -45,6 +45,20 @@ class ThreadListRequestData extends $pb.GeneratedMessage {
     $1.AppPosInfo? appPos,
     $2.AdParam? adParam,
     $core.String? adContextList,
+    $core.String? adBearContext,
+    $core.int? hasAdBear,
+    $core.String? adBearSid,
+    $core.double? adBearSidPrice,
+    $core.int? requestTimes,
+    $core.String? frsCommonInfo,
+    $core.int? isNewfrs,
+    $core.int? isGoodtab,
+    $core.String? logParam,
+    $core.int? isNewfeed,
+    $fixnum.Int64? tidSrc,
+    $core.String? nidSrc,
+    $core.String? adExternalInfo,
+    $core.String? simplifyField,
   }) {
     final result = create();
     if (threadIds != null) result.threadIds = threadIds;
@@ -66,6 +80,20 @@ class ThreadListRequestData extends $pb.GeneratedMessage {
     if (appPos != null) result.appPos = appPos;
     if (adParam != null) result.adParam = adParam;
     if (adContextList != null) result.adContextList = adContextList;
+    if (adBearContext != null) result.adBearContext = adBearContext;
+    if (hasAdBear != null) result.hasAdBear = hasAdBear;
+    if (adBearSid != null) result.adBearSid = adBearSid;
+    if (adBearSidPrice != null) result.adBearSidPrice = adBearSidPrice;
+    if (requestTimes != null) result.requestTimes = requestTimes;
+    if (frsCommonInfo != null) result.frsCommonInfo = frsCommonInfo;
+    if (isNewfrs != null) result.isNewfrs = isNewfrs;
+    if (isGoodtab != null) result.isGoodtab = isGoodtab;
+    if (logParam != null) result.logParam = logParam;
+    if (isNewfeed != null) result.isNewfeed = isNewfeed;
+    if (tidSrc != null) result.tidSrc = tidSrc;
+    if (nidSrc != null) result.nidSrc = nidSrc;
+    if (adExternalInfo != null) result.adExternalInfo = adExternalInfo;
+    if (simplifyField != null) result.simplifyField = simplifyField;
     return result;
   }
 
@@ -109,6 +137,21 @@ class ThreadListRequestData extends $pb.GeneratedMessage {
     ..aOM<$2.AdParam>(18, _omitFieldNames ? '' : 'adParam',
         subBuilder: $2.AdParam.create)
     ..aOS(19, _omitFieldNames ? '' : 'adContextList')
+    ..aOS(22, _omitFieldNames ? '' : 'adBearContext')
+    ..aI(23, _omitFieldNames ? '' : 'hasAdBear')
+    ..aOS(24, _omitFieldNames ? '' : 'adBearSid')
+    ..aD(25, _omitFieldNames ? '' : 'adBearSidPrice')
+    ..aI(26, _omitFieldNames ? '' : 'requestTimes')
+    ..aOS(27, _omitFieldNames ? '' : 'frsCommonInfo')
+    ..aI(28, _omitFieldNames ? '' : 'isNewfrs')
+    ..aI(29, _omitFieldNames ? '' : 'isGoodtab')
+    ..aOS(30, _omitFieldNames ? '' : 'logParam')
+    ..aI(31, _omitFieldNames ? '' : 'isNewfeed', fieldType: $pb.PbFieldType.OU3)
+    ..a<$fixnum.Int64>(32, _omitFieldNames ? '' : 'tidSrc', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOS(33, _omitFieldNames ? '' : 'nidSrc')
+    ..aOS(36, _omitFieldNames ? '' : 'adExternalInfo')
+    ..aOS(41, _omitFieldNames ? '' : 'simplifyField')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -307,6 +350,132 @@ class ThreadListRequestData extends $pb.GeneratedMessage {
   $core.bool hasAdContextList() => $_has(18);
   @$pb.TagNumber(19)
   void clearAdContextList() => $_clearField(19);
+
+  @$pb.TagNumber(22)
+  $core.String get adBearContext => $_getSZ(19);
+  @$pb.TagNumber(22)
+  set adBearContext($core.String value) => $_setString(19, value);
+  @$pb.TagNumber(22)
+  $core.bool hasAdBearContext() => $_has(19);
+  @$pb.TagNumber(22)
+  void clearAdBearContext() => $_clearField(22);
+
+  @$pb.TagNumber(23)
+  $core.int get hasAdBear => $_getIZ(20);
+  @$pb.TagNumber(23)
+  set hasAdBear($core.int value) => $_setSignedInt32(20, value);
+  @$pb.TagNumber(23)
+  $core.bool hasHasAdBear() => $_has(20);
+  @$pb.TagNumber(23)
+  void clearHasAdBear() => $_clearField(23);
+
+  @$pb.TagNumber(24)
+  $core.String get adBearSid => $_getSZ(21);
+  @$pb.TagNumber(24)
+  set adBearSid($core.String value) => $_setString(21, value);
+  @$pb.TagNumber(24)
+  $core.bool hasAdBearSid() => $_has(21);
+  @$pb.TagNumber(24)
+  void clearAdBearSid() => $_clearField(24);
+
+  @$pb.TagNumber(25)
+  $core.double get adBearSidPrice => $_getN(22);
+  @$pb.TagNumber(25)
+  set adBearSidPrice($core.double value) => $_setDouble(22, value);
+  @$pb.TagNumber(25)
+  $core.bool hasAdBearSidPrice() => $_has(22);
+  @$pb.TagNumber(25)
+  void clearAdBearSidPrice() => $_clearField(25);
+
+  @$pb.TagNumber(26)
+  $core.int get requestTimes => $_getIZ(23);
+  @$pb.TagNumber(26)
+  set requestTimes($core.int value) => $_setSignedInt32(23, value);
+  @$pb.TagNumber(26)
+  $core.bool hasRequestTimes() => $_has(23);
+  @$pb.TagNumber(26)
+  void clearRequestTimes() => $_clearField(26);
+
+  @$pb.TagNumber(27)
+  $core.String get frsCommonInfo => $_getSZ(24);
+  @$pb.TagNumber(27)
+  set frsCommonInfo($core.String value) => $_setString(24, value);
+  @$pb.TagNumber(27)
+  $core.bool hasFrsCommonInfo() => $_has(24);
+  @$pb.TagNumber(27)
+  void clearFrsCommonInfo() => $_clearField(27);
+
+  @$pb.TagNumber(28)
+  $core.int get isNewfrs => $_getIZ(25);
+  @$pb.TagNumber(28)
+  set isNewfrs($core.int value) => $_setSignedInt32(25, value);
+  @$pb.TagNumber(28)
+  $core.bool hasIsNewfrs() => $_has(25);
+  @$pb.TagNumber(28)
+  void clearIsNewfrs() => $_clearField(28);
+
+  @$pb.TagNumber(29)
+  $core.int get isGoodtab => $_getIZ(26);
+  @$pb.TagNumber(29)
+  set isGoodtab($core.int value) => $_setSignedInt32(26, value);
+  @$pb.TagNumber(29)
+  $core.bool hasIsGoodtab() => $_has(26);
+  @$pb.TagNumber(29)
+  void clearIsGoodtab() => $_clearField(29);
+
+  @$pb.TagNumber(30)
+  $core.String get logParam => $_getSZ(27);
+  @$pb.TagNumber(30)
+  set logParam($core.String value) => $_setString(27, value);
+  @$pb.TagNumber(30)
+  $core.bool hasLogParam() => $_has(27);
+  @$pb.TagNumber(30)
+  void clearLogParam() => $_clearField(30);
+
+  @$pb.TagNumber(31)
+  $core.int get isNewfeed => $_getIZ(28);
+  @$pb.TagNumber(31)
+  set isNewfeed($core.int value) => $_setUnsignedInt32(28, value);
+  @$pb.TagNumber(31)
+  $core.bool hasIsNewfeed() => $_has(28);
+  @$pb.TagNumber(31)
+  void clearIsNewfeed() => $_clearField(31);
+
+  @$pb.TagNumber(32)
+  $fixnum.Int64 get tidSrc => $_getI64(29);
+  @$pb.TagNumber(32)
+  set tidSrc($fixnum.Int64 value) => $_setInt64(29, value);
+  @$pb.TagNumber(32)
+  $core.bool hasTidSrc() => $_has(29);
+  @$pb.TagNumber(32)
+  void clearTidSrc() => $_clearField(32);
+
+  @$pb.TagNumber(33)
+  $core.String get nidSrc => $_getSZ(30);
+  @$pb.TagNumber(33)
+  set nidSrc($core.String value) => $_setString(30, value);
+  @$pb.TagNumber(33)
+  $core.bool hasNidSrc() => $_has(30);
+  @$pb.TagNumber(33)
+  void clearNidSrc() => $_clearField(33);
+
+  @$pb.TagNumber(36)
+  $core.String get adExternalInfo => $_getSZ(31);
+  @$pb.TagNumber(36)
+  set adExternalInfo($core.String value) => $_setString(31, value);
+  @$pb.TagNumber(36)
+  $core.bool hasAdExternalInfo() => $_has(31);
+  @$pb.TagNumber(36)
+  void clearAdExternalInfo() => $_clearField(36);
+
+  @$pb.TagNumber(41)
+  $core.String get simplifyField => $_getSZ(32);
+  @$pb.TagNumber(41)
+  set simplifyField($core.String value) => $_setString(32, value);
+  @$pb.TagNumber(41)
+  $core.bool hasSimplifyField() => $_has(32);
+  @$pb.TagNumber(41)
+  void clearSimplifyField() => $_clearField(41);
 }
 
 class ThreadListRequest extends $pb.GeneratedMessage {

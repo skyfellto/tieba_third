@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package tieba.threadList;
 
-option java_package = "com.huanchengfly.tieba.post.api.models.protos.threadList";
-
 import "CommonRequest.proto";
 import "ThreadInfo.proto";
 import "AppPosInfo.proto";
@@ -31,6 +29,20 @@ message ThreadListRequestData {
   optional int64 user_id = 9;
   optional string da_idfa = 10;
   string platform = 11;
+  string ad_bear_context = 22;
+  int32 has_ad_bear = 23;
+  string ad_bear_sid = 24;
+  double ad_bear_sid_price = 25;
+  int32 request_times = 26;
+  string frs_common_info = 27;
+  int32 is_newfrs = 28;
+  int32 is_goodtab = 29;
+  string log_param = 30;
+  uint32 is_newfeed = 31;
+  uint64 tid_src = 32;
+  string nid_src = 33;
+  string ad_external_info = 36;
+  string simplify_field = 41;
 }
 
 message ThreadListRequest {

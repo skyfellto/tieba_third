@@ -56,6 +56,14 @@ const PbFloorResponseData$json = {
       '10': 'displayForum'
     },
     {'1': 'is_black_white', '3': 9, '4': 1, '5': 5, '10': 'isBlackWhite'},
+    {
+      '1': 'log_param',
+      '3': 10,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.FeedKV',
+      '10': 'logParam'
+    },
   ],
 };
 
@@ -67,5 +75,5 @@ final $typed_data.Uint8List pbFloorResponseDataDescriptor = $convert.base64Decod
     'Jwb3N0TGlzdBIpCgZ0aHJlYWQYBSABKAsyES50aWViYS5UaHJlYWRJbmZvUgZ0aHJlYWQSKAoF'
     'Zm9ydW0YBiABKAsyEi50aWViYS5TaW1wbGVGb3J1bVIFZm9ydW0SHwoLc2VydmVyX3RpbWUYBy'
     'ABKAVSCnNlcnZlclRpbWUSNwoNZGlzcGxheV9mb3J1bRgIIAEoCzISLnRpZWJhLlNpbXBsZUZv'
-    'cnVtUgxkaXNwbGF5Rm9ydW0SJAoOaXNfYmxhY2tfd2hpdGUYCSABKAVSDGlzQmxhY2tXaGl0ZQ'
-    '==');
+    'cnVtUgxkaXNwbGF5Rm9ydW0SJAoOaXNfYmxhY2tfd2hpdGUYCSABKAVSDGlzQmxhY2tXaGl0ZR'
+    'IqCglsb2dfcGFyYW0YCiADKAsyDS50aWViYS5GZWVkS1ZSCGxvZ1BhcmFt');
