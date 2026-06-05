@@ -14,6 +14,7 @@ migrate_working_dir/
 docs/
 proto/
 CLAUDE.md
+.vscode/
 
 # IntelliJ related
 *.iml
