@@ -294,6 +294,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
       }
       return;
     }
+    // ignore: use_build_context_synchronously
     final scaffold = ScaffoldMessenger.of(context);
     final threadKey = 'thread:${widget.tid}';
     final serverLiked = _data?.hasThread() == true
@@ -925,6 +926,7 @@ class _PostDetailPageState extends State<PostDetailPage> {
       }
       return;
     }
+    // ignore: use_build_context_synchronously
     final scaffold = ScaffoldMessenger.of(context);
 
     final pidStr = post.id.toString();

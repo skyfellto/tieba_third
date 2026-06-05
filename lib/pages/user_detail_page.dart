@@ -405,6 +405,7 @@ class _UserDetailPageState extends State<UserDetailPage>
                           }
                           return;
                         }
+                        // ignore: use_build_context_synchronously
                         final scaffold = ScaffoldMessenger.of(context);
                         final pIdx = _posts.indexWhere((x) => x.tid == tid);
                         if (pIdx < 0) return;

@@ -348,6 +348,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       }
       return;
     }
+    // ignore: use_build_context_synchronously
     final scaffold = ScaffoldMessenger.of(context);
     final pidStr = subReply.id.toString();
     final replyKey = 'floor:$pidStr';

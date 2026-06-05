@@ -291,6 +291,7 @@ class _MyLikesPageState extends State<MyLikesPage>
       }
       return;
     }
+    // ignore: use_build_context_synchronously
     final scaffold = ScaffoldMessenger.of(context);
 
     // 有回复时赞的是回复本身，否则赞帖子
