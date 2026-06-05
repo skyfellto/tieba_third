@@ -6,6 +6,9 @@ import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/emoticon_helper.dart';
 import '../utils/toast_utils.dart';
+import '../widgets/text_with_emoji.dart';
+import '../widgets/message_error_state.dart';
+import '../widgets/message_list_footer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// 回复消息页面
@@ -25,8 +28,6 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
   int _pn = 1;
   String _ids = '0';
   final ScrollController _scrollController = ScrollController();
-
-  static final RegExp _emojiPattern = RegExp(r'#\(([^)]+)\)|#（([^）]+)）');
 
   /// 已点赞的回复 postId 集合（与 hasAgree 合并判断）
   final Set<String> _likedReplySet = {};
@@ -218,7 +219,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
     if (_isLoading && _messages.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_isError && _messages.isEmpty) return _buildErrorState();
+    if (_isError && _messages.isEmpty) return MessageErrorState(onRetry: _onRetry);
     if (!_isLoading && _messages.isEmpty) return _buildEmptyState();
 
     return RefreshIndicator(
@@ -230,66 +231,10 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
         itemCount: _messages.length + (_loadingMore || !_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _messages.length) {
-            if (_loadingMore) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              );
-            }
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: Text(
-                  '没有更多了',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-              ),
-            );
+            return MessageListFooter(isLoading: _loadingMore);
           }
           return _buildMessageItem(_messages[index]);
         },
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'emoticon/image_emoticon1.webp',
-              width: 80,
-              height: 80,
-              errorBuilder: (_, _, _) => const Icon(
-                Icons.sentiment_dissatisfied,
-                size: 64,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '网络不给力，小稽直叹气',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: _onRetry,
-              child: const Text(
-                '戳这里重试',
-                style: TextStyle(color: Color(0xFF9FB5DD), fontSize: 14),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -569,17 +514,9 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
           ),
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (quoteUserName.isNotEmpty)
-            Expanded(
-              child: _buildRichContent(
-                contents,
-                textStyle: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-            ),
-        ],
+      child: _buildRichContent(
+        contents,
+        textStyle: TextStyle(fontSize: 12, color: Colors.grey[500]),
       ),
     );
   }
@@ -611,7 +548,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _buildTextWithEmoji(
+            child: TextWithEmoji(
               title,
               maxLines: 1,
               emojiSize: 16,
@@ -621,7 +558,7 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
         ],
       );
     } else {
-      inner = _buildTextWithEmoji(
+      inner = TextWithEmoji(
         title,
         maxLines: 2,
         emojiSize: 16,
@@ -642,44 +579,6 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
   }
 
   /// Emoji 内联渲染
-  Widget _buildTextWithEmoji(
-    String text, {
-    int? maxLines,
-    double emojiSize = 18,
-    TextStyle? style,
-  }) {
-    if (text.isEmpty) return const SizedBox.shrink();
-    final spans = <InlineSpan>[];
-    int lastEnd = 0;
-    for (final match in _emojiPattern.allMatches(text)) {
-      if (match.start > lastEnd) {
-        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
-      }
-      final emojiName = match.group(1) ?? match.group(2) ?? '';
-      final imgPath = EmoticonHelper.getImagePath(emojiName);
-      if (imgPath != null) {
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Image.asset(imgPath, width: emojiSize, height: emojiSize),
-          ),
-        );
-      } else {
-        spans.add(TextSpan(text: '#($emojiName)'));
-      }
-      lastEnd = match.end;
-    }
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd)));
-    }
-    return Text.rich(
-      TextSpan(children: spans),
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-      style: style,
-    );
-  }
-
   void _onItemTap(ReplyList item) {
     final tid = item.threadId.toInt() > 0 ? item.threadId.toString() : '0';
     final pid = item.postId.toInt() > 0 ? item.postId.toString() : null;

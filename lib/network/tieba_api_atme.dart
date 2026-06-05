@@ -145,7 +145,6 @@ class _AtMeApi {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) return null;
-      _logger.i("json :: $json");
       return json;
     } catch (e) {
       _logger.w("【AtMe】请求异常：$e");

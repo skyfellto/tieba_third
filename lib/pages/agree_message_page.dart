@@ -5,7 +5,9 @@ import '../generated/AgreeList.pb.dart' as agree;
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/post_content_parser.dart';
-import '../utils/emoticon_helper.dart';
+import '../widgets/text_with_emoji.dart';
+import '../widgets/message_error_state.dart';
+import '../widgets/message_list_footer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// 点赞消息页面
@@ -25,9 +27,6 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
   Int64 _nextId = Int64.ZERO;
   static const int _pageSize = 20;
   final ScrollController _scrollController = ScrollController();
-
-  /// 匹配 #(表情名) 或 #（表情名）
-  static final RegExp _emojiPattern = RegExp(r'#\(([^)]+)\)|#（([^）]+)）');
 
   @override
   void initState() {
@@ -205,7 +204,7 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
     }
 
     if (_isError && _messages.isEmpty) {
-      return _buildErrorState();
+      return MessageErrorState(onRetry: _onRetry);
     }
 
     if (!_isLoading && _messages.isEmpty) {
@@ -221,70 +220,10 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
         itemCount: _messages.length + (_loadingMore || !_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _messages.length) {
-            if (_loadingMore) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              );
-            } else {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(
-                  child: Text(
-                    '没有更多了',
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                ),
-              );
-            }
+            return MessageListFooter(isLoading: _loadingMore);
           }
           return _buildMessageItem(_messages[index]);
         },
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'emoticon/image_emoticon1.webp',
-              width: 80,
-              height: 80,
-              errorBuilder: (_, _, _) => const Icon(
-                Icons.sentiment_dissatisfied,
-                size: 64,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '网络不给力，小稽直叹气',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: _onRetry,
-              child: const Text(
-                '戳这里重试',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 159, 181, 221),
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -407,7 +346,7 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _buildTextWithEmoji(
+            child: TextWithEmoji(
               title,
               maxLines: 1,
               emojiSize: 16,
@@ -417,7 +356,7 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
         ],
       );
     } else {
-      inner = _buildTextWithEmoji(
+      inner = TextWithEmoji(
         title,
         maxLines: 2,
         emojiSize: 16,
@@ -480,7 +419,7 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
                   ),
                 ),
               Expanded(
-                child: _buildTextWithEmoji(
+                child: TextWithEmoji(
                   replyContent,
                   maxLines: 1,
                   emojiSize: 16,
@@ -494,52 +433,6 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
         // 原帖信息
         _buildThreadContent(threadTitle, hasImage, imageUrl),
       ],
-    );
-  }
-
-  /// 将文本中的 #(表情名) / #（表情名） 渲染为内联 emoji 图片
-  Widget _buildTextWithEmoji(
-    String text, {
-    int? maxLines,
-    double emojiSize = 18,
-    TextStyle? style,
-  }) {
-    if (text.isEmpty) return const SizedBox.shrink();
-
-    final spans = <InlineSpan>[];
-    int lastEnd = 0;
-
-    for (final match in _emojiPattern.allMatches(text)) {
-      // 匹配前的纯文本
-      if (match.start > lastEnd) {
-        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
-      }
-      // emoji 名称（两组捕获之一）
-      final emojiName = match.group(1) ?? match.group(2) ?? '';
-      final imgPath = EmoticonHelper.getImagePath(emojiName);
-      if (imgPath != null) {
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Image.asset(imgPath, width: emojiSize, height: emojiSize),
-          ),
-        );
-      } else {
-        // 没有对应图片则原样显示
-        spans.add(TextSpan(text: '#($emojiName)'));
-      }
-      lastEnd = match.end;
-    }
-    // 剩余纯文本
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd)));
-    }
-
-    return Text.rich(
-      TextSpan(children: spans),
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-      style: style,
     );
   }
 

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/emoticon_helper.dart';
+import '../widgets/text_with_emoji.dart';
+import '../widgets/message_error_state.dart';
+import '../widgets/message_list_footer.dart';
 
 /// @我的消息页面
 class AtMeMessagePage extends StatefulWidget {
@@ -22,9 +26,6 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
   int _pn = 1;
   String _tid = '0';
   final ScrollController _scrollController = ScrollController();
-
-  /// 匹配 #(表情名) 或 #（表情名）
-  static final RegExp _emojiPattern = RegExp(r'#\(([^)]+)\)|#（([^）]+)）');
 
   @override
   void initState() {
@@ -245,7 +246,7 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
     if (_isLoading && _messages.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_isError && _messages.isEmpty) return _buildErrorState();
+    if (_isError && _messages.isEmpty) return MessageErrorState(onRetry: _onRetry);
     if (!_isLoading && _messages.isEmpty) return _buildEmptyState();
 
     return RefreshIndicator(
@@ -257,66 +258,10 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
         itemCount: _messages.length + (_loadingMore || !_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == _messages.length) {
-            if (_loadingMore) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              );
-            }
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Center(
-                child: Text(
-                  '没有更多了',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-              ),
-            );
+            return MessageListFooter(isLoading: _loadingMore);
           }
           return _buildMessageItem(_messages[index]);
         },
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'emoticon/image_emoticon1.webp',
-              width: 80,
-              height: 80,
-              errorBuilder: (_, _, _) => const Icon(
-                Icons.sentiment_dissatisfied,
-                size: 64,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '网络不给力，小稽直叹气',
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: _onRetry,
-              child: const Text(
-                '戳这里重试',
-                style: TextStyle(color: Color(0xFF9FB5DD), fontSize: 14),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -528,12 +473,22 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
-                  child: Image.network(
-                    src,
+                  child: CachedNetworkImage(
+                    imageUrl: src,
                     width: 60,
                     height: 60,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    placeholder: (_, _) => Container(
+                      color: Colors.grey[200],
+                      width: 60,
+                      height: 60,
+                    ),
+                    errorWidget: (_, _, _) => Container(
+                      color: Colors.grey[200],
+                      width: 60,
+                      height: 60,
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
                   ),
                 ),
               ),
@@ -598,51 +553,12 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
             : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
       ),
-      child: _buildTextWithEmoji(
+      child: TextWithEmoji(
         title,
         maxLines: 2,
         emojiSize: 16,
         style: const TextStyle(fontSize: 14),
       ),
-    );
-  }
-
-  /// Emoji 内联渲染（处理文本中的 #(表情名) 格式）
-  Widget _buildTextWithEmoji(
-    String text, {
-    int? maxLines,
-    double emojiSize = 18,
-    TextStyle? style,
-  }) {
-    if (text.isEmpty) return const SizedBox.shrink();
-    final spans = <InlineSpan>[];
-    int lastEnd = 0;
-    for (final match in _emojiPattern.allMatches(text)) {
-      if (match.start > lastEnd) {
-        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
-      }
-      final emojiName = match.group(1) ?? match.group(2) ?? '';
-      final imgPath = EmoticonHelper.getImagePath(emojiName);
-      if (imgPath != null) {
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Image.asset(imgPath, width: emojiSize, height: emojiSize),
-          ),
-        );
-      } else {
-        spans.add(TextSpan(text: '#($emojiName)'));
-      }
-      lastEnd = match.end;
-    }
-    if (lastEnd < text.length) {
-      spans.add(TextSpan(text: text.substring(lastEnd)));
-    }
-    return Text.rich(
-      TextSpan(children: spans),
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-      style: style,
     );
   }
 

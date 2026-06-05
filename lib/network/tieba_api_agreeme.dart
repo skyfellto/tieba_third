@@ -37,9 +37,6 @@ class _AgreeMeApi {
     final dnarb = base64Url
         .encode(utf8.encode(brand.split('').reversed.join()))
         .replaceAll('=', '');
-    final cam = base64Url
-        .encode(utf8.encode("02:00:00:00:00:00"))
-        .replaceAll('=', '');
 
     final common = CommonReq(
       clientType: 2,
@@ -77,7 +74,7 @@ class _AgreeMeApi {
       userAgent: di.userAgent(_clientVersion),
       personalizedRecSwitch: 0,
       iemi: iemi,
-      cam: cam,
+      cam: '',
       diDiordna: diDiordna,
       ledom: ledom,
       diao: '',
