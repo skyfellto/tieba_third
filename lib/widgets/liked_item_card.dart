@@ -304,18 +304,33 @@ class LikedItemCard extends StatelessWidget {
       final type = a['type'];
       if (type == 2) {
         final c = '${a['c'] ?? ''}';
+        final src = '${a['src'] ?? ''}';
+        String? localPath;
         if (c.isNotEmpty) {
-          final imgPath = EmoticonHelper.getImagePath(c);
-          if (imgPath != null) {
-            spans.add(
-              WidgetSpan(
-                alignment: PlaceholderAlignment.middle,
-                child: Image.asset(imgPath, width: 20, height: 20),
+          localPath = EmoticonHelper.getImagePath(c);
+        }
+        if (localPath != null) {
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Image.asset(localPath, width: 20, height: 20),
+            ),
+          );
+        } else if (src.isNotEmpty) {
+          // 本地无匹配时使用服务端返回的表情图片
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Image.network(
+                src,
+                width: 20,
+                height: 20,
+                errorBuilder: (_, _, _) => const SizedBox(width: 20),
               ),
-            );
-          } else {
-            spans.add(TextSpan(text: c));
-          }
+            ),
+          );
+        } else if (c.isNotEmpty) {
+          spans.add(TextSpan(text: c));
         }
       } else if (type == 0 || type == 1 || type == 4 || type == 9) {
         final text = '${a['text'] ?? ''}';
@@ -325,7 +340,8 @@ class LikedItemCard extends StatelessWidget {
               text: text,
               style: type == 4
                   ? TextStyle(
-                      color: Theme.of(context).primaryColor,
+                      // color: Theme.of(context).primaryColor,
+                      color: Colors.blue,
                       fontWeight: FontWeight.w600,
                     )
                   : null,
