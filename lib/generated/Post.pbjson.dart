@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from Post.proto.
+// Generated from post.proto.
 
 // @dart = 3.3
 

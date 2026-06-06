@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from Item.proto.
+// Generated from item.proto.
 
 // @dart = 3.3
 
@@ -41,6 +41,15 @@ const Item$json = {
       '6': '.tieba.ApkDetail',
       '10': 'apkDetail'
     },
+    {'1': 'game_id', '3': 16, '4': 1, '5': 9, '10': 'gameId'},
+    {'1': 'err_toast', '3': 17, '4': 1, '5': 9, '10': 'errToast'},
+    {
+      '1': 'able_cancel_subscribe',
+      '3': 18,
+      '4': 1,
+      '5': 5,
+      '10': 'ableCancelSubscribe'
+    },
   ],
 };
 
@@ -54,4 +63,6 @@ final $typed_data.Uint8List itemDescriptor = $convert.base64Decode(
     'oLY2F0ZWdvcnlfaWQYCyABKAVSCmNhdGVnb3J5SWQSKAoQYnV0dG9uX2xpbmtfdHlwZRgMIAEo'
     'BVIOYnV0dG9uTGlua1R5cGUSGQoIYXBrX25hbWUYDSABKAlSB2Fwa05hbWUSHQoKZm9ydW1fbm'
     'FtZRgOIAEoCVIJZm9ydW1OYW1lEi8KCmFwa19kZXRhaWwYDyABKAsyEC50aWViYS5BcGtEZXRh'
-    'aWxSCWFwa0RldGFpbA==');
+    'aWxSCWFwa0RldGFpbBIXCgdnYW1lX2lkGBAgASgJUgZnYW1lSWQSGwoJZXJyX3RvYXN0GBEgAS'
+    'gJUghlcnJUb2FzdBIyChVhYmxlX2NhbmNlbF9zdWJzY3JpYmUYEiABKAVSE2FibGVDYW5jZWxT'
+    'dWJzY3JpYmU=');

@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from Item.proto.
+// Generated from item.proto.
 
 // @dart = 3.3
 
@@ -36,6 +36,9 @@ class Item extends $pb.GeneratedMessage {
     $core.String? apkName,
     $core.String? forumName,
     $0.ApkDetail? apkDetail,
+    $core.String? gameId,
+    $core.String? errToast,
+    $core.int? ableCancelSubscribe,
   }) {
     final result = create();
     if (itemId != null) result.itemId = itemId;
@@ -53,6 +56,10 @@ class Item extends $pb.GeneratedMessage {
     if (apkName != null) result.apkName = apkName;
     if (forumName != null) result.forumName = forumName;
     if (apkDetail != null) result.apkDetail = apkDetail;
+    if (gameId != null) result.gameId = gameId;
+    if (errToast != null) result.errToast = errToast;
+    if (ableCancelSubscribe != null)
+      result.ableCancelSubscribe = ableCancelSubscribe;
     return result;
   }
 
@@ -85,6 +92,9 @@ class Item extends $pb.GeneratedMessage {
     ..aOS(14, _omitFieldNames ? '' : 'forumName')
     ..aOM<$0.ApkDetail>(15, _omitFieldNames ? '' : 'apkDetail',
         subBuilder: $0.ApkDetail.create)
+    ..aOS(16, _omitFieldNames ? '' : 'gameId')
+    ..aOS(17, _omitFieldNames ? '' : 'errToast')
+    ..aI(18, _omitFieldNames ? '' : 'ableCancelSubscribe')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -235,6 +245,33 @@ class Item extends $pb.GeneratedMessage {
   void clearApkDetail() => $_clearField(15);
   @$pb.TagNumber(15)
   $0.ApkDetail ensureApkDetail() => $_ensure(14);
+
+  @$pb.TagNumber(16)
+  $core.String get gameId => $_getSZ(15);
+  @$pb.TagNumber(16)
+  set gameId($core.String value) => $_setString(15, value);
+  @$pb.TagNumber(16)
+  $core.bool hasGameId() => $_has(15);
+  @$pb.TagNumber(16)
+  void clearGameId() => $_clearField(16);
+
+  @$pb.TagNumber(17)
+  $core.String get errToast => $_getSZ(16);
+  @$pb.TagNumber(17)
+  set errToast($core.String value) => $_setString(16, value);
+  @$pb.TagNumber(17)
+  $core.bool hasErrToast() => $_has(16);
+  @$pb.TagNumber(17)
+  void clearErrToast() => $_clearField(17);
+
+  @$pb.TagNumber(18)
+  $core.int get ableCancelSubscribe => $_getIZ(17);
+  @$pb.TagNumber(18)
+  set ableCancelSubscribe($core.int value) => $_setSignedInt32(17, value);
+  @$pb.TagNumber(18)
+  $core.bool hasAbleCancelSubscribe() => $_has(17);
+  @$pb.TagNumber(18)
+  void clearAbleCancelSubscribe() => $_clearField(18);
 }
 
 const $core.bool _omitFieldNames =

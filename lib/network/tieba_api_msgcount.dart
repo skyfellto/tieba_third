@@ -116,7 +116,6 @@ class _MsgCountApi {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final err = json["error_code"];
       if (err != null && err != "0" && err != 0) return null;
-      _logger.i("json :: $json");
 
       return json;
     } catch (e) {

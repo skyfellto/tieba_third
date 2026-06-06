@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from Item.proto.
+// Generated from item.proto.
 
 // @dart = 3.3
 
