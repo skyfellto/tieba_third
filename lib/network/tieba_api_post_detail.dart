@@ -298,7 +298,6 @@ class _PostDetailApi {
         return null;
       }
 
-      _logger.i("hasMore :: ${pb.data.page}");
       return pb.data;
     } catch (e) {
       _logger.w("【调试】PbFloor 请求异常：$e");
