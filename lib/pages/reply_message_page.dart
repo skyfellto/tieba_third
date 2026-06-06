@@ -6,6 +6,7 @@ import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/emoticon_helper.dart';
 import '../utils/toast_utils.dart';
+import '../utils/message_count_manager.dart';
 import '../widgets/text_with_emoji.dart';
 import '../widgets/message_error_state.dart';
 import '../widgets/message_list_footer.dart';
@@ -40,6 +41,9 @@ class _ReplyMessagePageState extends State<ReplyMessagePage> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadData(refresh: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MessageCountManager().clearReplyme();
+    });
   }
 
   @override

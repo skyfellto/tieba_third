@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/emoticon_helper.dart';
+import '../utils/message_count_manager.dart';
 import '../widgets/text_with_emoji.dart';
 import '../widgets/message_error_state.dart';
 import '../widgets/message_list_footer.dart';
@@ -32,6 +33,9 @@ class _AtMeMessagePageState extends State<AtMeMessagePage> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadData(refresh: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MessageCountManager().clearAtme();
+    });
   }
 
   @override

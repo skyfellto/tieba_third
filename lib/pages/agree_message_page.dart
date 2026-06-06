@@ -5,6 +5,7 @@ import '../generated/AgreeList.pb.dart' as agree;
 import '../network/tieba_api.dart';
 import '../utils/user_manager.dart';
 import '../utils/post_content_parser.dart';
+import '../utils/message_count_manager.dart';
 import '../widgets/text_with_emoji.dart';
 import '../widgets/message_error_state.dart';
 import '../widgets/message_list_footer.dart';
@@ -33,6 +34,9 @@ class _AgreeMessagePageState extends State<AgreeMessagePage> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadData(refresh: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      MessageCountManager().clearAgree();
+    });
   }
 
   @override

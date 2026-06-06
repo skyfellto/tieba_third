@@ -73,6 +73,7 @@ part 'tieba_api_user.dart';
 part 'tieba_api_agreeme.dart';
 part 'tieba_api_replyme.dart';
 part 'tieba_api_atme.dart';
+part 'tieba_api_msgcount.dart';
 
 class TiebaApi {
   static String get clientVersion => _clientVersion;
@@ -606,5 +607,14 @@ class TiebaApi {
     uid: uid,
     pn: pn,
     tid: tid,
+  );
+
+  /// 获取用户消息未读数
+  static Future<Map<String, dynamic>?> fetchMessageCounts({
+    required String bduss,
+    required String stoken,
+  }) => _MsgCountApi.fetchMessageCounts(
+    bduss: bduss,
+    stoken: stoken,
   );
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../utils/user_manager.dart';
 import '../utils/auth_notifier.dart';
+import '../utils/message_count_manager.dart';
 import '../constants/app_colors.dart';
 import '../main.dart' show themeNotifier;
 import '../models/user_profile_data.dart';
@@ -140,14 +141,50 @@ class _WodePageState extends State<WodePage> {
                             ),
                             const Spacer(),
                             if (isLogin)
-                              IconButton(
-                                icon: const Icon(Icons.mail_outline),
-                                iconSize: 24,
-                                color: Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.white70
-                                    : Colors.black54,
-                                onPressed: () => context.push('/messages'),
-                                splashRadius: 20,
+                              ListenableBuilder(
+                                listenable: MessageCountManager(),
+                                builder: (context, _) {
+                                  final mgr = MessageCountManager();
+                                  final total = mgr.total;
+                                  final showBadge = total > 0;
+                                  return Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.mail_outline),
+                                        iconSize: 24,
+                                        color: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.white70
+                                            : Colors.black54,
+                                        onPressed: () => context.push('/messages'),
+                                        splashRadius: 20,
+                                      ),
+                                      if (showBadge)
+                                        Positioned(
+                                          top: 2,
+                                          right: 2,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                            child: Center(
+                                              child: Text(
+                                                total > 99 ? '99+' : '$total',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  height: 1.2,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
                               ),
                           ],
                         ),
