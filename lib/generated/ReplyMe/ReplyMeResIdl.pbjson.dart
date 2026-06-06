@@ -20,11 +20,18 @@ const ReplyMeResIdl$json = {
   '1': 'ReplyMeResIdl',
   '2': [
     {'1': 'error', '3': 1, '4': 1, '5': 11, '6': '.tieba.Error', '10': 'error'},
-    {'1': 'data', '3': 2, '4': 1, '5': 11, '6': '.tieba.DataRes', '10': 'data'},
+    {
+      '1': 'data',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.tieba.replyMe.DataRes',
+      '10': 'data'
+    },
   ],
 };
 
 /// Descriptor for `ReplyMeResIdl`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List replyMeResIdlDescriptor = $convert.base64Decode(
-    'Cg1SZXBseU1lUmVzSWRsEiIKBWVycm9yGAEgASgLMgwudGllYmEuRXJyb3JSBWVycm9yEiIKBG'
-    'RhdGEYAiABKAsyDi50aWViYS5EYXRhUmVzUgRkYXRh');
+    'Cg1SZXBseU1lUmVzSWRsEiIKBWVycm9yGAEgASgLMgwudGllYmEuRXJyb3JSBWVycm9yEioKBG'
+    'RhdGEYAiABKAsyFi50aWViYS5yZXBseU1lLkRhdGFSZXNSBGRhdGE=');

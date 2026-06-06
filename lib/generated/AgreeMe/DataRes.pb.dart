@@ -40,7 +40,7 @@ class DataRes extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'DataRes',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.agreeMe'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'hasMore')
     ..pPM<$0.AgreeList>(2, _omitFieldNames ? '' : 'agreeList',

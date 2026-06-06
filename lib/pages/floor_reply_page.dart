@@ -3,8 +3,6 @@ import 'package:fixnum/fixnum.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tieba_third/utils/toast_utils.dart';
-import '../generated/Agree.pb.dart';
-import '../generated/PbContent.pb.dart';
 import '../generated/PbFloor/PbFloorResponseData.pb.dart';
 import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
@@ -51,7 +49,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   bool _loadingMore = false;
   late ScrollController _scrollController;
   String? _forumId;
-  String _lastSubPostId = '0';
+  int _requestTimes = 0;
 
   static const String _likedStorageKey = 'floor_reply_liked_cnt';
 
@@ -136,46 +134,6 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     });
   }
 
-  /// 将 JSON 子回复项转 SubPostList protobuf
-  SubPostList _subPostFromJson(Map<String, dynamic> item) {
-    final contentList =
-        (item["content"] as List<dynamic>?)
-            ?.map(
-              (c) => PbContent(
-                type: (c["type"] as num?)?.toInt() ?? 0,
-                text: c["text"]?.toString() ?? '',
-                src: c["src"]?.toString() ?? '',
-                uid: Int64.parseInt(c["uid"]?.toString() ?? '0'),
-              ),
-            )
-            .toList() ??
-        [];
-    final author = item["author"] as Map<String, dynamic>?;
-    final agree = item["agree"] as Map<String, dynamic>?;
-    return SubPostList(
-      id: Int64.parseInt(item["id"]?.toString() ?? '0'),
-      time: int.tryParse(item["time"]?.toString() ?? '0') ?? 0,
-      content: contentList,
-      authorId: Int64.parseInt(author?["id"]?.toString() ?? '0'),
-      author: author != null
-          ? usermodel.User(
-              id: Int64.parseInt(author["id"]?.toString() ?? '0'),
-              name: author["name"]?.toString() ?? '',
-              nameShow: author["name_show"]?.toString() ?? '',
-              portrait: author["portrait"]?.toString() ?? '',
-              levelId: int.tryParse(author["level_id"]?.toString() ?? '0') ?? 0,
-            )
-          : null,
-      agree: agree != null
-          ? Agree(
-              agreeNum: Int64.parseInt(agree["agree_num"]?.toString() ?? '0'),
-              hasAgree:
-                  int.tryParse(agree["has_agree"]?.toString() ?? '0') ?? 0,
-            )
-          : null,
-    );
-  }
-
   Future<void> _loadData({bool refresh = false}) async {
     if (!UserManager.isLogin) {
       if (mounted) setState(() => _error = '未登录');
@@ -188,69 +146,25 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         _error = null;
         _currentPage = 1;
         _hasMore = true;
-        _lastSubPostId = '0';
+        _requestTimes = 0;
       });
     }
 
-    // 第一页用 protobuf API，翻页用 JSON API（支持 rn 分页）
-    Map<String, dynamic>? jsonData;
+    // 全部使用 protobuf API 获取
     PbFloorResponseData? pbData;
 
-    if (refresh) {
-      pbData = await TiebaApi.fetchSubReplies(
-        bduss: UserManager.bduss!,
-        stoken: UserManager.stoken!,
-        threadId: widget.tid,
-        postId: widget.pid,
-        forumId: _forumId ?? '0',
-        page: 1,
-        subPostId: '0',
-      );
-    } else {
-      jsonData = await TiebaApi.fetchFloorRepliesJson(
-        bduss: UserManager.bduss!,
-        stoken: UserManager.stoken!,
-        tbs: UserManager.tbs ?? '',
-        threadId: widget.tid,
-        postId: widget.pid,
-        page: _currentPage,
-        subPostId: _lastSubPostId,
-        rn: 30,
-      );
-    }
+    pbData = await TiebaApi.fetchSubReplies(
+      bduss: UserManager.bduss!,
+      stoken: UserManager.stoken!,
+      threadId: widget.tid,
+      postId: widget.pid,
+      page: refresh ? 1 : _currentPage,
+      requestTimes: _requestTimes,
+    );
 
     if (!mounted) return;
 
-    if (jsonData != null) {
-      final subpostList = ((jsonData["subpost_list"] as List<dynamic>?) ?? [])
-          .map((item) => _subPostFromJson(item as Map<String, dynamic>))
-          .toList();
-      final pageInfo = jsonData["page"] as Map<String, dynamic>?;
-      final currentPg =
-          int.tryParse(pageInfo?["current_page"]?.toString() ?? '0') ?? 0;
-      final totalPg =
-          int.tryParse(pageInfo?["total_page"]?.toString() ?? '0') ?? 0;
-      final hasMore = _currentPage < totalPg;
-
-      setState(() {
-        _isLoading = false;
-        _loadingMore = false;
-        _data ??= PbFloorResponseData();
-        for (final s in subpostList) {
-          _data!.subpostList.add(s);
-        }
-        _currentPage = currentPg + 1;
-        _hasMore = hasMore;
-        if (subpostList.isNotEmpty) {
-          _lastSubPostId = subpostList.last.id.toString();
-        }
-      });
-      if (mounted) {
-        _rebuildAuthorMap(subpostList);
-        _syncLikedFromData();
-        _checkAutoLoad();
-      }
-    } else if (pbData != null) {
+    if (pbData != null) {
       final p = pbData;
       if (_forumId == null && p.hasForum()) {
         _forumId = p.forum.id.toString();
@@ -260,13 +174,16 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       setState(() {
         _isLoading = false;
         _loadingMore = false;
-        _data = p;
-        _currentPage = 2;
-        // protobuf API hasMore 不可靠，用 JSON API 翻页替代
-        _hasMore = p.subpostList.length >= 30;
-        if (p.subpostList.isNotEmpty) {
-          _lastSubPostId = p.subpostList.last.id.toString();
+        if (refresh) {
+          _data = p;
+          _currentPage = 2;
+        } else {
+          _data ??= PbFloorResponseData();
+          _data!.subpostList.addAll(p.subpostList);
+          _currentPage++;
         }
+        _requestTimes++;
+        _hasMore = p.page.currentPage < p.page.totalPage;
       });
       if (mounted) {
         _syncLikedFromData();
@@ -288,14 +205,6 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         if (pos.maxScrollExtent <= pos.viewportDimension + 50) _loadMore();
       }
     });
-  }
-
-  void _rebuildAuthorMap(List<SubPostList> subpostList) {
-    for (final s in subpostList) {
-      if (s.hasAuthor()) {
-        _authorMap[s.author.id.toInt()] = s.author;
-      }
-    }
   }
 
   Future<void> _loadMore() async {
@@ -357,21 +266,21 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         ? subReply.agree.agreeNum.toInt()
         : 0;
 
-    debugPrint(
-      "\n【楼中楼点赞】开始 tid=${widget.tid} pid=$pidStr "
-      "serverLiked=$serverLiked serverAgree=$serverAgree "
-      "opType=${serverLiked ? 1 : 0}",
-    );
+    // debugPrint(
+    //   "\n【楼中楼点赞】开始 tid=${widget.tid} pid=$pidStr "
+    //   "serverLiked=$serverLiked serverAgree=$serverAgree "
+    //   "opType=${serverLiked ? 1 : 0}",
+    // );
 
     final (nowLiked, nowAgree) = _likeManager.toggle(
       key: replyKey,
       serverLiked: serverLiked,
       serverAgreeNum: serverAgree,
       request: (opType) async {
-        debugPrint(
-          "【楼中楼点赞】发起请求 opType=$opType "
-          "tid=${widget.tid} pid=$pidStr objType=2",
-        );
+        // debugPrint(
+        //   "【楼中楼点赞】发起请求 opType=$opType "
+        //   "tid=${widget.tid} pid=$pidStr objType=2",
+        // );
         final score = await TiebaApi.likeAgree(
           bduss: UserManager.bduss!,
           stoken: UserManager.stoken!,
@@ -383,19 +292,19 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           forumId: _forumId ?? '',
           opType: opType,
         );
-        debugPrint(
-          "【楼中楼点赞】请求结果 score=$score "
-          "${score != null ? '成功' : '失败'}",
-        );
+        // debugPrint(
+        //   "【楼中楼点赞】请求结果 score=$score "
+        //   "${score != null ? '成功' : '失败'}",
+        // );
         return score != null;
       },
       onUpdate: (isRollback) {
         if (!mounted) return;
-        debugPrint(
-          "【楼中楼点赞】onUpdate isRollback=$isRollback "
-          "nowIsLiked=${_likeManager.isLiked(replyKey)} "
-          "nowAgree=${_likeManager.agreeNum(replyKey)}",
-        );
+        // debugPrint(
+        //   "【楼中楼点赞】onUpdate isRollback=$isRollback "
+        //   "nowIsLiked=${_likeManager.isLiked(replyKey)} "
+        //   "nowAgree=${_likeManager.agreeNum(replyKey)}",
+        // );
         setState(() {
           final newAgreeLocal = _likeManager.agreeNum(replyKey);
           if (subReply.hasAgree()) {
@@ -406,7 +315,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
         _saveLikedData();
         if (isRollback) {
           final nowLikedLocal = _likeManager.isLiked(replyKey);
-          debugPrint("【楼中楼点赞】回滚！当前状态 isLiked=$nowLikedLocal");
+          // debugPrint("【楼中楼点赞】回滚！当前状态 isLiked=$nowLikedLocal");
           scaffold.showSnackBar(
             SnackBar(
               content: Text(nowLikedLocal ? '取消点赞失败，请稍后重试' : '点赞失败，请稍后重试'),
@@ -417,7 +326,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
       },
     );
 
-    debugPrint("【楼中楼点赞】乐观更新结果 nowLiked=$nowLiked nowAgree=$nowAgree");
+    // debugPrint("【楼中楼点赞】乐观更新结果 nowLiked=$nowLiked nowAgree=$nowAgree");
 
     setState(() {
       if (subReply.hasAgree()) {
@@ -475,12 +384,12 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
     }
 
     final totalItems = _data!.subpostList.length;
-    // header + (分隔线 + 回复数 + 每项回复) + 底部加载指示器
-    final itemCount = 2 + totalItems;
+    final showFooter = _loadingMore || (!_hasMore && totalItems > 0);
+    final itemCount = 2 + totalItems + (showFooter ? 1 : 0);
 
     return ListView.builder(
       controller: _scrollController,
-      itemCount: _hasMore || totalItems == 0 ? itemCount : itemCount - 1,
+      itemCount: itemCount,
       itemBuilder: (context, index) {
         if (index == 0) return _buildFloorPost();
         if (index <= totalItems) {
@@ -509,16 +418,30 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
             ),
           );
         }
-        return const Padding(
-          padding: EdgeInsets.symmetric(vertical: 16),
-          child: Center(
-            child: SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
+        if (index == totalItems + 1) {
+          if (_loadingMore) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            );
+          }
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: Text(
+                '没有更多了',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ),
-          ),
-        );
+          );
+        }
+        return const SizedBox.shrink();
       },
     );
   }

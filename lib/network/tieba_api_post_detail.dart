@@ -126,43 +126,128 @@ class _PostDetailApi {
     required String stoken,
     required String threadId,
     required String postId,
-    required String forumId,
     int page = 1,
-    String subPostId = '0',
+    int requestTimes = 0,
   }) async {
-    final common = CommonRequest(
+    final phoneImei = DeviceInfo().phoneImei;
+    final cuid = DeviceInfo().cuid;
+    final c3Aid = DeviceInfo().c3Aid;
+    final brand = DeviceInfo().brand;
+    final model = DeviceInfo().model;
+    final androidId = DeviceInfo().androidId;
+    final di = DeviceInfo();
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final now = DateTime.now();
+    final eventDay = "${now.year}${now.month}${now.day}";
+    final clientId = _syncClientId;
+    final zId = await getCachedZid();
+
+    // 混淆字段
+    final iemi = base64Url
+        .encode(utf8.encode(phoneImei.split('').reversed.join()))
+        .replaceAll('=', '');
+    final diDiordna = base64Url
+        .encode(utf8.encode(androidId.split('').reversed.join()))
+        .replaceAll('=', '');
+    final ledom = base64Url
+        .encode(utf8.encode(model.split('').reversed.join()))
+        .replaceAll('=', '');
+    final dnarb = base64Url
+        .encode(utf8.encode(brand.split('').reversed.join()))
+        .replaceAll('=', '');
+    final cam = base64Url
+        .encode(utf8.encode("02:00:00:00:00:00"))
+        .replaceAll('=', '');
+
+    final common = CommonReq(
       clientType: 2,
       clientVersion: _clientVersion,
-      phoneImei: DeviceInfo().phoneImei,
-      timestamp: Int64(DateTime.now().millisecondsSinceEpoch ~/ 1000),
-      netType: 1,
+      clientId: clientId,
+      from: "1015363f",
+      cuid: cuid,
+      timestamp: Int64(timestamp),
       bDUSS: bduss,
+      netType: 1,
+      pversion: "1.0",
+      legoLibVersion: "3004000",
       stoken: stoken,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
+      zId: zId ?? '',
+      cuidGalaxy2: cuid,
+      cuidGid: '',
+      c3Aid: c3Aid,
+      sampleId: _syncSampleId ?? '',
+      scrW: di.scrW,
+      scrH: di.scrH,
+      scrDip: di.scrDip,
+      qType: 2,
+      isTeenager: 0,
+      sdkVer: "2.34.0",
+      frameworkVer: "3340042",
+      nawsGameVer: "1038000",
+      activeTimestamp: Int64(di.activeTimestamp),
+      firstInstallTime: Int64(di.firstInstallTime),
+      lastUpdateTime: Int64(di.lastUpdateTime),
+      eventDay: eventDay,
+      cmode: 1,
+      startScheme: '',
+      startType: 1,
+      extra: '',
+      userAgent: di.userAgent(_clientVersion),
+      personalizedRecSwitch: 0,
+      iemi: iemi,
+      cam: cam,
+      diDiordna: diDiordna,
+      ledom: ledom,
+      diao: '',
+      dnarb: dnarb,
+      needDecrypt: 1,
+      needCamDecrypt: 1,
+      supportImage: "1",
+      packageVersion: "0",
     );
 
     final reqData = PbFloorRequestData(
       common: common,
       kz: Int64.parseInt(threadId),
       pid: Int64.parseInt(postId),
-      spid: subPostId != '0' ? Int64.parseInt(subPostId) : Int64.ZERO,
+      spid: Int64.ZERO,
       pn: page,
-      scrW: DeviceInfo().scrW,
-      scrH: DeviceInfo().scrH,
-      scrDip: DeviceInfo().scrDip,
-      forumId: Int64.parseInt(forumId),
+      scrW: di.scrW,
+      scrH: di.scrH,
+      scrDip: di.scrDip,
+      forumId: Int64.ZERO,
       isCommReverse: 0,
       oriUgcType: 0,
+      requestTimes: requestTimes,
     );
 
     final request = PbFloorRequest(data: reqData);
     final bodyBytes = request.writeToBuffer();
 
-    final uri = Uri.parse(
-      "$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf&rn=30",
-    );
+    // ST 反垃圾参数
+    final stNum = Random().nextInt(750) + 100;
+    final stTime = stNum.toString();
+    final stSize = ((Random().nextDouble() * 8 + 0.4) * stNum)
+        .round()
+        .toString();
+    const stMethod = "1";
+    const stMode = "1";
+    const stTimesNum = "1";
+    const stErrorNums = "1";
+
+    final formParams = <List<String>>[
+      ["BDUSS", bduss],
+      ["stErrorNums", stErrorNums],
+      ["stMethod", stMethod],
+      ["stMode", stMode],
+      ["stSize", stSize],
+      ["stTime", stTime],
+      ["stTimesNum", stTimesNum],
+      ["stoken", stoken],
+    ];
+    final sign = _computeSign(formParams);
+
+    final uri = Uri.parse("$_baseHost/c/f/pb/floor?cmd=302002&format=protobuf");
 
     final client = http.Client();
     try {
@@ -170,8 +255,27 @@ class _PostDetailApi {
         ..headers.addAll({
           "x_bd_data_type": "protobuf",
           "User-Agent": DeviceInfo().userAgent(_clientVersion),
-          "Cookie": "BDUSS=$bduss; STOKEN=$stoken",
+          "cuid": cuid,
+          "c3_aid": c3Aid,
+          "Connection": "Keep-Alive",
+          "cuid_gid": "",
+          "Charset": "UTF-8",
+          "cuid_galaxy2": cuid,
+          "Accept-Encoding": "gzip",
+          "client_logid": "${DeviceInfo.initTime}",
+          "X-Bd-Traceid":
+              "${_randomHex(8)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(4)}-${_randomHex(12)}",
+          "Host": "tiebac.baidu.com",
         })
+        ..fields['BDUSS'] = bduss
+        ..fields['sign'] = sign
+        ..fields['stErrorNums'] = stErrorNums
+        ..fields['stMethod'] = stMethod
+        ..fields['stMode'] = stMode
+        ..fields['stSize'] = stSize
+        ..fields['stTime'] = stTime
+        ..fields['stTimesNum'] = stTimesNum
+        ..fields['STOKEN'] = stoken
         ..files.add(
           http.MultipartFile.fromBytes('data', bodyBytes, filename: 'file'),
         );
@@ -194,89 +298,10 @@ class _PostDetailApi {
         return null;
       }
 
+      _logger.i("hasMore :: ${pb.data.page}");
       return pb.data;
     } catch (e) {
       _logger.w("【调试】PbFloor 请求异常：$e");
-      return null;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// 获取楼中楼回复列表（JSON API，支持 rn 分页）
-  static Future<Map<String, dynamic>?> fetchFloorRepliesJson({
-    required String bduss,
-    required String stoken,
-    required String tbs,
-    required String threadId,
-    required String postId,
-    int page = 1,
-    String subPostId = '0',
-    int rn = 30,
-  }) async {
-    final timestamp = "${DateTime.now().millisecondsSinceEpoch}";
-    final phoneImei = DeviceInfo().phoneImei;
-    final cuid = DeviceInfo().cuid;
-    // final clientId = "wappc_${timestamp}_${Random().nextInt(1000)}";
-    final clientId = _syncClientId ?? '';
-
-    final params = [
-      ["BDUSS", bduss],
-      ["STOKEN", stoken],
-      ["_client_version", _clientVersion],
-      ["client_id", clientId],
-      ["cuid", cuid],
-      ["cuid_galaxy2", cuid],
-      ["cuid_gid", ""],
-      ["from", "1021636m"],
-      ["kz", threadId],
-      ["model", DeviceInfo().model],
-      ["net_type", "1"],
-      ["os_version", DeviceInfo().osVersion],
-      ["phone_imei", phoneImei],
-      ["pid", postId],
-      ["pn", "$page"],
-      ["rn", "$rn"],
-      ["spid", subPostId],
-      ["stoken", stoken],
-      ["subapp_type", "mini"],
-      ["tbs", tbs],
-      ["timestamp", timestamp],
-    ];
-    final sign = _computeSign(params);
-    params.add(["sign", sign]);
-    final bodyStr = params
-        .map((p) => "${p[0]}=${Uri.encodeComponent(p[1])}")
-        .join("&");
-
-    final client = http.Client();
-    try {
-      final request =
-          http.Request(
-              'POST',
-              Uri.parse("http://c.tieba.baidu.com/c/f/pb/floor"),
-            )
-            ..followRedirects = false
-            ..headers.addAll({
-              "Content-Type": "application/x-www-form-urlencoded",
-              "User-Agent": DeviceInfo().userAgent(_clientVersion),
-              "Cookie": "ka=open",
-              "cuid": cuid,
-              "cuid_galaxy2": cuid,
-              "client_logid": "${DeviceInfo.initTime}",
-            })
-            ..body = bodyStr;
-
-      final response = await http.Response.fromStream(
-        await client.send(request),
-      );
-      if (response.statusCode != 200) return null;
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final err = json["error_code"];
-      if (err != null && err != "0" && err != 0) return null;
-      return json;
-    } catch (e) {
-      _logger.w("【楼中楼JSON异常】$e");
       return null;
     } finally {
       client.close();

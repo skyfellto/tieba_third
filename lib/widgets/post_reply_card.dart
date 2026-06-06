@@ -381,16 +381,23 @@ class PostReplyCard extends StatelessWidget {
       emojiSize: 14,
       textStyle: const TextStyle(fontSize: 12, height: 1.3),
       skipMention: true,
+      context: context,
     );
     if (bodySpans.isNotEmpty) {
       contentSpans.add(const TextSpan(text: '：'));
       contentSpans.addAll(bodySpans);
     }
 
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.all(8),
+    return GestureDetector(
+      onTap: () => onShowAllReplies?.call(
+        post.id.toString(),
+        post.floor,
+        post.subPostNumber > 0 ? post.subPostNumber : post.subPostList.subPostList.length,
+      ),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         // color: Colors.grey[50],
         color: Theme.of(context).brightness == Brightness.dark
@@ -422,6 +429,7 @@ class PostReplyCard extends StatelessWidget {
             ),
         ],
       ),
-    );
+    ),
+  );
   }
 }

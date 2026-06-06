@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../generated/PbContent.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
@@ -91,7 +93,7 @@ class PostContentParser {
   /// 从 PbContent 中提取"回复 XXX"的目标用户
   static String? extractReplyTarget(List<PbContent> contents) {
     for (final c in contents) {
-      if (c.uid.toInt() > 0 && c.text.isNotEmpty) {
+      if (c.type == 0 && c.uid.toInt() > 0 && c.text.isNotEmpty) {
         return c.text.trim();
       }
     }
@@ -130,6 +132,7 @@ class PostContentParser {
   /// [skipMention] 为 true 时跳过 "回复 xxx" 结构
   static List<InlineSpan> buildContentSpans(
     List<PbContent> contents, {
+    required BuildContext context,
     double emojiSize = 18,
     TextStyle? textStyle,
     bool skipMention = false,
@@ -150,7 +153,6 @@ class PostContentParser {
       if (replyStartIdx >= 0 && (i == replyStartIdx || i == replyStartIdx + 1)) {
         continue;
       }
-      if (skipMention && c.uid.toInt() > 0) continue;
 
       if (c.type == 2 && c.c.isNotEmpty) {
         final imgPath = EmoticonHelper.getImagePath(c.c);
@@ -162,6 +164,50 @@ class PostContentParser {
         } else {
           spans.add(TextSpan(text: c.c, style: textStyle));
         }
+      } else if (c.type == 1 && c.linkType == 1 && c.link.isNotEmpty) {
+        // 帖子链接：图标 + 蓝色可点击文字
+        final tid = _extractThreadId(c.link);
+        final displayText = c.text.isNotEmpty ? c.text : '查看帖子';
+        if (tid != null) {
+          void onLinkTap() {
+            if (context.mounted) context.push('/post/$tid');
+          }
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 2),
+                child: GestureDetector(
+                  onTap: onLinkTap,
+                  child: Icon(Icons.link, size: 14, color: Colors.blue),
+                ),
+              ),
+            ),
+          );
+          spans.add(
+            TextSpan(
+              text: displayText,
+              style: (textStyle ?? const TextStyle()).copyWith(color: Colors.blue),
+              recognizer: TapGestureRecognizer()..onTap = onLinkTap,
+            ),
+          );
+        } else {
+          spans.add(TextSpan(text: displayText, style: textStyle));
+        }
+      } else if (c.type == 4 && c.uid.toInt() > 0 && c.text.isNotEmpty) {
+        // @用户：蓝色可点击
+        final uid = c.uid.toInt();
+        final text = c.text;
+        void onUserTap() {
+          if (context.mounted) context.push('/user/$uid');
+        }
+        spans.add(
+          TextSpan(
+            text: text,
+            style: (textStyle ?? const TextStyle()).copyWith(color: Colors.blue),
+            recognizer: TapGestureRecognizer()..onTap = onUserTap,
+          ),
+        );
       } else if (_isTextTypeForSpan(c.type) && c.text.isNotEmpty) {
         var t = c.text.trim();
         // 如果第一个 span 以冒号开头，去掉（避免和手动添加的 ： 重复）
@@ -174,6 +220,13 @@ class PostContentParser {
       }
     }
     return spans;
+  }
+
+  /// 从链接 URL 中提取帖子 ID（/p/数字）
+  static String? _extractThreadId(String link) {
+    final regExp = RegExp(r'/p/(\d+)');
+    final match = regExp.firstMatch(link);
+    return match?.group(1);
   }
 
   static bool _isTextTypeForSpan(int type) {

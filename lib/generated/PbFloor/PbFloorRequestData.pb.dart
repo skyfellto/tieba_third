@@ -15,7 +15,7 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import '../CommonRequest.pb.dart' as $0;
+import '../CommonReq.pb.dart' as $0;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
@@ -29,7 +29,7 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
     $core.int? scrH,
     $core.double? scrDip,
     $core.String? stType,
-    $0.CommonRequest? common,
+    $0.CommonReq? common,
     $core.int? isCommReverse,
     $fixnum.Int64? forumId,
     $core.String? oriUgcNid,
@@ -37,6 +37,7 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
     $core.int? oriUgcType,
     $core.String? oriUgcVid,
     $core.String? topUgcPid,
+    $core.int? requestTimes,
   }) {
     final result = create();
     if (kz != null) result.kz = kz;
@@ -55,6 +56,7 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
     if (oriUgcType != null) result.oriUgcType = oriUgcType;
     if (oriUgcVid != null) result.oriUgcVid = oriUgcVid;
     if (topUgcPid != null) result.topUgcPid = topUgcPid;
+    if (requestTimes != null) result.requestTimes = requestTimes;
     return result;
   }
 
@@ -79,8 +81,8 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
     ..aI(6, _omitFieldNames ? '' : 'scrH')
     ..aD(7, _omitFieldNames ? '' : 'scrDip')
     ..aOS(8, _omitFieldNames ? '' : 'stType')
-    ..aOM<$0.CommonRequest>(9, _omitFieldNames ? '' : 'common',
-        subBuilder: $0.CommonRequest.create)
+    ..aOM<$0.CommonReq>(9, _omitFieldNames ? '' : 'common',
+        subBuilder: $0.CommonReq.create)
     ..aI(10, _omitFieldNames ? '' : 'isCommReverse')
     ..aInt64(11, _omitFieldNames ? '' : 'forumId')
     ..aOS(12, _omitFieldNames ? '' : 'oriUgcNid')
@@ -88,6 +90,7 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
     ..aI(15, _omitFieldNames ? '' : 'oriUgcType')
     ..aOS(16, _omitFieldNames ? '' : 'oriUgcVid')
     ..aOS(17, _omitFieldNames ? '' : 'topUgcPid')
+    ..aI(18, _omitFieldNames ? '' : 'requestTimes')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -182,15 +185,15 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
   void clearStType() => $_clearField(8);
 
   @$pb.TagNumber(9)
-  $0.CommonRequest get common => $_getN(8);
+  $0.CommonReq get common => $_getN(8);
   @$pb.TagNumber(9)
-  set common($0.CommonRequest value) => $_setField(9, value);
+  set common($0.CommonReq value) => $_setField(9, value);
   @$pb.TagNumber(9)
   $core.bool hasCommon() => $_has(8);
   @$pb.TagNumber(9)
   void clearCommon() => $_clearField(9);
   @$pb.TagNumber(9)
-  $0.CommonRequest ensureCommon() => $_ensure(8);
+  $0.CommonReq ensureCommon() => $_ensure(8);
 
   @$pb.TagNumber(10)
   $core.int get isCommReverse => $_getIZ(9);
@@ -254,6 +257,15 @@ class PbFloorRequestData extends $pb.GeneratedMessage {
   $core.bool hasTopUgcPid() => $_has(15);
   @$pb.TagNumber(17)
   void clearTopUgcPid() => $_clearField(17);
+
+  @$pb.TagNumber(18)
+  $core.int get requestTimes => $_getIZ(16);
+  @$pb.TagNumber(18)
+  set requestTimes($core.int value) => $_setSignedInt32(16, value);
+  @$pb.TagNumber(18)
+  $core.bool hasRequestTimes() => $_has(16);
+  @$pb.TagNumber(18)
+  void clearRequestTimes() => $_clearField(18);
 }
 
 const $core.bool _omitFieldNames =

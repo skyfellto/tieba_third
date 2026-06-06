@@ -38,7 +38,7 @@ class ReplyMeReqIdl extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ReplyMeReqIdl',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.replyMe'),
       createEmptyInstance: create)
     ..aOM<$0.DataReq>(1, _omitFieldNames ? '' : 'data',
         subBuilder: $0.DataReq.create)

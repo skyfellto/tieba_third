@@ -111,7 +111,7 @@ class ReplyList extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ReplyList',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.replyMe'),
       createEmptyInstance: create)
     ..a<$fixnum.Int64>(
         1, _omitFieldNames ? '' : 'threadId', $pb.PbFieldType.OU6,

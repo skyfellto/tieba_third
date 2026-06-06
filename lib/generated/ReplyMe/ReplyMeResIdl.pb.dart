@@ -41,7 +41,7 @@ class ReplyMeResIdl extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ReplyMeResIdl',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.replyMe'),
       createEmptyInstance: create)
     ..aOM<$0.Error>(1, _omitFieldNames ? '' : 'error',
         subBuilder: $0.Error.create)

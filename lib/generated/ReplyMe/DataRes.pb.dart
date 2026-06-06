@@ -48,7 +48,7 @@ class DataRes extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'DataRes',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.replyMe'),
       createEmptyInstance: create)
     ..aOM<$0.Page>(1, _omitFieldNames ? '' : 'page', subBuilder: $0.Page.create)
     ..pPM<$1.ReplyList>(2, _omitFieldNames ? '' : 'replyList',

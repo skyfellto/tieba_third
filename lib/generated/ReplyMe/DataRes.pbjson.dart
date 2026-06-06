@@ -25,7 +25,7 @@ const DataRes$json = {
       '3': 2,
       '4': 3,
       '5': 11,
-      '6': '.tieba.ReplyList',
+      '6': '.tieba.replyMe.ReplyList',
       '10': 'replyList'
     },
     {
@@ -49,8 +49,8 @@ const DataRes$json = {
 
 /// Descriptor for `DataRes`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List dataResDescriptor = $convert.base64Decode(
-    'CgdEYXRhUmVzEh8KBHBhZ2UYASABKAsyCy50aWViYS5QYWdlUgRwYWdlEi8KCnJlcGx5X2xpc3'
-    'QYAiADKAsyEC50aWViYS5SZXBseUxpc3RSCXJlcGx5TGlzdBJFChJjaG9vc2VfdGhyZWFkX2xp'
-    'c3QYAyADKAsyFy50aWViYS5DaG9vc2VUaHJlYWRMaXN0UhBjaG9vc2VUaHJlYWRMaXN0Ej8KEG'
-    'Nob29zZV90aW1lX2xpc3QYBCADKAsyFS50aWViYS5DaG9vc2VUaW1lTGlzdFIOY2hvb3NlVGlt'
-    'ZUxpc3Q=');
+    'CgdEYXRhUmVzEh8KBHBhZ2UYASABKAsyCy50aWViYS5QYWdlUgRwYWdlEjcKCnJlcGx5X2xpc3'
+    'QYAiADKAsyGC50aWViYS5yZXBseU1lLlJlcGx5TGlzdFIJcmVwbHlMaXN0EkUKEmNob29zZV90'
+    'aHJlYWRfbGlzdBgDIAMoCzIXLnRpZWJhLkNob29zZVRocmVhZExpc3RSEGNob29zZVRocmVhZE'
+    'xpc3QSPwoQY2hvb3NlX3RpbWVfbGlzdBgEIAMoCzIVLnRpZWJhLkNob29zZVRpbWVMaXN0Ug5j'
+    'aG9vc2VUaW1lTGlzdA==');

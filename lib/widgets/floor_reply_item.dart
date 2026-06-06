@@ -51,10 +51,17 @@ class FloorReplyItem extends StatelessWidget {
     final List<InlineSpan> contentSpans = [];
     if (replyTarget != null && replyTarget.isNotEmpty) {
       contentSpans.addAll([
-        const TextSpan(text: '回复 ', style: TextStyle(fontSize: 14, color: Colors.grey)),
+        const TextSpan(
+          text: '回复 ',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
         TextSpan(
           text: replyTarget,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.blueGrey),
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: Colors.blueGrey,
+          ),
         ),
       ]);
     }
@@ -64,6 +71,7 @@ class FloorReplyItem extends StatelessWidget {
       emojiSize: 16,
       textStyle: const TextStyle(fontSize: 14, height: 1.4),
       skipMention: true,
+      context: context,
     );
     if (bodySpans.isNotEmpty) {
       if (replyTarget != null && replyTarget.isNotEmpty) {
@@ -72,87 +80,79 @@ class FloorReplyItem extends StatelessWidget {
       contentSpans.addAll(bodySpans);
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          top: BorderSide(
-            width: 2,
-            color: const Color.fromARGB(255, 237, 232, 232),
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 作者行
-            if (author != null) _buildAuthorRow(author),
-            // 时间
-            if (timeStr.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 2, bottom: 4),
-                child: Text(
-                  timeStr,
-                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
-                ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 作者行
+          if (author != null) _buildAuthorRow(author),
+          // 时间
+          if (timeStr.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 4),
+              child: Text(
+                timeStr,
+                style: TextStyle(color: Colors.grey[400], fontSize: 11),
               ),
-            // 文字内容（含 "回复 xxx：内容" 内联格式）
-            if (contentSpans.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Text.rich(
-                  TextSpan(children: contentSpans),
-                  softWrap: true,
-                  overflow: TextOverflow.visible,
-                ),
+            ),
+          // 文字内容（含 "回复 xxx：内容" 内联格式）
+          if (contentSpans.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text.rich(
+                TextSpan(children: contentSpans),
+                softWrap: true,
+                overflow: TextOverflow.visible,
               ),
-            // 操作行
-            _buildActionRow(isLiked, agreeNum, subReply),
-          ],
-        ),
+            ),
+          // 操作行
+          _buildActionRow(isLiked, agreeNum, subReply),
+        ],
       ),
     );
   }
 
   Widget _buildAuthorRow(usermodel.User author) {
     return GestureDetector(
-      onTap: onUserTap != null ? () => onUserTap!(author.id.toInt().toString()) : null,
+      onTap: onUserTap != null
+          ? () => onUserTap!(author.id.toInt().toString())
+          : null,
       child: Row(
-      children: [
-        CircleAvatar(
-          radius: 14,
-          backgroundColor: Colors.grey[300],
-          backgroundImage: author.portrait.isNotEmpty
-              ? NetworkImage(
-                  'http://tb.himg.baidu.com/sys/portrait/item/${author.portrait}',
-                  headers: UserManager.avatarHeaders,
-                )
-              : null,
-        ),
-        const SizedBox(width: 6),
-        Text(
-          PostContentParser.getAuthorName(author),
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        ),
-        if (author.levelId > 0) ...[
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundColor: Colors.grey[300],
+            backgroundImage: author.portrait.isNotEmpty
+                ? NetworkImage(
+                    'http://tb.himg.baidu.com/sys/portrait/item/${author.portrait}',
+                    headers: UserManager.avatarHeaders,
+                  )
+                : null,
+          ),
           const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-            decoration: BoxDecoration(
-              color: _levelColor(author),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '${author.levelId}',
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColors.levelNumber,
+          Text(
+            PostContentParser.getAuthorName(author),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          if (author.levelId > 0) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: _levelColor(author),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '${author.levelId}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.levelNumber,
+                ),
               ),
             ),
-          ),
+          ],
         ],
-      ],
       ),
     );
   }

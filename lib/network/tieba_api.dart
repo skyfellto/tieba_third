@@ -171,37 +171,15 @@ class TiebaApi {
     required String stoken,
     required String threadId,
     required String postId,
-    required String forumId,
     int page = 1,
-    String subPostId = '0',
+    int requestTimes = 0,
   }) => _PostDetailApi.fetchSubReplies(
     bduss: bduss,
     stoken: stoken,
     threadId: threadId,
     postId: postId,
-    forumId: forumId,
     page: page,
-    subPostId: subPostId,
-  );
-
-  static Future<Map<String, dynamic>?> fetchFloorRepliesJson({
-    required String bduss,
-    required String stoken,
-    required String tbs,
-    required String threadId,
-    required String postId,
-    int page = 1,
-    String subPostId = '0',
-    int rn = 30,
-  }) => _PostDetailApi.fetchFloorRepliesJson(
-    bduss: bduss,
-    stoken: stoken,
-    tbs: tbs,
-    threadId: threadId,
-    postId: postId,
-    page: page,
-    subPostId: subPostId,
-    rn: rn,
+    requestTimes: requestTimes,
   );
 
   static Future<GetForumDetailResponseData?> fetchForumDetail({

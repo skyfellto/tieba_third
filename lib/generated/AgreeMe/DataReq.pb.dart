@@ -51,7 +51,7 @@ class DataReq extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'DataReq',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.agreeMe'),
       createEmptyInstance: create)
     ..aOM<$0.CommonReq>(1, _omitFieldNames ? '' : 'common',
         subBuilder: $0.CommonReq.create)

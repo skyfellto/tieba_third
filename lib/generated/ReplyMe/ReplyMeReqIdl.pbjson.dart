@@ -19,10 +19,18 @@ import 'dart:typed_data' as $typed_data;
 const ReplyMeReqIdl$json = {
   '1': 'ReplyMeReqIdl',
   '2': [
-    {'1': 'data', '3': 1, '4': 1, '5': 11, '6': '.tieba.DataReq', '10': 'data'},
+    {
+      '1': 'data',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.tieba.replyMe.DataReq',
+      '10': 'data'
+    },
   ],
 };
 
 /// Descriptor for `ReplyMeReqIdl`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List replyMeReqIdlDescriptor = $convert.base64Decode(
-    'Cg1SZXBseU1lUmVxSWRsEiIKBGRhdGEYASABKAsyDi50aWViYS5EYXRhUmVxUgRkYXRh');
+    'Cg1SZXBseU1lUmVxSWRsEioKBGRhdGEYASABKAsyFi50aWViYS5yZXBseU1lLkRhdGFSZXFSBG'
+    'RhdGE=');

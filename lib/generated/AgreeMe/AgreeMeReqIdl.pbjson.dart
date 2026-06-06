@@ -19,10 +19,18 @@ import 'dart:typed_data' as $typed_data;
 const AgreeMeReqIdl$json = {
   '1': 'AgreeMeReqIdl',
   '2': [
-    {'1': 'data', '3': 1, '4': 1, '5': 11, '6': '.tieba.DataReq', '10': 'data'},
+    {
+      '1': 'data',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.tieba.agreeMe.DataReq',
+      '10': 'data'
+    },
   ],
 };
 
 /// Descriptor for `AgreeMeReqIdl`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List agreeMeReqIdlDescriptor = $convert.base64Decode(
-    'Cg1BZ3JlZU1lUmVxSWRsEiIKBGRhdGEYASABKAsyDi50aWViYS5EYXRhUmVxUgRkYXRh');
+    'Cg1BZ3JlZU1lUmVxSWRsEioKBGRhdGEYASABKAsyFi50aWViYS5hZ3JlZU1lLkRhdGFSZXFSBG'
+    'RhdGE=');

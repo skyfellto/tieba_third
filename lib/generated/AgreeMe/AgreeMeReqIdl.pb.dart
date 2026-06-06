@@ -38,7 +38,7 @@ class AgreeMeReqIdl extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'AgreeMeReqIdl',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.agreeMe'),
       createEmptyInstance: create)
     ..aOM<$0.DataReq>(1, _omitFieldNames ? '' : 'data',
         subBuilder: $0.DataReq.create)

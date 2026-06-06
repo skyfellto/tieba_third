@@ -79,8 +79,8 @@ class _AgreeMeApi {
       ledom: ledom,
       diao: '',
       dnarb: dnarb,
-      needDecrypt: 0,
-      needCamDecrypt: 0,
+      needDecrypt: 1,
+      needCamDecrypt: 1,
     );
 
     final reqData = DataReq(

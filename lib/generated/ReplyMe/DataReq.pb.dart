@@ -59,7 +59,7 @@ class DataReq extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'DataReq',
-      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba'),
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'tieba.replyMe'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'pn')
     ..aOS(2, _omitFieldNames ? '' : 'ids')
