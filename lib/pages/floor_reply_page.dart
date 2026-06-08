@@ -43,6 +43,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   bool _isAnimatingToTop = false;
   final LikeManager _likeManager = LikeManager();
   final Map<int, usermodel.User> _authorMap = {};
+  usermodel.User? _opAuthor;
 
   int _currentPage = 1;
   bool _hasMore = true;
@@ -215,6 +216,12 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
 
   void _buildAuthorMap(PbFloorResponseData data) {
     _authorMap.clear();
+    _opAuthor = data.hasThread() && data.thread.hasAuthor()
+        ? data.thread.author
+        : null;
+    if (_opAuthor != null) {
+      _authorMap[_opAuthor!.id.toInt()] = _opAuthor!;
+    }
     if (data.hasPost() && data.post.hasAuthor()) {
       final a = data.post.author;
       _authorMap[a.id.toInt()] = a;
@@ -400,6 +407,7 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
               authorMap: _authorMap,
               likedReplySet: _likedReplySet,
               tid: widget.tid,
+              opAuthor: _opAuthor,
               onLikeTap: _handleLikeReply,
               onUserTap: (uid) {
                 final sr = _data!.subpostList[index - 1];
@@ -447,6 +455,8 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
   }
 
   Widget _buildFloorPost() {
+    final op = _opAuthor;
+    final postAuthor = _data!.post.hasAuthor() ? _data!.post.author : null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
       child: Column(
@@ -455,8 +465,10 @@ class _FloorReplyPageState extends State<FloorReplyPage> {
           PostDetailHeader(
             // title: _data!.hasThread() ? _data!.thread.title : null,
             firstPost: _data!.post,
-            opAuthor: _data!.post.hasAuthor() ? _data!.post.author : null,
-            showLouZhuBadge: false,
+            opAuthor: postAuthor,
+            showLouZhuBadge: op != null &&
+                postAuthor != null &&
+                postAuthor.id == op.id,
             showIpLocation: false,
           ),
           const Divider(height: 24),

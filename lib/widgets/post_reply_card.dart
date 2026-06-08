@@ -8,6 +8,7 @@ import '../utils/post_content_parser.dart';
 import '../utils/user_manager.dart';
 import 'post_content_text.dart';
 import 'post_image_row.dart';
+import 'user_badge.dart';
 
 /// 回复卡片（含楼中楼）
 class PostReplyCard extends StatelessWidget {
@@ -194,50 +195,13 @@ class PostReplyCard extends StatelessWidget {
               (author.bawuType == 'manager' ||
                   author.bawuType == 'assist')) ...[
             const SizedBox(width: 4),
-            _buildBawuBadge(author.bawuType, fontSize: 10),
+            BawuBadge(bawuType: author.bawuType, fontSize: 10),
           ],
           if (opAuthor != null && aid == opAuthor.id.toInt()) ...[
             const SizedBox(width: 4),
-            _buildLouZhuBadge(fontSize: 10),
+            LouZhuBadge(fontSize: 10),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildLouZhuBadge({double fontSize = 11}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-      decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Text(
-        '楼主',
-        style: TextStyle(
-          fontSize: fontSize,
-          color: Colors.red,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBawuBadge(String bawuType, {double fontSize = 11}) {
-    final isManager = bawuType == 'manager';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-      decoration: BoxDecoration(
-        color: Colors.purple[50],
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Text(
-        isManager ? '吧主' : '小吧主',
-        style: TextStyle(
-          fontSize: fontSize,
-          color: Colors.purple,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
@@ -338,7 +302,7 @@ class PostReplyCard extends StatelessWidget {
           alignment: PlaceholderAlignment.middle,
           child: Padding(
             padding: const EdgeInsets.only(left: 4),
-            child: _buildBawuBadge(author.bawuType, fontSize: 10),
+            child: BawuBadge(bawuType: author.bawuType, fontSize: 10),
           ),
         ),
       );
@@ -351,7 +315,7 @@ class PostReplyCard extends StatelessWidget {
           alignment: PlaceholderAlignment.middle,
           child: Padding(
             padding: const EdgeInsets.only(left: 4),
-            child: _buildLouZhuBadge(fontSize: 10),
+            child: LouZhuBadge(fontSize: 10),
           ),
         ),
       );

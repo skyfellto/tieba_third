@@ -52,6 +52,15 @@ const SubPostList$json = {
     },
     {'1': 'is_fake_top', '3': 11, '4': 1, '5': 5, '10': 'isFakeTop'},
     {'1': 'is_author_view', '3': 12, '4': 1, '5': 5, '10': 'isAuthorView'},
+    {'1': 'footer', '3': 13, '4': 1, '5': 9, '10': 'footer'},
+    {
+      '1': 'log_param',
+      '3': 14,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.FeedKV',
+      '10': 'logParam'
+    },
   ],
 };
 
@@ -63,4 +72,6 @@ final $typed_data.Uint8List subPostListDescriptor = $convert.base64Decode(
     'IjCgZhdXRob3IYByABKAsyCy50aWViYS5Vc2VyUgZhdXRob3ISHwoLaXNfZ2lmdHBvc3QYCCAB'
     'KAVSCmlzR2lmdHBvc3QSIgoFYWdyZWUYCSABKAsyDC50aWViYS5BZ3JlZVIFYWdyZWUSJgoIbG'
     '9jYXRpb24YCiABKAsyCi50aWViYS5MYnNSCGxvY2F0aW9uEh4KC2lzX2Zha2VfdG9wGAsgASgF'
-    'Uglpc0Zha2VUb3ASJAoOaXNfYXV0aG9yX3ZpZXcYDCABKAVSDGlzQXV0aG9yVmlldw==');
+    'Uglpc0Zha2VUb3ASJAoOaXNfYXV0aG9yX3ZpZXcYDCABKAVSDGlzQXV0aG9yVmlldxIWCgZmb2'
+    '90ZXIYDSABKAlSBmZvb3RlchIqCglsb2dfcGFyYW0YDiADKAsyDS50aWViYS5GZWVkS1ZSCGxv'
+    'Z1BhcmFt');

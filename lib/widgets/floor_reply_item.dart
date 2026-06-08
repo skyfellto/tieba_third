@@ -4,6 +4,7 @@ import '../generated/SubPostList.pb.dart';
 import '../generated/User.pb.dart' as usermodel;
 import '../utils/post_content_parser.dart';
 import '../utils/user_manager.dart';
+import 'user_badge.dart';
 
 /// 楼中楼回复详情页的单条回复项（无卡片、无 IP、无图片、无楼中楼）
 class FloorReplyItem extends StatelessWidget {
@@ -11,6 +12,7 @@ class FloorReplyItem extends StatelessWidget {
   final Map<int, usermodel.User> authorMap;
   final Set<String> likedReplySet;
   final String tid;
+  final usermodel.User? opAuthor;
   final void Function(SubPostList subReply)? onLikeTap;
   final void Function(String uid)? onUserTap;
 
@@ -20,6 +22,7 @@ class FloorReplyItem extends StatelessWidget {
     required this.authorMap,
     required this.likedReplySet,
     required this.tid,
+    this.opAuthor,
     this.onLikeTap,
     this.onUserTap,
   });
@@ -151,6 +154,16 @@ class FloorReplyItem extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+          if (author.isBawu == 1 &&
+              (author.bawuType == 'manager' ||
+                  author.bawuType == 'assist')) ...[
+            const SizedBox(width: 4),
+            BawuBadge(bawuType: author.bawuType, fontSize: 10),
+          ],
+          if (opAuthor != null && author.id == opAuthor!.id) ...[
+            const SizedBox(width: 4),
+            LouZhuBadge(fontSize: 10),
           ],
         ],
       ),

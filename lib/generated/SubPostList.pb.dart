@@ -16,6 +16,7 @@ import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'Agree.pb.dart' as $2;
+import 'FeedKV.pb.dart' as $4;
 import 'Lbs.pb.dart' as $3;
 import 'PbContent.pb.dart' as $0;
 import 'User.pb.dart' as $1;
@@ -36,6 +37,8 @@ class SubPostList extends $pb.GeneratedMessage {
     $3.Lbs? location,
     $core.int? isFakeTop,
     $core.int? isAuthorView,
+    $core.String? footer,
+    $core.Iterable<$4.FeedKV>? logParam,
   }) {
     final result = create();
     if (id != null) result.id = id;
@@ -50,6 +53,8 @@ class SubPostList extends $pb.GeneratedMessage {
     if (location != null) result.location = location;
     if (isFakeTop != null) result.isFakeTop = isFakeTop;
     if (isAuthorView != null) result.isAuthorView = isAuthorView;
+    if (footer != null) result.footer = footer;
+    if (logParam != null) result.logParam.addAll(logParam);
     return result;
   }
 
@@ -83,6 +88,9 @@ class SubPostList extends $pb.GeneratedMessage {
         subBuilder: $3.Lbs.create)
     ..aI(11, _omitFieldNames ? '' : 'isFakeTop')
     ..aI(12, _omitFieldNames ? '' : 'isAuthorView')
+    ..aOS(13, _omitFieldNames ? '' : 'footer')
+    ..pPM<$4.FeedKV>(14, _omitFieldNames ? '' : 'logParam',
+        subBuilder: $4.FeedKV.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -211,6 +219,18 @@ class SubPostList extends $pb.GeneratedMessage {
   $core.bool hasIsAuthorView() => $_has(11);
   @$pb.TagNumber(12)
   void clearIsAuthorView() => $_clearField(12);
+
+  @$pb.TagNumber(13)
+  $core.String get footer => $_getSZ(12);
+  @$pb.TagNumber(13)
+  set footer($core.String value) => $_setString(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasFooter() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearFooter() => $_clearField(13);
+
+  @$pb.TagNumber(14)
+  $pb.PbList<$4.FeedKV> get logParam => $_getList(13);
 }
 
 const $core.bool _omitFieldNames =
