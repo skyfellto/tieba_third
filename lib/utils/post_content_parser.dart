@@ -91,8 +91,15 @@ class PostContentParser {
   }
 
   /// 从 PbContent 中提取"回复 XXX"的目标用户
+  ///
+  /// 匹配两种格式：
+  /// 1. type=4（@用户类型，含 uid）— 楼中楼 API 返回此格式
+  /// 2. type=0 + uid > 0 — 部分旧格式
   static String? extractReplyTarget(List<PbContent> contents) {
     for (final c in contents) {
+      if (c.type == 4 && c.uid.toInt() > 0 && c.text.isNotEmpty) {
+        return c.text.trim();
+      }
       if (c.type == 0 && c.uid.toInt() > 0 && c.text.isNotEmpty) {
         return c.text.trim();
       }
