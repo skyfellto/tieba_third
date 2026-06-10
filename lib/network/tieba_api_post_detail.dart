@@ -16,7 +16,7 @@ class _PostDetailApi {
     String stType = 'pb',
   }) async {
     final cuidPb = DeviceInfo().cuid;
-    final common = CommonRequest(
+    final common = CommonReq(
       clientType: 2,
       clientVersion: _clientVersion,
       phoneImei: DeviceInfo().phoneImei,
@@ -111,6 +111,7 @@ class _PostDetailApi {
         _logger.w("【调试】PbPage data为空");
         return null;
       }
+
       return pb.data;
     } catch (e) {
       _logger.w("【调试】PbPage 请求异常：$e");

@@ -407,6 +407,44 @@ const PbPageResponseData$json = {
     {'1': 'pb_notice', '3': 67, '4': 1, '5': 9, '10': 'pbNotice'},
     {'1': 'has_fold_comment', '3': 68, '4': 1, '5': 5, '10': 'hasFoldComment'},
     {'1': 'fold_comment_num', '3': 70, '4': 1, '5': 3, '10': 'foldCommentNum'},
+    {
+      '1': 'top_answer',
+      '3': 73,
+      '4': 1,
+      '5': 11,
+      '6': '.tieba.Post',
+      '10': 'topAnswer'
+    },
+    {
+      '1': 'log_param',
+      '3': 81,
+      '4': 3,
+      '5': 11,
+      '6': '.tieba.FeedKV',
+      '10': 'logParam'
+    },
+    {
+      '1': 'limit_dialog_name',
+      '3': 84,
+      '4': 3,
+      '5': 9,
+      '10': 'limitDialogName'
+    },
+    {'1': 'ad_show_select', '3': 88, '4': 1, '5': 5, '10': 'adShowSelect'},
+    {'1': 'search_query', '3': 92, '4': 1, '5': 9, '10': 'searchQuery'},
+    {'1': 'return_page', '3': 96, '4': 1, '5': 9, '10': 'returnPage'},
+    {
+      '1': 'first_floor',
+      '3': 97,
+      '4': 1,
+      '5': 11,
+      '6': '.tieba.Post',
+      '10': 'firstFloor'
+    },
+    {'1': 'scroll', '3': 100, '4': 1, '5': 13, '10': 'scroll'},
+    {'1': 'is_tid_white', '3': 101, '4': 1, '5': 13, '10': 'isTidWhite'},
+    {'1': 'use_hybrid_pb', '3': 112, '4': 1, '5': 5, '10': 'useHybridPb'},
+    {'1': 'ad_info', '3': 113, '4': 1, '5': 9, '10': 'adInfo'},
   ],
 };
 
@@ -475,4 +513,11 @@ final $typed_data.Uint8List pbPageResponseDataDescriptor = $convert.base64Decode
     'Z0ljb24SHwoLaXNfcHVyY2hhc2UYQSABKAVSCmlzUHVyY2hhc2USJAoOcGJfbm90aWNlX3R5cG'
     'UYQiABKAVSDHBiTm90aWNlVHlwZRIbCglwYl9ub3RpY2UYQyABKAlSCHBiTm90aWNlEigKEGhh'
     'c19mb2xkX2NvbW1lbnQYRCABKAVSDmhhc0ZvbGRDb21tZW50EigKEGZvbGRfY29tbWVudF9udW'
-    '0YRiABKANSDmZvbGRDb21tZW50TnVt');
+    '0YRiABKANSDmZvbGRDb21tZW50TnVtEioKCnRvcF9hbnN3ZXIYSSABKAsyCy50aWViYS5Qb3N0'
+    'Ugl0b3BBbnN3ZXISKgoJbG9nX3BhcmFtGFEgAygLMg0udGllYmEuRmVlZEtWUghsb2dQYXJhbR'
+    'IqChFsaW1pdF9kaWFsb2dfbmFtZRhUIAMoCVIPbGltaXREaWFsb2dOYW1lEiQKDmFkX3Nob3df'
+    'c2VsZWN0GFggASgFUgxhZFNob3dTZWxlY3QSIQoMc2VhcmNoX3F1ZXJ5GFwgASgJUgtzZWFyY2'
+    'hRdWVyeRIfCgtyZXR1cm5fcGFnZRhgIAEoCVIKcmV0dXJuUGFnZRIsCgtmaXJzdF9mbG9vchhh'
+    'IAEoCzILLnRpZWJhLlBvc3RSCmZpcnN0Rmxvb3ISFgoGc2Nyb2xsGGQgASgNUgZzY3JvbGwSIA'
+    'oMaXNfdGlkX3doaXRlGGUgASgNUgppc1RpZFdoaXRlEiIKDXVzZV9oeWJyaWRfcGIYcCABKAVS'
+    'C3VzZUh5YnJpZFBiEhcKB2FkX2luZm8YcSABKAlSBmFkSW5mbw==');

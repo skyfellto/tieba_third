@@ -19,6 +19,7 @@ import '../AlaLiveInfo.pb.dart' as $21;
 import '../Anti.pb.dart' as $3;
 import '../BannerList.pb.dart' as $9;
 import '../BusinessAccountInfo.pb.dart' as $34;
+import '../FeedKV.pb.dart' as $37;
 import '../FineBannerPb.pb.dart' as $12;
 import '../ForumRuleStatus.pb.dart' as $35;
 import '../GraffitiRankListInfo.pb.dart' as $16;
@@ -126,6 +127,17 @@ class PbPageResponseData extends $pb.GeneratedMessage {
     $core.String? pbNotice,
     $core.int? hasFoldComment,
     $fixnum.Int64? foldCommentNum,
+    $5.Post? topAnswer,
+    $core.Iterable<$37.FeedKV>? logParam,
+    $core.Iterable<$core.String>? limitDialogName,
+    $core.int? adShowSelect,
+    $core.String? searchQuery,
+    $core.String? returnPage,
+    $5.Post? firstFloor,
+    $core.int? scroll,
+    $core.int? isTidWhite,
+    $core.int? useHybridPb,
+    $core.String? adInfo,
   }) {
     final result = create();
     if (user != null) result.user = user;
@@ -205,6 +217,17 @@ class PbPageResponseData extends $pb.GeneratedMessage {
     if (pbNotice != null) result.pbNotice = pbNotice;
     if (hasFoldComment != null) result.hasFoldComment = hasFoldComment;
     if (foldCommentNum != null) result.foldCommentNum = foldCommentNum;
+    if (topAnswer != null) result.topAnswer = topAnswer;
+    if (logParam != null) result.logParam.addAll(logParam);
+    if (limitDialogName != null) result.limitDialogName.addAll(limitDialogName);
+    if (adShowSelect != null) result.adShowSelect = adShowSelect;
+    if (searchQuery != null) result.searchQuery = searchQuery;
+    if (returnPage != null) result.returnPage = returnPage;
+    if (firstFloor != null) result.firstFloor = firstFloor;
+    if (scroll != null) result.scroll = scroll;
+    if (isTidWhite != null) result.isTidWhite = isTidWhite;
+    if (useHybridPb != null) result.useHybridPb = useHybridPb;
+    if (adInfo != null) result.adInfo = adInfo;
     return result;
   }
 
@@ -338,6 +361,21 @@ class PbPageResponseData extends $pb.GeneratedMessage {
     ..aOS(67, _omitFieldNames ? '' : 'pbNotice')
     ..aI(68, _omitFieldNames ? '' : 'hasFoldComment')
     ..aInt64(70, _omitFieldNames ? '' : 'foldCommentNum')
+    ..aOM<$5.Post>(73, _omitFieldNames ? '' : 'topAnswer',
+        subBuilder: $5.Post.create)
+    ..pPM<$37.FeedKV>(81, _omitFieldNames ? '' : 'logParam',
+        subBuilder: $37.FeedKV.create)
+    ..pPS(84, _omitFieldNames ? '' : 'limitDialogName')
+    ..aI(88, _omitFieldNames ? '' : 'adShowSelect')
+    ..aOS(92, _omitFieldNames ? '' : 'searchQuery')
+    ..aOS(96, _omitFieldNames ? '' : 'returnPage')
+    ..aOM<$5.Post>(97, _omitFieldNames ? '' : 'firstFloor',
+        subBuilder: $5.Post.create)
+    ..aI(100, _omitFieldNames ? '' : 'scroll', fieldType: $pb.PbFieldType.OU3)
+    ..aI(101, _omitFieldNames ? '' : 'isTidWhite',
+        fieldType: $pb.PbFieldType.OU3)
+    ..aI(112, _omitFieldNames ? '' : 'useHybridPb')
+    ..aOS(113, _omitFieldNames ? '' : 'adInfo')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -962,6 +1000,97 @@ class PbPageResponseData extends $pb.GeneratedMessage {
   $core.bool hasFoldCommentNum() => $_has(68);
   @$pb.TagNumber(70)
   void clearFoldCommentNum() => $_clearField(70);
+
+  @$pb.TagNumber(73)
+  $5.Post get topAnswer => $_getN(69);
+  @$pb.TagNumber(73)
+  set topAnswer($5.Post value) => $_setField(73, value);
+  @$pb.TagNumber(73)
+  $core.bool hasTopAnswer() => $_has(69);
+  @$pb.TagNumber(73)
+  void clearTopAnswer() => $_clearField(73);
+  @$pb.TagNumber(73)
+  $5.Post ensureTopAnswer() => $_ensure(69);
+
+  @$pb.TagNumber(81)
+  $pb.PbList<$37.FeedKV> get logParam => $_getList(70);
+
+  @$pb.TagNumber(84)
+  $pb.PbList<$core.String> get limitDialogName => $_getList(71);
+
+  @$pb.TagNumber(88)
+  $core.int get adShowSelect => $_getIZ(72);
+  @$pb.TagNumber(88)
+  set adShowSelect($core.int value) => $_setSignedInt32(72, value);
+  @$pb.TagNumber(88)
+  $core.bool hasAdShowSelect() => $_has(72);
+  @$pb.TagNumber(88)
+  void clearAdShowSelect() => $_clearField(88);
+
+  @$pb.TagNumber(92)
+  $core.String get searchQuery => $_getSZ(73);
+  @$pb.TagNumber(92)
+  set searchQuery($core.String value) => $_setString(73, value);
+  @$pb.TagNumber(92)
+  $core.bool hasSearchQuery() => $_has(73);
+  @$pb.TagNumber(92)
+  void clearSearchQuery() => $_clearField(92);
+
+  @$pb.TagNumber(96)
+  $core.String get returnPage => $_getSZ(74);
+  @$pb.TagNumber(96)
+  set returnPage($core.String value) => $_setString(74, value);
+  @$pb.TagNumber(96)
+  $core.bool hasReturnPage() => $_has(74);
+  @$pb.TagNumber(96)
+  void clearReturnPage() => $_clearField(96);
+
+  @$pb.TagNumber(97)
+  $5.Post get firstFloor => $_getN(75);
+  @$pb.TagNumber(97)
+  set firstFloor($5.Post value) => $_setField(97, value);
+  @$pb.TagNumber(97)
+  $core.bool hasFirstFloor() => $_has(75);
+  @$pb.TagNumber(97)
+  void clearFirstFloor() => $_clearField(97);
+  @$pb.TagNumber(97)
+  $5.Post ensureFirstFloor() => $_ensure(75);
+
+  @$pb.TagNumber(100)
+  $core.int get scroll => $_getIZ(76);
+  @$pb.TagNumber(100)
+  set scroll($core.int value) => $_setUnsignedInt32(76, value);
+  @$pb.TagNumber(100)
+  $core.bool hasScroll() => $_has(76);
+  @$pb.TagNumber(100)
+  void clearScroll() => $_clearField(100);
+
+  @$pb.TagNumber(101)
+  $core.int get isTidWhite => $_getIZ(77);
+  @$pb.TagNumber(101)
+  set isTidWhite($core.int value) => $_setUnsignedInt32(77, value);
+  @$pb.TagNumber(101)
+  $core.bool hasIsTidWhite() => $_has(77);
+  @$pb.TagNumber(101)
+  void clearIsTidWhite() => $_clearField(101);
+
+  @$pb.TagNumber(112)
+  $core.int get useHybridPb => $_getIZ(78);
+  @$pb.TagNumber(112)
+  set useHybridPb($core.int value) => $_setSignedInt32(78, value);
+  @$pb.TagNumber(112)
+  $core.bool hasUseHybridPb() => $_has(78);
+  @$pb.TagNumber(112)
+  void clearUseHybridPb() => $_clearField(112);
+
+  @$pb.TagNumber(113)
+  $core.String get adInfo => $_getSZ(79);
+  @$pb.TagNumber(113)
+  set adInfo($core.String value) => $_setString(79, value);
+  @$pb.TagNumber(113)
+  $core.bool hasAdInfo() => $_has(79);
+  @$pb.TagNumber(113)
+  void clearAdInfo() => $_clearField(113);
 }
 
 const $core.bool _omitFieldNames =

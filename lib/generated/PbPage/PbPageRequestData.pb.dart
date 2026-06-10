@@ -17,7 +17,8 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 import '../AppPosInfo.pb.dart' as $1;
 import '../AppTransmitData.pb.dart' as $3;
-import '../CommonRequest.pb.dart' as $0;
+import '../CommonReq.pb.dart' as $0;
+import '../PushInfo.pb.dart' as $4;
 import 'AdParam.pb.dart' as $2;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -48,7 +49,7 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     $core.int? arround,
     $core.int? last,
     $core.String? msgClick,
-    $0.CommonRequest? common,
+    $0.CommonReq? common,
     $core.String? lastids,
     $core.String? stFrom,
     $core.String? stLink,
@@ -82,8 +83,10 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     $core.String? oriUgcTid,
     $core.int? oriUgcType,
     $core.String? oriUgcVid,
+    $core.int? afterAdThreadCount,
     $core.String? adContextList,
     $core.String? upSchema,
+    $core.String? pbTestInfo,
     $core.int? fromPush,
     $core.String? adExtParams,
     $fixnum.Int64? broadcastId,
@@ -98,6 +101,32 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     $core.int? similarFrom,
     $core.String? comeFrom,
     $core.String? searchQuery,
+    $4.PushInfo? pushInfo,
+    $core.String? mountBotUk,
+    $core.String? logParam,
+    $core.String? gameId,
+    $core.String? cid,
+    $core.int? pageFrom,
+    $core.int? position,
+    $core.String? gameFid,
+    $core.String? gameFname,
+    $core.String? adBearPbBanner,
+    $core.String? adBearPbComment,
+    $core.String? tabType,
+    $fixnum.Int64? tabId,
+    $core.String? eqid,
+    $core.int? isNote,
+    $fixnum.Int64? aladdinSrcId,
+    $fixnum.Int64? topPid,
+    $core.String? adExternalBannerInfo,
+    $core.String? adExternalInfo,
+    $fixnum.Int64? topicId,
+    $fixnum.Int64? topicFid,
+    $core.int? needDataType,
+    $core.int? sessionRequestTimes,
+    $core.int? bizType,
+    $core.String? offset,
+    $core.int? fromForumId,
   }) {
     final result = create();
     if (pbRn != null) result.pbRn = pbRn;
@@ -159,8 +188,11 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     if (oriUgcTid != null) result.oriUgcTid = oriUgcTid;
     if (oriUgcType != null) result.oriUgcType = oriUgcType;
     if (oriUgcVid != null) result.oriUgcVid = oriUgcVid;
+    if (afterAdThreadCount != null)
+      result.afterAdThreadCount = afterAdThreadCount;
     if (adContextList != null) result.adContextList = adContextList;
     if (upSchema != null) result.upSchema = upSchema;
+    if (pbTestInfo != null) result.pbTestInfo = pbTestInfo;
     if (fromPush != null) result.fromPush = fromPush;
     if (adExtParams != null) result.adExtParams = adExtParams;
     if (broadcastId != null) result.broadcastId = broadcastId;
@@ -176,6 +208,34 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     if (similarFrom != null) result.similarFrom = similarFrom;
     if (comeFrom != null) result.comeFrom = comeFrom;
     if (searchQuery != null) result.searchQuery = searchQuery;
+    if (pushInfo != null) result.pushInfo = pushInfo;
+    if (mountBotUk != null) result.mountBotUk = mountBotUk;
+    if (logParam != null) result.logParam = logParam;
+    if (gameId != null) result.gameId = gameId;
+    if (cid != null) result.cid = cid;
+    if (pageFrom != null) result.pageFrom = pageFrom;
+    if (position != null) result.position = position;
+    if (gameFid != null) result.gameFid = gameFid;
+    if (gameFname != null) result.gameFname = gameFname;
+    if (adBearPbBanner != null) result.adBearPbBanner = adBearPbBanner;
+    if (adBearPbComment != null) result.adBearPbComment = adBearPbComment;
+    if (tabType != null) result.tabType = tabType;
+    if (tabId != null) result.tabId = tabId;
+    if (eqid != null) result.eqid = eqid;
+    if (isNote != null) result.isNote = isNote;
+    if (aladdinSrcId != null) result.aladdinSrcId = aladdinSrcId;
+    if (topPid != null) result.topPid = topPid;
+    if (adExternalBannerInfo != null)
+      result.adExternalBannerInfo = adExternalBannerInfo;
+    if (adExternalInfo != null) result.adExternalInfo = adExternalInfo;
+    if (topicId != null) result.topicId = topicId;
+    if (topicFid != null) result.topicFid = topicFid;
+    if (needDataType != null) result.needDataType = needDataType;
+    if (sessionRequestTimes != null)
+      result.sessionRequestTimes = sessionRequestTimes;
+    if (bizType != null) result.bizType = bizType;
+    if (offset != null) result.offset = offset;
+    if (fromForumId != null) result.fromForumId = fromForumId;
     return result;
   }
 
@@ -216,8 +276,8 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     ..aI(22, _omitFieldNames ? '' : 'arround')
     ..aI(23, _omitFieldNames ? '' : 'last')
     ..aOS(24, _omitFieldNames ? '' : 'msgClick')
-    ..aOM<$0.CommonRequest>(25, _omitFieldNames ? '' : 'common',
-        subBuilder: $0.CommonRequest.create)
+    ..aOM<$0.CommonReq>(25, _omitFieldNames ? '' : 'common',
+        subBuilder: $0.CommonReq.create)
     ..aOS(26, _omitFieldNames ? '' : 'lastids')
     ..aOS(27, _omitFieldNames ? '' : 'stFrom')
     ..aOS(28, _omitFieldNames ? '' : 'stLink')
@@ -256,8 +316,10 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     ..aOS(63, _omitFieldNames ? '' : 'oriUgcTid')
     ..aI(65, _omitFieldNames ? '' : 'oriUgcType')
     ..aOS(66, _omitFieldNames ? '' : 'oriUgcVid')
+    ..aI(67, _omitFieldNames ? '' : 'afterAdThreadCount')
     ..aOS(68, _omitFieldNames ? '' : 'adContextList')
     ..aOS(69, _omitFieldNames ? '' : 'upSchema')
+    ..aOS(70, _omitFieldNames ? '' : 'pbTestInfo')
     ..aI(71, _omitFieldNames ? '' : 'fromPush')
     ..aOS(72, _omitFieldNames ? '' : 'adExtParams')
     ..aInt64(73, _omitFieldNames ? '' : 'broadcastId')
@@ -273,6 +335,35 @@ class PbPageRequestData extends $pb.GeneratedMessage {
     ..aI(82, _omitFieldNames ? '' : 'similarFrom')
     ..aOS(83, _omitFieldNames ? '' : 'comeFrom')
     ..aOS(84, _omitFieldNames ? '' : 'searchQuery')
+    ..aOM<$4.PushInfo>(86, _omitFieldNames ? '' : 'pushInfo',
+        subBuilder: $4.PushInfo.create)
+    ..aOS(87, _omitFieldNames ? '' : 'mountBotUk')
+    ..aOS(88, _omitFieldNames ? '' : 'logParam')
+    ..aOS(89, _omitFieldNames ? '' : 'gameId')
+    ..aOS(90, _omitFieldNames ? '' : 'cid')
+    ..aI(91, _omitFieldNames ? '' : 'pageFrom')
+    ..aI(92, _omitFieldNames ? '' : 'position')
+    ..aOS(93, _omitFieldNames ? '' : 'gameFid')
+    ..aOS(94, _omitFieldNames ? '' : 'gameFname')
+    ..aOS(95, _omitFieldNames ? '' : 'adBearPbBanner')
+    ..aOS(96, _omitFieldNames ? '' : 'adBearPbComment')
+    ..aOS(97, _omitFieldNames ? '' : 'tabType')
+    ..a<$fixnum.Int64>(98, _omitFieldNames ? '' : 'tabId', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOS(99, _omitFieldNames ? '' : 'eqid')
+    ..aI(100, _omitFieldNames ? '' : 'isNote')
+    ..aInt64(101, _omitFieldNames ? '' : 'aladdinSrcId')
+    ..aInt64(102, _omitFieldNames ? '' : 'topPid')
+    ..aOS(103, _omitFieldNames ? '' : 'adExternalBannerInfo')
+    ..aOS(104, _omitFieldNames ? '' : 'adExternalInfo')
+    ..aInt64(105, _omitFieldNames ? '' : 'topicId')
+    ..aInt64(106, _omitFieldNames ? '' : 'topicFid')
+    ..aI(107, _omitFieldNames ? '' : 'needDataType')
+    ..aI(108, _omitFieldNames ? '' : 'sessionRequestTimes')
+    ..aI(109, _omitFieldNames ? '' : 'bizType')
+    ..aOS(110, _omitFieldNames ? '' : 'offset')
+    ..aI(111, _omitFieldNames ? '' : 'fromForumId',
+        fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -511,15 +602,15 @@ class PbPageRequestData extends $pb.GeneratedMessage {
   void clearMsgClick() => $_clearField(24);
 
   @$pb.TagNumber(25)
-  $0.CommonRequest get common => $_getN(24);
+  $0.CommonReq get common => $_getN(24);
   @$pb.TagNumber(25)
-  set common($0.CommonRequest value) => $_setField(25, value);
+  set common($0.CommonReq value) => $_setField(25, value);
   @$pb.TagNumber(25)
   $core.bool hasCommon() => $_has(24);
   @$pb.TagNumber(25)
   void clearCommon() => $_clearField(25);
   @$pb.TagNumber(25)
-  $0.CommonRequest ensureCommon() => $_ensure(24);
+  $0.CommonReq ensureCommon() => $_ensure(24);
 
   @$pb.TagNumber(26)
   $core.String get lastids => $_getSZ(25);
@@ -822,152 +913,406 @@ class PbPageRequestData extends $pb.GeneratedMessage {
   @$pb.TagNumber(66)
   void clearOriUgcVid() => $_clearField(66);
 
+  @$pb.TagNumber(67)
+  $core.int get afterAdThreadCount => $_getIZ(58);
+  @$pb.TagNumber(67)
+  set afterAdThreadCount($core.int value) => $_setSignedInt32(58, value);
+  @$pb.TagNumber(67)
+  $core.bool hasAfterAdThreadCount() => $_has(58);
+  @$pb.TagNumber(67)
+  void clearAfterAdThreadCount() => $_clearField(67);
+
   @$pb.TagNumber(68)
-  $core.String get adContextList => $_getSZ(58);
+  $core.String get adContextList => $_getSZ(59);
   @$pb.TagNumber(68)
-  set adContextList($core.String value) => $_setString(58, value);
+  set adContextList($core.String value) => $_setString(59, value);
   @$pb.TagNumber(68)
-  $core.bool hasAdContextList() => $_has(58);
+  $core.bool hasAdContextList() => $_has(59);
   @$pb.TagNumber(68)
   void clearAdContextList() => $_clearField(68);
 
   @$pb.TagNumber(69)
-  $core.String get upSchema => $_getSZ(59);
+  $core.String get upSchema => $_getSZ(60);
   @$pb.TagNumber(69)
-  set upSchema($core.String value) => $_setString(59, value);
+  set upSchema($core.String value) => $_setString(60, value);
   @$pb.TagNumber(69)
-  $core.bool hasUpSchema() => $_has(59);
+  $core.bool hasUpSchema() => $_has(60);
   @$pb.TagNumber(69)
   void clearUpSchema() => $_clearField(69);
 
+  @$pb.TagNumber(70)
+  $core.String get pbTestInfo => $_getSZ(61);
+  @$pb.TagNumber(70)
+  set pbTestInfo($core.String value) => $_setString(61, value);
+  @$pb.TagNumber(70)
+  $core.bool hasPbTestInfo() => $_has(61);
+  @$pb.TagNumber(70)
+  void clearPbTestInfo() => $_clearField(70);
+
   @$pb.TagNumber(71)
-  $core.int get fromPush => $_getIZ(60);
+  $core.int get fromPush => $_getIZ(62);
   @$pb.TagNumber(71)
-  set fromPush($core.int value) => $_setSignedInt32(60, value);
+  set fromPush($core.int value) => $_setSignedInt32(62, value);
   @$pb.TagNumber(71)
-  $core.bool hasFromPush() => $_has(60);
+  $core.bool hasFromPush() => $_has(62);
   @$pb.TagNumber(71)
   void clearFromPush() => $_clearField(71);
 
   @$pb.TagNumber(72)
-  $core.String get adExtParams => $_getSZ(61);
+  $core.String get adExtParams => $_getSZ(63);
   @$pb.TagNumber(72)
-  set adExtParams($core.String value) => $_setString(61, value);
+  set adExtParams($core.String value) => $_setString(63, value);
   @$pb.TagNumber(72)
-  $core.bool hasAdExtParams() => $_has(61);
+  $core.bool hasAdExtParams() => $_has(63);
   @$pb.TagNumber(72)
   void clearAdExtParams() => $_clearField(72);
 
   @$pb.TagNumber(73)
-  $fixnum.Int64 get broadcastId => $_getI64(62);
+  $fixnum.Int64 get broadcastId => $_getI64(64);
   @$pb.TagNumber(73)
-  set broadcastId($fixnum.Int64 value) => $_setInt64(62, value);
+  set broadcastId($fixnum.Int64 value) => $_setInt64(64, value);
   @$pb.TagNumber(73)
-  $core.bool hasBroadcastId() => $_has(62);
+  $core.bool hasBroadcastId() => $_has(64);
   @$pb.TagNumber(73)
   void clearBroadcastId() => $_clearField(73);
 
   @$pb.TagNumber(74)
-  $core.int get floorSortType => $_getIZ(63);
+  $core.int get floorSortType => $_getIZ(65);
   @$pb.TagNumber(74)
-  set floorSortType($core.int value) => $_setSignedInt32(63, value);
+  set floorSortType($core.int value) => $_setSignedInt32(65, value);
   @$pb.TagNumber(74)
-  $core.bool hasFloorSortType() => $_has(63);
+  $core.bool hasFloorSortType() => $_has(65);
   @$pb.TagNumber(74)
   void clearFloorSortType() => $_clearField(74);
 
   @$pb.TagNumber(75)
-  $core.int get sourceType => $_getIZ(64);
+  $core.int get sourceType => $_getIZ(66);
   @$pb.TagNumber(75)
-  set sourceType($core.int value) => $_setSignedInt32(64, value);
+  set sourceType($core.int value) => $_setSignedInt32(66, value);
   @$pb.TagNumber(75)
-  $core.bool hasSourceType() => $_has(64);
+  $core.bool hasSourceType() => $_has(66);
   @$pb.TagNumber(75)
   void clearSourceType() => $_clearField(75);
 
   @$pb.TagNumber(76)
-  $core.int get immersionVideoCommentSource => $_getIZ(65);
+  $core.int get immersionVideoCommentSource => $_getIZ(67);
   @$pb.TagNumber(76)
   set immersionVideoCommentSource($core.int value) =>
-      $_setSignedInt32(65, value);
+      $_setSignedInt32(67, value);
   @$pb.TagNumber(76)
-  $core.bool hasImmersionVideoCommentSource() => $_has(65);
+  $core.bool hasImmersionVideoCommentSource() => $_has(67);
   @$pb.TagNumber(76)
   void clearImmersionVideoCommentSource() => $_clearField(76);
 
   @$pb.TagNumber(77)
-  $3.AppTransmitData get appTransmitData => $_getN(66);
+  $3.AppTransmitData get appTransmitData => $_getN(68);
   @$pb.TagNumber(77)
   set appTransmitData($3.AppTransmitData value) => $_setField(77, value);
   @$pb.TagNumber(77)
-  $core.bool hasAppTransmitData() => $_has(66);
+  $core.bool hasAppTransmitData() => $_has(68);
   @$pb.TagNumber(77)
   void clearAppTransmitData() => $_clearField(77);
   @$pb.TagNumber(77)
-  $3.AppTransmitData ensureAppTransmitData() => $_ensure(66);
+  $3.AppTransmitData ensureAppTransmitData() => $_ensure(68);
 
   @$pb.TagNumber(78)
-  $core.int get isFoldCommentReq => $_getIZ(67);
+  $core.int get isFoldCommentReq => $_getIZ(69);
   @$pb.TagNumber(78)
-  set isFoldCommentReq($core.int value) => $_setSignedInt32(67, value);
+  set isFoldCommentReq($core.int value) => $_setSignedInt32(69, value);
   @$pb.TagNumber(78)
-  $core.bool hasIsFoldCommentReq() => $_has(67);
+  $core.bool hasIsFoldCommentReq() => $_has(69);
   @$pb.TagNumber(78)
   void clearIsFoldCommentReq() => $_clearField(78);
 
   @$pb.TagNumber(79)
-  $core.int get isEditCommentReq => $_getIZ(68);
+  $core.int get isEditCommentReq => $_getIZ(70);
   @$pb.TagNumber(79)
-  set isEditCommentReq($core.int value) => $_setSignedInt32(68, value);
+  set isEditCommentReq($core.int value) => $_setSignedInt32(70, value);
   @$pb.TagNumber(79)
-  $core.bool hasIsEditCommentReq() => $_has(68);
+  $core.bool hasIsEditCommentReq() => $_has(70);
   @$pb.TagNumber(79)
   void clearIsEditCommentReq() => $_clearField(79);
 
   @$pb.TagNumber(80)
-  $core.int get requestTimes => $_getIZ(69);
+  $core.int get requestTimes => $_getIZ(71);
   @$pb.TagNumber(80)
-  set requestTimes($core.int value) => $_setSignedInt32(69, value);
+  set requestTimes($core.int value) => $_setSignedInt32(71, value);
   @$pb.TagNumber(80)
-  $core.bool hasRequestTimes() => $_has(69);
+  $core.bool hasRequestTimes() => $_has(71);
   @$pb.TagNumber(80)
   void clearRequestTimes() => $_clearField(80);
 
   @$pb.TagNumber(81)
-  $fixnum.Int64 get lastPid => $_getI64(70);
+  $fixnum.Int64 get lastPid => $_getI64(72);
   @$pb.TagNumber(81)
-  set lastPid($fixnum.Int64 value) => $_setInt64(70, value);
+  set lastPid($fixnum.Int64 value) => $_setInt64(72, value);
   @$pb.TagNumber(81)
-  $core.bool hasLastPid() => $_has(70);
+  $core.bool hasLastPid() => $_has(72);
   @$pb.TagNumber(81)
   void clearLastPid() => $_clearField(81);
 
   @$pb.TagNumber(82)
-  $core.int get similarFrom => $_getIZ(71);
+  $core.int get similarFrom => $_getIZ(73);
   @$pb.TagNumber(82)
-  set similarFrom($core.int value) => $_setSignedInt32(71, value);
+  set similarFrom($core.int value) => $_setSignedInt32(73, value);
   @$pb.TagNumber(82)
-  $core.bool hasSimilarFrom() => $_has(71);
+  $core.bool hasSimilarFrom() => $_has(73);
   @$pb.TagNumber(82)
   void clearSimilarFrom() => $_clearField(82);
 
   @$pb.TagNumber(83)
-  $core.String get comeFrom => $_getSZ(72);
+  $core.String get comeFrom => $_getSZ(74);
   @$pb.TagNumber(83)
-  set comeFrom($core.String value) => $_setString(72, value);
+  set comeFrom($core.String value) => $_setString(74, value);
   @$pb.TagNumber(83)
-  $core.bool hasComeFrom() => $_has(72);
+  $core.bool hasComeFrom() => $_has(74);
   @$pb.TagNumber(83)
   void clearComeFrom() => $_clearField(83);
 
   @$pb.TagNumber(84)
-  $core.String get searchQuery => $_getSZ(73);
+  $core.String get searchQuery => $_getSZ(75);
   @$pb.TagNumber(84)
-  set searchQuery($core.String value) => $_setString(73, value);
+  set searchQuery($core.String value) => $_setString(75, value);
   @$pb.TagNumber(84)
-  $core.bool hasSearchQuery() => $_has(73);
+  $core.bool hasSearchQuery() => $_has(75);
   @$pb.TagNumber(84)
   void clearSearchQuery() => $_clearField(84);
+
+  @$pb.TagNumber(86)
+  $4.PushInfo get pushInfo => $_getN(76);
+  @$pb.TagNumber(86)
+  set pushInfo($4.PushInfo value) => $_setField(86, value);
+  @$pb.TagNumber(86)
+  $core.bool hasPushInfo() => $_has(76);
+  @$pb.TagNumber(86)
+  void clearPushInfo() => $_clearField(86);
+  @$pb.TagNumber(86)
+  $4.PushInfo ensurePushInfo() => $_ensure(76);
+
+  @$pb.TagNumber(87)
+  $core.String get mountBotUk => $_getSZ(77);
+  @$pb.TagNumber(87)
+  set mountBotUk($core.String value) => $_setString(77, value);
+  @$pb.TagNumber(87)
+  $core.bool hasMountBotUk() => $_has(77);
+  @$pb.TagNumber(87)
+  void clearMountBotUk() => $_clearField(87);
+
+  @$pb.TagNumber(88)
+  $core.String get logParam => $_getSZ(78);
+  @$pb.TagNumber(88)
+  set logParam($core.String value) => $_setString(78, value);
+  @$pb.TagNumber(88)
+  $core.bool hasLogParam() => $_has(78);
+  @$pb.TagNumber(88)
+  void clearLogParam() => $_clearField(88);
+
+  @$pb.TagNumber(89)
+  $core.String get gameId => $_getSZ(79);
+  @$pb.TagNumber(89)
+  set gameId($core.String value) => $_setString(79, value);
+  @$pb.TagNumber(89)
+  $core.bool hasGameId() => $_has(79);
+  @$pb.TagNumber(89)
+  void clearGameId() => $_clearField(89);
+
+  @$pb.TagNumber(90)
+  $core.String get cid => $_getSZ(80);
+  @$pb.TagNumber(90)
+  set cid($core.String value) => $_setString(80, value);
+  @$pb.TagNumber(90)
+  $core.bool hasCid() => $_has(80);
+  @$pb.TagNumber(90)
+  void clearCid() => $_clearField(90);
+
+  @$pb.TagNumber(91)
+  $core.int get pageFrom => $_getIZ(81);
+  @$pb.TagNumber(91)
+  set pageFrom($core.int value) => $_setSignedInt32(81, value);
+  @$pb.TagNumber(91)
+  $core.bool hasPageFrom() => $_has(81);
+  @$pb.TagNumber(91)
+  void clearPageFrom() => $_clearField(91);
+
+  @$pb.TagNumber(92)
+  $core.int get position => $_getIZ(82);
+  @$pb.TagNumber(92)
+  set position($core.int value) => $_setSignedInt32(82, value);
+  @$pb.TagNumber(92)
+  $core.bool hasPosition() => $_has(82);
+  @$pb.TagNumber(92)
+  void clearPosition() => $_clearField(92);
+
+  @$pb.TagNumber(93)
+  $core.String get gameFid => $_getSZ(83);
+  @$pb.TagNumber(93)
+  set gameFid($core.String value) => $_setString(83, value);
+  @$pb.TagNumber(93)
+  $core.bool hasGameFid() => $_has(83);
+  @$pb.TagNumber(93)
+  void clearGameFid() => $_clearField(93);
+
+  @$pb.TagNumber(94)
+  $core.String get gameFname => $_getSZ(84);
+  @$pb.TagNumber(94)
+  set gameFname($core.String value) => $_setString(84, value);
+  @$pb.TagNumber(94)
+  $core.bool hasGameFname() => $_has(84);
+  @$pb.TagNumber(94)
+  void clearGameFname() => $_clearField(94);
+
+  @$pb.TagNumber(95)
+  $core.String get adBearPbBanner => $_getSZ(85);
+  @$pb.TagNumber(95)
+  set adBearPbBanner($core.String value) => $_setString(85, value);
+  @$pb.TagNumber(95)
+  $core.bool hasAdBearPbBanner() => $_has(85);
+  @$pb.TagNumber(95)
+  void clearAdBearPbBanner() => $_clearField(95);
+
+  @$pb.TagNumber(96)
+  $core.String get adBearPbComment => $_getSZ(86);
+  @$pb.TagNumber(96)
+  set adBearPbComment($core.String value) => $_setString(86, value);
+  @$pb.TagNumber(96)
+  $core.bool hasAdBearPbComment() => $_has(86);
+  @$pb.TagNumber(96)
+  void clearAdBearPbComment() => $_clearField(96);
+
+  @$pb.TagNumber(97)
+  $core.String get tabType => $_getSZ(87);
+  @$pb.TagNumber(97)
+  set tabType($core.String value) => $_setString(87, value);
+  @$pb.TagNumber(97)
+  $core.bool hasTabType() => $_has(87);
+  @$pb.TagNumber(97)
+  void clearTabType() => $_clearField(97);
+
+  @$pb.TagNumber(98)
+  $fixnum.Int64 get tabId => $_getI64(88);
+  @$pb.TagNumber(98)
+  set tabId($fixnum.Int64 value) => $_setInt64(88, value);
+  @$pb.TagNumber(98)
+  $core.bool hasTabId() => $_has(88);
+  @$pb.TagNumber(98)
+  void clearTabId() => $_clearField(98);
+
+  @$pb.TagNumber(99)
+  $core.String get eqid => $_getSZ(89);
+  @$pb.TagNumber(99)
+  set eqid($core.String value) => $_setString(89, value);
+  @$pb.TagNumber(99)
+  $core.bool hasEqid() => $_has(89);
+  @$pb.TagNumber(99)
+  void clearEqid() => $_clearField(99);
+
+  @$pb.TagNumber(100)
+  $core.int get isNote => $_getIZ(90);
+  @$pb.TagNumber(100)
+  set isNote($core.int value) => $_setSignedInt32(90, value);
+  @$pb.TagNumber(100)
+  $core.bool hasIsNote() => $_has(90);
+  @$pb.TagNumber(100)
+  void clearIsNote() => $_clearField(100);
+
+  @$pb.TagNumber(101)
+  $fixnum.Int64 get aladdinSrcId => $_getI64(91);
+  @$pb.TagNumber(101)
+  set aladdinSrcId($fixnum.Int64 value) => $_setInt64(91, value);
+  @$pb.TagNumber(101)
+  $core.bool hasAladdinSrcId() => $_has(91);
+  @$pb.TagNumber(101)
+  void clearAladdinSrcId() => $_clearField(101);
+
+  @$pb.TagNumber(102)
+  $fixnum.Int64 get topPid => $_getI64(92);
+  @$pb.TagNumber(102)
+  set topPid($fixnum.Int64 value) => $_setInt64(92, value);
+  @$pb.TagNumber(102)
+  $core.bool hasTopPid() => $_has(92);
+  @$pb.TagNumber(102)
+  void clearTopPid() => $_clearField(102);
+
+  @$pb.TagNumber(103)
+  $core.String get adExternalBannerInfo => $_getSZ(93);
+  @$pb.TagNumber(103)
+  set adExternalBannerInfo($core.String value) => $_setString(93, value);
+  @$pb.TagNumber(103)
+  $core.bool hasAdExternalBannerInfo() => $_has(93);
+  @$pb.TagNumber(103)
+  void clearAdExternalBannerInfo() => $_clearField(103);
+
+  @$pb.TagNumber(104)
+  $core.String get adExternalInfo => $_getSZ(94);
+  @$pb.TagNumber(104)
+  set adExternalInfo($core.String value) => $_setString(94, value);
+  @$pb.TagNumber(104)
+  $core.bool hasAdExternalInfo() => $_has(94);
+  @$pb.TagNumber(104)
+  void clearAdExternalInfo() => $_clearField(104);
+
+  @$pb.TagNumber(105)
+  $fixnum.Int64 get topicId => $_getI64(95);
+  @$pb.TagNumber(105)
+  set topicId($fixnum.Int64 value) => $_setInt64(95, value);
+  @$pb.TagNumber(105)
+  $core.bool hasTopicId() => $_has(95);
+  @$pb.TagNumber(105)
+  void clearTopicId() => $_clearField(105);
+
+  @$pb.TagNumber(106)
+  $fixnum.Int64 get topicFid => $_getI64(96);
+  @$pb.TagNumber(106)
+  set topicFid($fixnum.Int64 value) => $_setInt64(96, value);
+  @$pb.TagNumber(106)
+  $core.bool hasTopicFid() => $_has(96);
+  @$pb.TagNumber(106)
+  void clearTopicFid() => $_clearField(106);
+
+  @$pb.TagNumber(107)
+  $core.int get needDataType => $_getIZ(97);
+  @$pb.TagNumber(107)
+  set needDataType($core.int value) => $_setSignedInt32(97, value);
+  @$pb.TagNumber(107)
+  $core.bool hasNeedDataType() => $_has(97);
+  @$pb.TagNumber(107)
+  void clearNeedDataType() => $_clearField(107);
+
+  @$pb.TagNumber(108)
+  $core.int get sessionRequestTimes => $_getIZ(98);
+  @$pb.TagNumber(108)
+  set sessionRequestTimes($core.int value) => $_setSignedInt32(98, value);
+  @$pb.TagNumber(108)
+  $core.bool hasSessionRequestTimes() => $_has(98);
+  @$pb.TagNumber(108)
+  void clearSessionRequestTimes() => $_clearField(108);
+
+  @$pb.TagNumber(109)
+  $core.int get bizType => $_getIZ(99);
+  @$pb.TagNumber(109)
+  set bizType($core.int value) => $_setSignedInt32(99, value);
+  @$pb.TagNumber(109)
+  $core.bool hasBizType() => $_has(99);
+  @$pb.TagNumber(109)
+  void clearBizType() => $_clearField(109);
+
+  @$pb.TagNumber(110)
+  $core.String get offset => $_getSZ(100);
+  @$pb.TagNumber(110)
+  set offset($core.String value) => $_setString(100, value);
+  @$pb.TagNumber(110)
+  $core.bool hasOffset() => $_has(100);
+  @$pb.TagNumber(110)
+  void clearOffset() => $_clearField(110);
+
+  @$pb.TagNumber(111)
+  $core.int get fromForumId => $_getIZ(101);
+  @$pb.TagNumber(111)
+  set fromForumId($core.int value) => $_setUnsignedInt32(101, value);
+  @$pb.TagNumber(111)
+  $core.bool hasFromForumId() => $_has(101);
+  @$pb.TagNumber(111)
+  void clearFromForumId() => $_clearField(111);
 }
 
 const $core.bool _omitFieldNames =
