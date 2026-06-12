@@ -17,6 +17,8 @@ class PostItem {
   final String? lastTime;
   final String? abstractText;
   final List<String> imageUrls;
+  final String? videoUrl; // 视频播放 URL（ThreadInfo.video / ThreadInfo.videoInfo.videoUrl）
+  final String? videoCover; // 视频封面 URL（ThreadInfo.video_cover / ThreadInfo.videoInfo.thumbnailUrl）
   final bool isAd;
   bool isTop;
   bool isLiked;
@@ -41,6 +43,8 @@ class PostItem {
     required this.lastTime,
     this.abstractText,
     this.imageUrls = const [],
+    this.videoUrl,
+    this.videoCover,
     this.isAd = false,
     this.isTop = false,
     this.isLiked = false,
@@ -73,6 +77,23 @@ class PostItem {
         }
       }
     } catch (_) {}
+
+    // 提取视频信息（ThreadInfo 直接字段 + VideoInfo protobuf）
+    String? videoUrl;
+    String? videoCover;
+    try {
+      final v = _s(t.video);
+      final vm = _s(t.videoMobileUrl);
+      videoUrl = v.isNotEmpty ? v : (vm.isNotEmpty ? vm : null);
+      videoCover = _s(t.videoCover);
+      if ((videoUrl == null || videoUrl.isEmpty) && t.hasVideoInfo()) {
+        final vi = t.videoInfo;
+        videoUrl = _s(vi.videoUrl);
+        if (videoCover.isEmpty) videoCover = _s(vi.thumbnailUrl);
+      }
+    } catch (_) {}
+    if (videoUrl?.isEmpty == true) videoUrl = null;
+    if (videoCover?.isEmpty == true) videoCover = null;
 
     String authorId = '';
     String authorName = '';
@@ -131,6 +152,8 @@ class PostItem {
       abstractText: absText,
       lastTime: lastReplyTime,
       imageUrls: imgs,
+      videoUrl: videoUrl,
+      videoCover: videoCover,
       isAd: t.hasAlaInfo(),
       isTop: t.isTop == 1,
       isLiked: t.hasAgree() && t.agree.hasAgree == 1,

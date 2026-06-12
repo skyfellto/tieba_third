@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:go_router/go_router.dart';
 import '../generated/PbContent.pb.dart';
 import '../utils/emoticon_helper.dart';
+import 'post_video_card.dart';
 
 /// 将 PbContent 列表渲染为带内联 emoji 图片的文本
 class PostContentText extends StatelessWidget {
@@ -92,6 +93,18 @@ class PostContentText extends StatelessWidget {
             text: displayText,
             style: (style ?? const TextStyle()).copyWith(color: Colors.blue),
             recognizer: TapGestureRecognizer()..onTap = onUserTap,
+          ),
+        );
+      } else if (c.type == 5 && c.link.isNotEmpty) {
+        // 视频：嵌入视频卡片
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: PostVideoCard(
+              videoUrl: c.link,
+              thumbnailUrl: c.src.isNotEmpty ? c.src : null,
+              bsize: c.bsize.isNotEmpty ? c.bsize : null,
+            ),
           ),
         );
       } else if (_isTextType(c.type) && c.text.isNotEmpty) {

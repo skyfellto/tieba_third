@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/post_item.dart';
 import '../utils/user_manager.dart';
 import 'action_icon_button.dart';
+import 'post_video_card.dart';
 
 class PostCard extends StatelessWidget {
   final PostItem? post;
@@ -223,6 +224,14 @@ class PostCard extends StatelessWidget {
                   ),
                 ),
               ],
+              // ========== 视频区域 ==========
+              if (_videoUrl != null) ...[
+                const SizedBox(height: 8),
+                PostVideoCard(
+                  videoUrl: _videoUrl!,
+                  thumbnailUrl: _videoCover,
+                ),
+              ],
               const SizedBox(height: 8),
               // ========== 贴吧信息栏 ==========
               if (!isPlaceholder && showForum && _forumName.isNotEmpty)
@@ -317,6 +326,8 @@ class PostCard extends StatelessWidget {
   String get _title => post?.title ?? (isPlaceholder ? "这是一条占位帖子内容。" : "");
   String? get _abstract => post?.abstractText;
   List<String> get _images => post?.imageUrls ?? [];
+  String? get _videoUrl => post?.videoUrl;
+  String? get _videoCover => post?.videoCover;
   String get _agree => post?.agreeNum ?? "";
   String get _reply => post?.replyNum ?? "";
   String get _time => post?.lastTime ?? "刚刚";
